@@ -61,7 +61,7 @@ export default function ShareButton({ targetRef }) {
           ) : (
             <>
               <Download size={16} />
-              保存画像
+              保存结果
             </>
           )}
         </span>
