@@ -1,13 +1,13 @@
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RotateCcw, ChevronDown } from "lucide-react";
+import { RotateCcw, ChevronDown, Zap } from "lucide-react";
 import VectorSpace3D from "../components/VectorSpace3D";
 import ShareButton from "../components/ShareButton";
 import GlassButton from "../components/GlassButton";
 import TraitRadar from "../components/TraitRadar";
 
 const TABS = [
-  { key: "cloud", label: "向量空间" },
+  { key: "cloud", label: "画像" },
   { key: "data", label: "数据" },
   { key: "narrative", label: "叙事" },
 ];
@@ -23,7 +23,7 @@ export default function Result({ result, onRestart }) {
   const [activeTab, setActiveTab] = useState("cloud");
   const [expandedTag, setExpandedTag] = useState(null);
 
-  const { archetype, archetypeKey, tagDetails, scoredTraits, dimensionScores } = result;
+  const { archetype, archetypeKey, secondaryArchetype, tagDetails, scoredTraits, dimensionScores, suppressedTraits } = result;
   const narrative = archetype.narrative;
 
   return (
@@ -60,22 +60,47 @@ export default function Result({ result, onRestart }) {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-          className="mb-3"
+          transition={{ delay: 0.3, duration: 0.6 }}
+          className="flex flex-col items-center mb-3"
         >
+          <span className="text-4xl mb-2">{archetype.symbol}</span>
           <span className="text-[11px] text-blur-text-light tracking-[0.25em] uppercase">
-            Blur 人格向量空间
+            Blur 人格原型
           </span>
         </motion.div>
 
         <motion.h1
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="text-[26px] font-medium text-blur-text tracking-tight leading-tight text-center"
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="text-[28px] font-medium text-blur-text tracking-tight leading-tight text-center"
         >
           {archetype.title}
         </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="text-sm text-blur-text-muted mt-1.5 text-center"
+        >
+          {archetype.subtitle}
+        </motion.p>
+
+        {secondaryArchetype && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="mt-2 flex items-center gap-1.5 text-xs text-blur-text-light"
+          >
+            <span>兼具</span>
+            <span className="text-blur-accent">
+              {secondaryArchetype.symbol} {secondaryArchetype.title}
+            </span>
+            <span>特质</span>
+          </motion.div>
+        )}
       </div>
 
       <motion.div
@@ -176,10 +201,37 @@ export default function Result({ result, onRestart }) {
               ))}
             </div>
 
+            {suppressedTraits && suppressedTraits.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="glass rounded-2xl p-4 mb-5"
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <Zap size={14} className="text-blur-accent" />
+                  <span className="text-xs font-medium text-blur-text">你的另一面</span>
+                </div>
+                <p className="text-xs text-blur-text-muted leading-relaxed mb-3">
+                  你很少展露这些特质，但它们偶尔会在你毫无防备时浮现——
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {suppressedTraits.slice(0, 2).map((trait) => (
+                    <span
+                      key={trait.trait}
+                      className="text-xs px-3 py-1.5 rounded-full border border-blur-border text-blur-text-muted"
+                    >
+                      {trait.text}
+                    </span>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
+              transition={{ delay: 0.6 }}
               className="text-xs text-blur-text-light italic text-center"
             >
               "所有不精确都值得被看见"

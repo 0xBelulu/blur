@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Eye, Sparkles, SkipForward } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, Sparkles, SkipForward, GripVertical } from "lucide-react";
 import { questions } from "../data/questions";
 import BlurCard from "../components/BlurCard";
 import GlassButton from "../components/GlassButton";
@@ -13,9 +13,11 @@ export default function Test({ onComplete }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
   const [selectedOption, setSelectedOption] = useState(null);
+  const [rankOrder, setRankOrder] = useState([0, 1, 2, 3]);
 
   const currentList = phase === "required" ? requiredQuestions : optionalQuestions;
   const currentQuestion = currentList[currentIndex];
+  const isRankQuestion = currentQuestion?.type === "rank";
 
   const requiredProgress = phase === "required"
     ? ((currentIndex + 1) / requiredQuestions.length) * 100
@@ -29,21 +31,38 @@ export default function Test({ onComplete }) {
     setSelectedOption(option);
   };
 
+  const handleRankMove = (index, direction) => {
+    const newOrder = [...rankOrder];
+    const swapIndex = direction === "up" ? index - 1 : index + 1;
+    if (swapIndex < 0 || swapIndex >= newOrder.length) return;
+    [newOrder[index], newOrder[swapIndex]] = [newOrder[swapIndex], newOrder[index]];
+    setRankOrder(newOrder);
+  };
+
   const finishTest = (finalAnswers) => {
     const valid = finalAnswers.filter(Boolean);
     onComplete(valid);
   };
 
   const handleNext = () => {
-    if (!selectedOption && phase === "required") return;
+    if (!selectedOption && phase === "required" && !isRankQuestion) return;
 
-    const newAnswer = selectedOption
-      ? {
-          questionId: currentQuestion.id,
-          optionId: selectedOption.id,
-          traits: selectedOption.traits,
-        }
-      : null;
+    let newAnswer;
+    if (isRankQuestion) {
+      newAnswer = {
+        questionId: currentQuestion.id,
+        rankOrder,
+        options: currentQuestion.options,
+      };
+    } else {
+      newAnswer = selectedOption
+        ? {
+            questionId: currentQuestion.id,
+            optionId: selectedOption.id,
+            traits: selectedOption.traits,
+          }
+        : null;
+    }
 
     const newAnswers = [...answers];
     const globalIndex = phase === "required"
@@ -58,9 +77,16 @@ export default function Test({ onComplete }) {
         ? currentIndex + 1
         : requiredQuestions.length + currentIndex + 1;
       const nextPrev = newAnswers[nextGlobalIndex];
-      setSelectedOption(
-        nextPrev ? { id: nextPrev.optionId, traits: nextPrev.traits } : null
-      );
+
+      if (nextPrev?.rankOrder) {
+        setRankOrder(nextPrev.rankOrder);
+        setSelectedOption(null);
+      } else {
+        setSelectedOption(
+          nextPrev ? { id: nextPrev.optionId, traits: nextPrev.traits } : null
+        );
+        setRankOrder([0, 1, 2, 3]);
+      }
     } else if (phase === "required") {
       setPhase("transition");
     } else {
@@ -77,6 +103,7 @@ export default function Test({ onComplete }) {
     if (currentIndex < optionalQuestions.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setSelectedOption(null);
+      setRankOrder([0, 1, 2, 3]);
     } else {
       finishTest(newAnswers);
     }
@@ -93,9 +120,16 @@ export default function Test({ onComplete }) {
         ? currentIndex - 1
         : requiredQuestions.length + currentIndex - 1;
       const prevAnswer = answers[prevGlobalIndex];
-      setSelectedOption(
-        prevAnswer ? { id: prevAnswer.optionId, traits: prevAnswer.traits } : null
-      );
+
+      if (prevAnswer?.rankOrder) {
+        setRankOrder(prevAnswer.rankOrder);
+        setSelectedOption(null);
+      } else {
+        setSelectedOption(
+          prevAnswer ? { id: prevAnswer.optionId, traits: prevAnswer.traits } : null
+        );
+        setRankOrder([0, 1, 2, 3]);
+      }
     }
   };
 
@@ -103,6 +137,7 @@ export default function Test({ onComplete }) {
     setPhase("optional");
     setCurrentIndex(0);
     setSelectedOption(null);
+    setRankOrder([0, 1, 2, 3]);
   };
 
   const handleSeeResult = () => {
@@ -219,17 +254,59 @@ export default function Test({ onComplete }) {
               </h2>
             </div>
 
-            <div className="space-y-3 mb-8">
-              {currentQuestion.options.map((option, i) => (
-                <BlurCard
-                  key={option.id}
-                  option={option}
-                  index={i}
-                  isSelected={selectedOption?.id === option.id}
-                  onClick={() => handleSelect(option)}
-                />
-              ))}
-            </div>
+            {isRankQuestion ? (
+              <div className="space-y-2 mb-8">
+                <p className="text-xs text-blur-text-muted mb-3">
+                  点击箭头调整顺序，最上方为最像你
+                </p>
+                {rankOrder.map((optionIndex, rankIndex) => {
+                  const option = currentQuestion.options[optionIndex];
+                  return (
+                    <motion.div
+                      key={option.id}
+                      layout
+                      className="flex items-center gap-3 glass rounded-xl px-4 py-3"
+                    >
+                      <span className="text-xs text-blur-text-light w-6 text-center">
+                        {rankIndex + 1}
+                      </span>
+                      <span className="flex-1 text-sm text-blur-text">
+                        {option.text}
+                      </span>
+                      <div className="flex flex-col gap-0.5">
+                        <button
+                          onClick={() => handleRankMove(rankIndex, "up")}
+                          disabled={rankIndex === 0}
+                          className="p-1 rounded hover:bg-blur-surface disabled:opacity-30 transition-opacity"
+                        >
+                          <ChevronLeft size={14} className="-rotate-90 text-blur-text-light" />
+                        </button>
+                        <button
+                          onClick={() => handleRankMove(rankIndex, "down")}
+                          disabled={rankIndex === 3}
+                          className="p-1 rounded hover:bg-blur-surface disabled:opacity-30 transition-opacity"
+                        >
+                          <ChevronLeft size={14} className="rotate-90 text-blur-text-light" />
+                        </button>
+                      </div>
+                      <GripVertical size={16} className="text-blur-text-light opacity-40" />
+                    </motion.div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="space-y-3 mb-8">
+                {currentQuestion.options.map((option, i) => (
+                  <BlurCard
+                    key={option.id}
+                    option={option}
+                    index={i}
+                    isSelected={selectedOption?.id === option.id}
+                    onClick={() => handleSelect(option)}
+                  />
+                ))}
+              </div>
+            )}
 
             <div className="flex gap-3 mt-auto">
               {!(phase === "required" && currentIndex === 0) && (
@@ -256,7 +333,7 @@ export default function Test({ onComplete }) {
 
               <GlassButton
                 onClick={handleNext}
-                disabled={phase === "required" && !selectedOption}
+                disabled={phase === "required" && !isRankQuestion && !selectedOption}
                 className="flex-1 flex items-center justify-center gap-1"
               >
                 {phase === "required" && currentIndex === requiredQuestions.length - 1

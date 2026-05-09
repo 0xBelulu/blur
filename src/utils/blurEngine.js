@@ -1,30 +1,48 @@
-import { tagPool, archetypeDescriptions, DIMENSIONS } from "../data/questions";
+import {
+  tagPool,
+  archetypeDescriptions,
+  DIMENSIONS,
+  ARCHETYPE_TRAITS,
+  ARCHETYPE_SUPPRESSED,
+} from "../data/questions";
 
 export const ARCHETYPE_VECTORS = {
-  dreamer: { pos: [0.40, 0.85, 0.55], color: [155, 142, 199], label: "梦者" },
-  watcher: { pos: [0.70, 0.40, 0.20], color: [143, 181, 196], label: "观者" },
-  wanderer: { pos: [0.90, 0.25, 0.45], color: [196, 165, 137], label: "旅人" },
-  echo: { pos: [0.15, 0.80, 0.90], color: [196, 155, 165], label: "回声" },
-  ghost: { pos: [0.90, 0.75, 0.10], color: [165, 184, 155], label: "幽灵" },
+  mist: { pos: [1, 0, -1], color: [180, 185, 195], label: "雾" },
+  thunder: { pos: [0, 1, -1], color: [195, 175, 155], label: "雷" },
+  tide: { pos: [-1, 0, -1], color: [155, 180, 195], label: "潮汐" },
+  abyss: { pos: [0, -1, -1], color: [155, 165, 185], label: "深渊" },
+  rainbow: { pos: [0, 0, 1], color: [185, 165, 195], label: "虹" },
 };
 
 export const VECTOR_AXES = [
-  { key: "independence", label: "独立力", color: [143, 181, 196] },
-  { key: "introspection", label: "内省力", color: [155, 142, 199] },
-  { key: "emotion", label: "情感力", color: [196, 155, 165] },
+  { key: "x", label: "", color: [180, 185, 195] },
+  { key: "y", label: "", color: [195, 175, 155] },
+  { key: "z", label: "", color: [155, 180, 195] },
 ];
 
+export function mapTo3D(scores) {
+  const mist = scores?.mist?.score ?? 0.5;
+  const thunder = scores?.thunder?.score ?? 0.5;
+  const tide = scores?.tide?.score ?? 0.5;
+  const abyss = scores?.abyss?.score ?? 0.5;
+  const rainbow = scores?.rainbow?.score ?? 0.5;
+
+  return [
+    mist - tide,
+    thunder - abyss,
+    2 * rainbow - 1,
+  ];
+}
+
 const PALETTE = [
-  [155, 142, 199],
-  [143, 181, 196],
-  [196, 165, 137],
-  [196, 155, 165],
-  [165, 184, 155],
-  [184, 165, 196],
-  [196, 184, 165],
-  [165, 196, 184],
-  [196, 175, 155],
-  [175, 165, 196],
+  [180, 185, 195],
+  [195, 175, 155],
+  [155, 180, 195],
+  [155, 165, 185],
+  [185, 165, 195],
+  [175, 185, 175],
+  [195, 185, 165],
+  [165, 175, 195],
 ];
 
 function seededRandom(seed) {
@@ -36,17 +54,36 @@ export function generateResult(answers) {
   const traitCounts = {};
 
   answers.forEach((answer) => {
-    answer.traits.forEach((trait) => {
-      traitCounts[trait] = (traitCounts[trait] || 0) + 1;
-    });
+    if (answer.rankOrder) {
+      // 排序题：根据排名给不同权重
+      const weights = [1.0, 0.6, 0.3, 0.1];
+      answer.rankOrder.forEach((optionIndex, rank) => {
+        const option = answer.options[optionIndex];
+        if (option && option.traits) {
+          option.traits.forEach((trait) => {
+            traitCounts[trait] = (traitCounts[trait] || 0) + weights[rank];
+          });
+        }
+      });
+    } else if (answer.traits) {
+      // 普通四选一
+      answer.traits.forEach((trait) => {
+        traitCounts[trait] = (traitCounts[trait] || 0) + 1;
+      });
+    }
   });
 
-  const answerHash = answers.reduce((h, a) => h + a.optionId.charCodeAt(0), 0);
+  const answerHash = answers.reduce((h, a) => {
+    if (a.rankOrder) {
+      return h + a.rankOrder.reduce((s, i) => s + i, 0);
+    }
+    return h + (a.optionId ? a.optionId.charCodeAt(0) : 0);
+  }, 0);
 
   const scoredTraits = Object.entries(traitCounts).map(([trait, count]) => {
     const tagInfo = tagPool[trait];
     const weight = tagInfo ? tagInfo.weight : 1;
-    const noise = (seededRandom(trait.length + answerHash) - 0.5) * 0.2;
+    const noise = (seededRandom(trait.length + answerHash) - 0.5) * 0.15;
     return {
       trait,
       score: count * weight + noise,
@@ -57,7 +94,7 @@ export function generateResult(answers) {
 
   scoredTraits.sort((a, b) => b.score - a.score);
 
-  const numTags = 6;
+  const numTags = 5;
   const selectedTags = scoredTraits.slice(0, numTags).map((t) => t.text);
   const selectedTagDetails = scoredTraits.slice(0, numTags).map((t) => ({
     trait: t.trait,
@@ -66,9 +103,12 @@ export function generateResult(answers) {
     score: t.score,
   }));
 
-  const { key: archetypeKey, archetype } = determineArchetype(scoredTraits);
+  const { key: archetypeKey, archetype, secondaryArchetype } =
+    determineArchetype(scoredTraits);
 
-  const clarity = 0.45 + seededRandom(answerHash + 7) * 0.15;
+  const suppressedTraits = determineSuppressedTraits(archetypeKey, scoredTraits);
+
+  const clarity = 0.4 + seededRandom(answerHash + 7) * 0.2;
   const cloudData = generateCloudData(selectedTags.length, clarity, answerHash);
 
   const dimensionScores = computeDimensionScores(traitCounts);
@@ -76,8 +116,10 @@ export function generateResult(answers) {
   return {
     archetype,
     archetypeKey,
+    secondaryArchetype,
     tags: selectedTags,
     tagDetails: selectedTagDetails,
+    suppressedTraits,
     clarity,
     cloudData,
     scoredTraits: scoredTraits.slice(0, 10),
@@ -94,14 +136,14 @@ function computeDimensionScores(traitCounts) {
     dim.traits.forEach((trait) => {
       const tagInfo = tagPool[trait];
       const weight = tagInfo ? tagInfo.weight : 1;
-      maxTotal += weight;
+      maxTotal += weight * 3; // 假设每特质最多出现3次
       if (traitCounts[trait]) {
         total += traitCounts[trait] * weight;
       }
     });
     rawScores[dimKey] = {
       name: dim.name,
-      raw: maxTotal > 0 ? total / maxTotal : 0,
+      raw: maxTotal > 0 ? Math.min(total / maxTotal, 1) : 0,
     };
   });
 
@@ -111,7 +153,7 @@ function computeDimensionScores(traitCounts) {
   const scores = {};
   Object.entries(rawScores).forEach(([dimKey, dim]) => {
     const normalized = dim.raw / maxRaw;
-    const display = 0.3 + normalized * 0.7;
+    const display = 0.25 + normalized * 0.75;
     scores[dimKey] = {
       name: dim.name,
       score: display,
@@ -120,14 +162,6 @@ function computeDimensionScores(traitCounts) {
 
   return scores;
 }
-
-const ARCHETYPE_TRAITS = {
-  dreamer: ["philosophical", "abstract", "wonder", "mysterious"],
-  watcher: ["observant", "detached", "observer", "guarded"],
-  wanderer: ["escapist", "wandering", "restless", "transient"],
-  echo: ["introspective", "reflective", "lonely", "nostalgic"],
-  ghost: ["enigmatic", "empty", "obscure", "layered", "withdrawn", "suggestive"],
-};
 
 function determineArchetype(scoredTraits) {
   const archetypeScores = {};
@@ -142,24 +176,54 @@ function determineArchetype(scoredTraits) {
     archetypeScores[key] = score;
   }
 
-  let bestKey = null;
-  let bestScore = -Infinity;
+  // 排序找出最高和次高
+  const sorted = Object.entries(archetypeScores).sort((a, b) => b[1] - a[1]);
+  const bestKey = sorted[0][0];
+  const secondKey = sorted[1] && sorted[1][1] > 0 ? sorted[1][0] : null;
 
-  for (const [key, score] of Object.entries(archetypeScores)) {
-    if (score > bestScore) {
-      bestScore = score;
-      bestKey = key;
-    }
-  }
-
-  if (bestScore === 0) {
+  // 如果最高分是0，回退到随机
+  if (sorted[0][1] === 0) {
     const keys = Object.keys(archetypeDescriptions);
     const fallbackIndex =
       scoredTraits.reduce((h, t) => h + t.trait.charCodeAt(0), 0) % keys.length;
-    bestKey = keys[fallbackIndex];
+    return {
+      key: keys[fallbackIndex],
+      archetype: archetypeDescriptions[keys[fallbackIndex]],
+      secondaryArchetype: null,
+    };
   }
 
-  return { key: bestKey, archetype: archetypeDescriptions[bestKey] };
+  return {
+    key: bestKey,
+    archetype: archetypeDescriptions[bestKey],
+    secondaryArchetype: secondKey
+      ? {
+          key: secondKey,
+          title: archetypeDescriptions[secondKey].title,
+          symbol: archetypeDescriptions[secondKey].symbol,
+        }
+      : null,
+  };
+}
+
+function determineSuppressedTraits(archetypeKey, scoredTraits) {
+  const suppressedList = ARCHETYPE_SUPPRESSED[archetypeKey] || [];
+  const traitScoreMap = Object.fromEntries(
+    scoredTraits.map((t) => [t.trait, t.score])
+  );
+
+  return suppressedList
+    .map((trait) => {
+      const tagInfo = tagPool[trait];
+      const score = traitScoreMap[trait] || 0;
+      return {
+        trait,
+        text: tagInfo ? tagInfo.text : trait,
+        detail: tagInfo ? tagInfo.detail : "",
+        score,
+      };
+    })
+    .sort((a, b) => a.score - b.score); // 分数越低，越被压抑
 }
 
 function generateCloudData(numTags, clarity, seed) {

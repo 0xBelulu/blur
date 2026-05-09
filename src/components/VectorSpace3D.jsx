@@ -1,5 +1,5 @@
 import { useRef, useEffect } from "react";
-import { ARCHETYPE_VECTORS, VECTOR_AXES } from "../utils/blurEngine";
+import { ARCHETYPE_VECTORS, VECTOR_AXES, mapTo3D } from "../utils/blurEngine";
 
 const AXES = VECTOR_AXES;
 
@@ -32,10 +32,6 @@ function project3D(p, cx, cy, fov) {
   return { x: cx + p[0] * s, y: cy - p[1] * s, s, z: p[2] };
 }
 
-function dist3(a, b) {
-  return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2);
-}
-
 function generateParticles() {
   const particles = [];
   let seed = 42;
@@ -46,9 +42,9 @@ function generateParticles() {
       const spread = 0.18;
       particles.push({
         pos: [
-          Math.max(0.02, Math.min(0.98, arch.pos[0] + (seededRandom(seed * 3) - 0.5) * spread * 2)),
-          Math.max(0.02, Math.min(0.98, arch.pos[1] + (seededRandom(seed * 3 + 1) - 0.5) * spread * 2)),
-          Math.max(0.02, Math.min(0.98, arch.pos[2] + (seededRandom(seed * 3 + 2) - 0.5) * spread * 2)),
+          Math.max(-0.98, Math.min(0.98, arch.pos[0] + (seededRandom(seed * 3) - 0.5) * spread * 2)),
+          Math.max(-0.98, Math.min(0.98, arch.pos[1] + (seededRandom(seed * 3 + 1) - 0.5) * spread * 2)),
+          Math.max(-0.98, Math.min(0.98, arch.pos[2] + (seededRandom(seed * 3 + 2) - 0.5) * spread * 2)),
         ],
         color: arch.color,
         size: 1.2 + seededRandom(seed * 3 + 3) * 2.2,
@@ -63,8 +59,8 @@ function generateParticles() {
 
 function drawWireframe(ctx, toScreen) {
   const corners = [
-    [0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0],
-    [0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1],
+    [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],
+    [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1],
   ];
   const edges = [
     [0, 1], [1, 2], [2, 3], [3, 0],
@@ -82,15 +78,15 @@ function drawWireframe(ctx, toScreen) {
   });
 
   const gridAlpha = 0.06;
-  for (let i = 1; i <= 3; i++) {
-    const v = i * 0.25;
+  const gridValues = [-0.5, 0, 0.5];
+  gridValues.forEach((v) => {
     const lines = [
-      [[0, 0, v], [1, 0, v]],
-      [[v, 0, 0], [v, 0, 1]],
-      [[0, 0, v], [0, 1, v]],
-      [[0, v, 0], [0, v, 1]],
-      [[v, 0, 0], [v, 1, 0]],
-      [[0, v, 0], [1, v, 0]],
+      [[-1, -1, v], [1, -1, v]],
+      [[v, -1, -1], [v, -1, 1]],
+      [[-1, -1, v], [-1, 1, v]],
+      [[-1, v, -1], [-1, v, 1]],
+      [[v, -1, -1], [v, 1, -1]],
+      [[-1, v, -1], [1, v, -1]],
     ];
     ctx.strokeStyle = `rgba(200,195,190,${gridAlpha})`;
     ctx.lineWidth = 0.4;
@@ -102,47 +98,25 @@ function drawWireframe(ctx, toScreen) {
       ctx.lineTo(p2.x, p2.y);
       ctx.stroke();
     });
-  }
+  });
 }
 
 function drawAxes(ctx, toScreen) {
-  const origin = toScreen([0, 0, 0]);
-  const ends = [toScreen([1, 0, 0]), toScreen([0, 1, 0]), toScreen([0, 0, 1])];
+  const axisLines = [
+    { from: [-1, 0, 0], to: [1, 0, 0], color: AXES[0].color },
+    { from: [0, -1, 0], to: [0, 1, 0], color: AXES[1].color },
+    { from: [0, 0, -1], to: [0, 0, 1], color: AXES[2].color },
+  ];
 
-  AXES.forEach((axis, i) => {
-    const end = ends[i];
+  axisLines.forEach((axis) => {
+    const s = toScreen(axis.from);
+    const e = toScreen(axis.to);
     ctx.beginPath();
-    ctx.moveTo(origin.x, origin.y);
-    ctx.lineTo(end.x, end.y);
+    ctx.moveTo(s.x, s.y);
+    ctx.lineTo(e.x, e.y);
     ctx.strokeStyle = rgba(axis.color, 0.4);
     ctx.lineWidth = 1;
     ctx.stroke();
-
-    const dx = end.x - origin.x;
-    const dy = end.y - origin.y;
-    const len = Math.sqrt(dx * dx + dy * dy);
-    if (len > 1) {
-      const ux = dx / len,
-        uy = dy / len;
-      const as = 5;
-      ctx.beginPath();
-      ctx.moveTo(end.x, end.y);
-      ctx.lineTo(end.x - ux * as - uy * as * 0.4, end.y - uy * as + ux * as * 0.4);
-      ctx.moveTo(end.x, end.y);
-      ctx.lineTo(end.x - ux * as + uy * as * 0.4, end.y - uy * as - ux * as * 0.4);
-      ctx.strokeStyle = rgba(axis.color, 0.5);
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    }
-
-    const lo = 16;
-    const lx = end.x + (len > 1 ? (dx / len) * lo : 0);
-    const ly = end.y + (len > 1 ? (dy / len) * lo : 0);
-    ctx.fillStyle = rgba(axis.color, 0.65);
-    ctx.font = "10px system-ui,-apple-system,sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(axis.label, lx, ly);
   });
 }
 
@@ -295,9 +269,9 @@ export default function VectorSpace3D({ dimensionScores, archetypeKey, width = 2
 
     const toScreen = (pos, progress = 1) => {
       const centered = [
-        (pos[0] * progress - 0.5) * spaceScale,
-        (pos[1] * progress - 0.5) * spaceScale,
-        (pos[2] * progress - 0.5) * spaceScale,
+        pos[0] * progress * spaceScale / 2,
+        pos[1] * progress * spaceScale / 2,
+        pos[2] * progress * spaceScale / 2,
       ];
       const r1 = rotateY(centered, rotRef.current.theta);
       const r2 = rotateX(r1, rotRef.current.phi);
@@ -350,17 +324,7 @@ export default function VectorSpace3D({ dimensionScores, archetypeKey, width = 2
 
       const scores = dataRef.current.scores;
       const aKey = dataRef.current.archetypeKey;
-      const testPos = AXES.map((a) => scores?.[a.key]?.score ?? 0.5);
-
-      let closestKey = aKey;
-      let minDist = Infinity;
-      Object.entries(ARCHETYPES).forEach(([k, v]) => {
-        const d = dist3(testPos, v.pos);
-        if (d < minDist) {
-          minDist = d;
-          closestKey = k;
-        }
-      });
+      const testPos = mapTo3D(scores);
 
       ctx.clearRect(0, 0, width, height);
 
@@ -387,7 +351,7 @@ export default function VectorSpace3D({ dimensionScores, archetypeKey, width = 2
           end,
           color: arch.color,
           label: arch.label,
-          isClosest: key === closestKey,
+          isClosest: key === aKey,
         });
       });
 
@@ -426,10 +390,10 @@ export default function VectorSpace3D({ dimensionScores, archetypeKey, width = 2
         }
       });
 
-      const closestArch = ARCHETYPES[closestKey];
-      if (closestArch) {
-        const closestScreen = toScreen(closestArch.pos, easedProgress);
-        drawClosestLine(ctx, testScreen, closestScreen, closestArch.color, t);
+      const activeArch = ARCHETYPES[aKey];
+      if (activeArch) {
+        const activeScreen = toScreen(activeArch.pos, easedProgress);
+        drawClosestLine(ctx, testScreen, activeScreen, activeArch.color, t);
       }
 
       ctx.fillStyle = "rgba(181,173,163,0.5)";
