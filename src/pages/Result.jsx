@@ -145,7 +145,7 @@ export default function Result({ result, onRestart }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
-          className="flex gap-1 p-1 rounded-2xl glass mt-6 mb-5 w-full"
+          className="relative flex rounded-2xl glass p-1 mt-6 mb-5 w-full"
         >
           {TABS.map((tab) => (
             <button
@@ -154,13 +154,24 @@ export default function Result({ result, onRestart }) {
                 setActiveTab(tab.key);
                 setExpandedTag(null);
               }}
-              className={`flex-1 px-4 py-2 rounded-xl text-xs transition-all duration-300 cursor-pointer ${
-                activeTab === tab.key
-                  ? "bg-blur-surface text-blur-text shadow-sm font-medium"
-                  : "text-blur-text-muted hover:text-blur-text"
-              }`}
+              className="flex-1 relative z-10 px-4 py-2 text-xs cursor-pointer"
             >
-              {tab.label}
+              {activeTab === tab.key && (
+                <motion.div
+                  layoutId="activeTab"
+                  className="absolute inset-0 rounded-xl bg-blur-surface shadow-sm"
+                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                />
+              )}
+              <span
+                className={`relative z-10 transition-colors duration-300 ${
+                  activeTab === tab.key
+                    ? "text-blur-text font-medium"
+                    : "text-blur-text-muted hover:text-blur-text"
+                }`}
+              >
+                {tab.label}
+              </span>
             </button>
           ))}
         </motion.div>
