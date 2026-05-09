@@ -93,7 +93,7 @@ export const questions = [
     text: "你最容易对什么样的人产生好感？",
     options: [
       { id: "a", text: "让你感到安全、不刺眼的人", traits: ["softedge", "guarded"] },
-      { id: "b", text: "和你一样脑子里很吵的人", traits: ["reverberant", "thunder"] },
+      { id: "b", text: "笑起来有破绽的人", traits: ["acute", "softedge"] },
       { id: "c", text: "从不追问你要去哪的人", traits: ["adrift", "fluid"] },
       { id: "d", text: "能安静陪你，不说多余话的人", traits: ["abyssal", "deepwatch"] },
     ],
