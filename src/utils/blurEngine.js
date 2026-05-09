@@ -8,9 +8,9 @@ import {
 
 export const ARCHETYPE_VECTORS = {
   mist: { pos: [1, 0, -1], color: [180, 185, 195], label: "雾" },
-  thunder: { pos: [0, 1, -1], color: [195, 175, 155], label: "雷" },
-  tide: { pos: [-1, 0, -1], color: [155, 180, 195], label: "潮汐" },
-  abyss: { pos: [0, -1, -1], color: [155, 165, 185], label: "深渊" },
+  thunder: { pos: [0, 1, -1], color: [195, 175, 155], label: "风铃" },
+  tide: { pos: [-1, 0, -1], color: [155, 180, 195], label: "漂流者" },
+  abyss: { pos: [0, -1, -1], color: [155, 165, 185], label: "静观者" },
   rainbow: { pos: [0, 0, 1], color: [185, 165, 195], label: "虹" },
 };
 

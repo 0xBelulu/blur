@@ -1,17 +1,20 @@
 import { useRef, useEffect } from "react";
 import { ARCHETYPE_VECTORS, VECTOR_AXES, mapTo3D } from "../utils/blurEngine";
+import { DIMENSIONS } from "../data/questions";
 
 const AXES = VECTOR_AXES;
 
 const ARCHETYPES = ARCHETYPE_VECTORS;
 
-function rgba(rgb, a) {
-  return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`;
+const TRAIT_DIM_MAP = {};
+for (const [dimKey, dim] of Object.entries(DIMENSIONS)) {
+  for (const trait of dim.traits) {
+    TRAIT_DIM_MAP[trait] = dimKey;
+  }
 }
 
-function seededRandom(seed) {
-  const x = Math.sin(seed + 1) * 10000;
-  return x - Math.floor(x);
+function rgba(rgb, a) {
+  return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`;
 }
 
 function rotateY(p, a) {
@@ -30,31 +33,6 @@ function project3D(p, cx, cy, fov) {
   const d = fov + p[2];
   const s = d > 0.1 ? fov / d : fov / 0.1;
   return { x: cx + p[0] * s, y: cy - p[1] * s, s, z: p[2] };
-}
-
-function generateParticles() {
-  const particles = [];
-  let seed = 42;
-  Object.entries(ARCHETYPES).forEach(([key, arch]) => {
-    const count = 10;
-    for (let i = 0; i < count; i++) {
-      seed += 1;
-      const spread = 0.18;
-      particles.push({
-        pos: [
-          Math.max(-0.98, Math.min(0.98, arch.pos[0] + (seededRandom(seed * 3) - 0.5) * spread * 2)),
-          Math.max(-0.98, Math.min(0.98, arch.pos[1] + (seededRandom(seed * 3 + 1) - 0.5) * spread * 2)),
-          Math.max(-0.98, Math.min(0.98, arch.pos[2] + (seededRandom(seed * 3 + 2) - 0.5) * spread * 2)),
-        ],
-        color: arch.color,
-        size: 1.2 + seededRandom(seed * 3 + 3) * 2.2,
-        opacity: 0.2 + seededRandom(seed * 3 + 4) * 0.35,
-        phase: seededRandom(seed * 3 + 5) * Math.PI * 2,
-        archetype: key,
-      });
-    }
-  });
-  return particles;
 }
 
 function drawWireframe(ctx, toScreen) {
@@ -161,22 +139,32 @@ function drawArchetypeVector(ctx, origin, end, color, label, isClosest, t) {
   ctx.fillText(label, end.x, end.y - (isClosest ? 11 : 7));
 }
 
-function drawParticle(ctx, screen, color, size, opacity, phase, t) {
-  const pulse = 0.65 + Math.sin(t * 0.015 + phase) * 0.35;
-  const s = Math.max(0.5, size * screen.s);
+function drawTraitDot(ctx, screen, color, size, opacity, label, isTop, t) {
+  const pulse = 0.7 + Math.sin(t * 0.02 + size * 10) * 0.3;
+  const r = Math.max(0.8, size * screen.s);
 
-  const glow = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, s * 3);
-  glow.addColorStop(0, rgba(color, opacity * 0.2 * pulse));
-  glow.addColorStop(1, rgba(color, 0));
+  if (isTop) {
+    const glow = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, r * 5);
+    glow.addColorStop(0, rgba(color, opacity * 0.15 * pulse));
+    glow.addColorStop(1, rgba(color, 0));
+    ctx.beginPath();
+    ctx.arc(screen.x, screen.y, r * 5, 0, Math.PI * 2);
+    ctx.fillStyle = glow;
+    ctx.fill();
+  }
+
   ctx.beginPath();
-  ctx.arc(screen.x, screen.y, s * 3, 0, Math.PI * 2);
-  ctx.fillStyle = glow;
+  ctx.arc(screen.x, screen.y, r, 0, Math.PI * 2);
+  ctx.fillStyle = rgba(color, opacity * pulse);
   ctx.fill();
 
-  ctx.beginPath();
-  ctx.arc(screen.x, screen.y, Math.max(0.6, s * 0.4), 0, Math.PI * 2);
-  ctx.fillStyle = rgba(color, opacity * 0.7 * pulse);
-  ctx.fill();
+  if (isTop) {
+    ctx.fillStyle = rgba(color, 0.75);
+    ctx.font = "8px system-ui,-apple-system,sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    ctx.fillText(label, screen.x, screen.y - r - 4);
+  }
 }
 
 function drawTestSubject(ctx, screen, origin, t) {
@@ -231,7 +219,7 @@ function drawClosestLine(ctx, testScreen, closestScreen, color, t) {
   ctx.setLineDash([]);
 }
 
-export default function VectorSpace3D({ dimensionScores, archetypeKey, width = 280, height = 280 }) {
+export default function VectorSpace3D({ dimensionScores, archetypeKey, scoredTraits, width = 280, height = 280 }) {
   const canvasRef = useRef(null);
   const animRef = useRef(null);
   const timeRef = useRef(0);
@@ -239,18 +227,38 @@ export default function VectorSpace3D({ dimensionScores, archetypeKey, width = 2
   const dragRef = useRef({ active: false, x: 0, y: 0 });
   const autoRef = useRef(true);
   const autoTimerRef = useRef(null);
-  const particlesRef = useRef(null);
+  const traitDotsRef = useRef([]);
   const progressRef = useRef(0);
   const dataRef = useRef({});
 
   useEffect(() => {
     dataRef.current.scores = dimensionScores;
     dataRef.current.archetypeKey = archetypeKey;
+    dataRef.current.scoredTraits = scoredTraits;
   });
 
   useEffect(() => {
-    particlesRef.current = generateParticles();
-  }, []);
+    if (!scoredTraits || scoredTraits.length === 0) {
+      traitDotsRef.current = [];
+      return;
+    }
+    const maxScore = scoredTraits[0].score;
+    traitDotsRef.current = scoredTraits.map((st, i) => {
+      const dimKey = TRAIT_DIM_MAP[st.trait];
+      const protoPos = dimKey ? ARCHETYPES[dimKey].pos : [0, 0, 0];
+      const color = dimKey ? ARCHETYPES[dimKey].color : [180, 180, 180];
+      const normScore = maxScore > 0 ? st.score / maxScore : 0;
+      const scale = 0.12 + normScore * 0.88;
+      return {
+        pos: [protoPos[0] * scale, protoPos[1] * scale, protoPos[2] * scale],
+        color,
+        size: 1.8 + normScore * 2.8,
+        opacity: 0.35 + normScore * 0.45,
+        label: st.text,
+        isTop: i < 3,
+      };
+    });
+  }, [scoredTraits]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -355,18 +363,18 @@ export default function VectorSpace3D({ dimensionScores, archetypeKey, width = 2
         });
       });
 
-      if (particlesRef.current) {
-        particlesRef.current.forEach((p, i) => {
-          const screen = toScreen(p.pos, easedProgress);
+      if (traitDotsRef.current) {
+        traitDotsRef.current.forEach((dot) => {
+          const screen = toScreen(dot.pos, easedProgress);
           drawItems.push({
-            type: "particle",
+            type: "trait",
             z: screen.z,
             screen,
-            color: p.color,
-            size: p.size,
-            opacity: p.opacity,
-            phase: p.phase,
-            index: i,
+            color: dot.color,
+            size: dot.size,
+            opacity: dot.opacity,
+            label: dot.label,
+            isTop: dot.isTop,
           });
         });
       }
@@ -383,8 +391,8 @@ export default function VectorSpace3D({ dimensionScores, archetypeKey, width = 2
       drawItems.forEach((item) => {
         if (item.type === "arch") {
           drawArchetypeVector(ctx, origin, item.end, item.color, item.label, item.isClosest, t);
-        } else if (item.type === "particle") {
-          drawParticle(ctx, item.screen, item.color, item.size, item.opacity, item.phase, t);
+        } else if (item.type === "trait") {
+          drawTraitDot(ctx, item.screen, item.color, item.size, item.opacity, item.label, item.isTop, t);
         } else if (item.type === "test") {
           drawTestSubject(ctx, item.screen, origin, t);
         }

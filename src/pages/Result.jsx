@@ -43,6 +43,7 @@ export default function Result({ result, onRestart }) {
             <VectorSpace3D
               dimensionScores={dimensionScores}
               archetypeKey={archetypeKey}
+              scoredTraits={scoredTraits}
               width={280}
               height={280}
             />
