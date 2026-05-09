@@ -8,9 +8,9 @@ import {
 
 export const ARCHETYPE_VECTORS = {
   mist: { pos: [1, 0, -1], color: [180, 185, 195], label: "雾" },
-  thunder: { pos: [0, 1, -1], color: [195, 175, 155], label: "风铃" },
-  tide: { pos: [-1, 0, -1], color: [155, 180, 195], label: "漂流者" },
-  abyss: { pos: [0, -1, -1], color: [155, 165, 185], label: "静观者" },
+  chime: { pos: [0, 1, -1], color: [195, 175, 155], label: "风铃" },
+  drift: { pos: [-1, 0, -1], color: [155, 180, 195], label: "漂流者" },
+  still: { pos: [0, -1, -1], color: [155, 165, 185], label: "静观者" },
   rainbow: { pos: [0, 0, 1], color: [185, 165, 195], label: "虹" },
 };
 
@@ -22,14 +22,14 @@ export const VECTOR_AXES = [
 
 export function mapTo3D(scores) {
   const mist = scores?.mist?.score ?? 0.5;
-  const thunder = scores?.thunder?.score ?? 0.5;
-  const tide = scores?.tide?.score ?? 0.5;
-  const abyss = scores?.abyss?.score ?? 0.5;
+  const chime = scores?.chime?.score ?? 0.5;
+  const drift = scores?.drift?.score ?? 0.5;
+  const still = scores?.still?.score ?? 0.5;
   const rainbow = scores?.rainbow?.score ?? 0.5;
 
   return [
-    mist - tide,
-    thunder - abyss,
+    mist - drift,
+    chime - still,
     2 * rainbow - 1,
   ];
 }

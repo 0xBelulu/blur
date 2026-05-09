@@ -114,10 +114,10 @@ export const questions = [
     required: false,
     text: "你手机里最多的是哪类照片？",
     options: [
-      { id: "a", text: "模糊的风景、光影、雾气", traits: ["vague", "misty"] },
-      { id: "b", text: "来不及拍好的瞬间，手抖或曝光过度", traits: ["acute", "overwhelming"] },
-      { id: "c", text: "不同城市的街景，没有重复的地点", traits: ["unmoored", "fleeing"] },
-      { id: "d", text: "水面、倒影、光折射的碎片", traits: ["prismatic", "refracted"] },
+      { id: "a", text: "天空和光影变化——同一个角度的不同天色", traits: ["vague", "misty"] },
+      { id: "b", text: "随手拍的食物、街头文字、没整理的日常碎片", traits: ["acute", "overwhelming"] },
+      { id: "c", text: "不同城市的街景和站牌，几乎没有重复", traits: ["unmoored", "fleeing"] },
+      { id: "d", text: "水面倒影、橱窗玻璃、被光线切碎的瞬间", traits: ["prismatic", "refracted"] },
     ],
   },
   {
@@ -125,10 +125,10 @@ export const questions = [
     required: false,
     text: "你更害怕哪种感觉？",
     options: [
-      { id: "a", text: "被强光直射，无处躲藏", traits: ["shielded", "softedge"] },
-      { id: "b", text: "脑子里突然安静下来，像坏掉的收音机", traits: ["reverberant", "thunder"] },
-      { id: "c", text: "被困在一个永远不会变的房间里", traits: ["shifting", "fluid"] },
-      { id: "d", text: "必须立刻给出一个确定的答案", traits: ["suspended", "equivocal"] },
+      { id: "a", text: "突然成为所有人的焦点，无处可躲", traits: ["shielded", "softedge"] },
+      { id: "b", text: "被所有人遗忘，手机再也没有新消息", traits: ["reverberant", "thunder"] },
+      { id: "c", text: "日复一日过一模一样的生活，看不到尽头", traits: ["shifting", "fluid"] },
+      { id: "d", text: "被人逼着选边站，明明两边都有道理", traits: ["suspended", "equivocal"] },
     ],
   },
   {
@@ -234,7 +234,7 @@ export const tagPool = {
   guarded: { text: "低曝光", weight: 0.8, detail: "你不习惯把自己放在强光下" },
   faded: { text: "褪色感", weight: 0.7, detail: "你觉得自己像被时间洗淡的旧照片" },
 
-  // 雷系 — 过载性模糊
+  // 风铃系 — 过载性模糊
   saturated: { text: "信息过载", weight: 1, detail: "你接收的信息量总是超过处理能力" },
   acute: { text: "高敏接收", weight: 1, detail: "你的感官像没有音量键的收音机" },
   reverberant: { text: "内心回响", weight: 0.9, detail: "一个念头会在你脑子里绕很多圈" },
@@ -242,7 +242,7 @@ export const tagPool = {
   thunder: { text: "轰鸣体质", weight: 1, detail: "你的内心很少真正安静过" },
   loud: { text: "高音量", weight: 0.8, detail: "即使是安静的时候，你的内心也在轰鸣" },
 
-  // 潮汐系 — 流动性模糊
+  // 漂流者系 — 流动性模糊
   adrift: { text: "无锚状态", weight: 1, detail: "你不觉得自己属于任何一个固定的地方" },
   fleeing: { text: "逃离冲动", weight: 0.9, detail: "你在感到被定义时会本能地想逃" },
   unmoored: { text: "解缆者", weight: 0.9, detail: "你主动或被动地切断了固定的连接" },
@@ -250,7 +250,7 @@ export const tagPool = {
   tidal: { text: "潮汐节律", weight: 1, detail: "你的情绪和状态有自然的涨落周期" },
   fluid: { text: "流动性", weight: 0.8, detail: "你从一种状态滑向另一种，没有明显边界" },
 
-  // 深渊系 — 时间性模糊
+  // 静观者系 — 时间性模糊
   patient: { text: "慢时间", weight: 1, detail: "你愿意等，相信时间会让事情澄清" },
   sunken: { text: "沉降感", weight: 0.9, detail: "你的情绪和想法会自己慢慢沉到深处" },
   abyssal: { text: "深潜者", weight: 1, detail: "你不害怕深处，那里反而让你平静" },
@@ -268,25 +268,25 @@ export const tagPool = {
 
 export const ARCHETYPE_TRAITS = {
   mist: ["shielded", "softedge", "filtered", "vague", "misty", "guarded", "faded"],
-  thunder: ["saturated", "acute", "reverberant", "overwhelming", "thunder", "loud"],
-  tide: ["adrift", "fleeing", "unmoored", "shifting", "tidal", "fluid"],
-  abyss: ["patient", "sunken", "abyssal", "sedimentary", "stilled", "deepwatch"],
+  chime: ["saturated", "acute", "reverberant", "overwhelming", "thunder", "loud"],
+  drift: ["adrift", "fleeing", "unmoored", "shifting", "tidal", "fluid"],
+  still: ["patient", "sunken", "abyssal", "sedimentary", "stilled", "deepwatch"],
   rainbow: ["manifold", "equivocal", "prismatic", "refracted", "suspended"],
 };
 
 export const ARCHETYPE_SUPPRESSED = {
   mist: ["acute", "tidal"],
-  thunder: ["patient", "stilled"],
-  tide: ["shielded", "sedimentary"],
-  abyss: ["fleeing", "manifold"],
+  chime: ["patient", "stilled"],
+  drift: ["shielded", "sedimentary"],
+  still: ["fleeing", "manifold"],
   rainbow: ["guarded", "sunken"],
 };
 
 export const DIMENSIONS = {
   mist: { name: "遮蔽性", traits: ARCHETYPE_TRAITS.mist },
-  thunder: { name: "敏感度", traits: ARCHETYPE_TRAITS.thunder },
-  tide: { name: "流动性", traits: ARCHETYPE_TRAITS.tide },
-  abyss: { name: "沉淀性", traits: ARCHETYPE_TRAITS.abyss },
+  chime: { name: "敏感度", traits: ARCHETYPE_TRAITS.chime },
+  drift: { name: "流动性", traits: ARCHETYPE_TRAITS.drift },
+  still: { name: "沉淀性", traits: ARCHETYPE_TRAITS.still },
   rainbow: { name: "多面性", traits: ARCHETYPE_TRAITS.rainbow },
 };
 
@@ -302,7 +302,7 @@ export const archetypeDescriptions = {
       hiddenSide: "你看起来永远在回避，但其实你内心深处渴望一次被强光直射的体验——不是烧伤，而是温暖。你最大的秘密是：你的模糊有时候让你自己也找不到自己了。",
     },
   },
-  thunder: {
+  chime: {
     title: "风铃",
     subtitle: "微风即响，没有静音键",
     symbol: "🎐",
@@ -313,7 +313,7 @@ export const archetypeDescriptions = {
       hiddenSide: "你看起来此起彼伏，但其实你最渴望的是真正的无风——不是用更大的声响盖住，而是所有风都停了之后的那种空。你最大的恐惧是：如果没有风，你还响吗？",
     },
   },
-  tide: {
+  drift: {
     title: "漂流者",
     subtitle: "你不是在漂流，你是在拒绝靠岸",
     symbol: "🍃",
@@ -324,7 +324,7 @@ export const archetypeDescriptions = {
       hiddenSide: "你看起来随性自由，但你比任何人都渴望一个可以回去的岸。只是你害怕，一旦靠岸，潮汐就不再是潮汐了。你最大的矛盾是：你用流动来保护那个想要停泊的自己。",
     },
   },
-  abyss: {
+  still: {
     title: "静观者",
     subtitle: "你不急于浮出水面",
     symbol: "🌑",

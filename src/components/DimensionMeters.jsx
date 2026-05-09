@@ -2,9 +2,9 @@ import { motion } from "framer-motion";
 
 const DIM_CONFIG = {
   mist: { label: "雾", color: "#b4b9c3", desc: "弥散 · 包容" },
-  thunder: { label: "风铃", color: "#c3af9b", desc: "锐利 · 穿透" },
-  tide: { label: "漂流者", color: "#9bb4c3", desc: "流动 · 追寻" },
-  abyss: { label: "静观者", color: "#9ba5b9", desc: "沉淀 · 内省" },
+  chime: { label: "风铃", color: "#c3af9b", desc: "锐利 · 穿透" },
+  drift: { label: "漂流者", color: "#9bb4c3", desc: "流动 · 追寻" },
+  still: { label: "静观者", color: "#9ba5b9", desc: "沉淀 · 内省" },
   rainbow: { label: "虹", color: "#b9a5c3", desc: "折射 · 多元" },
 };
 
