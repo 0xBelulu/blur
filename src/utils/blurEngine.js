@@ -73,22 +73,35 @@ export function generateResult(answers) {
 }
 
 function computeDimensionScores(traitCounts) {
-  const scores = {};
-  const maxPossible = 4;
+  const rawScores = {};
 
   Object.entries(DIMENSIONS).forEach(([dimKey, dim]) => {
     let total = 0;
+    let maxTotal = 0;
     dim.traits.forEach((trait) => {
+      const tagInfo = tagPool[trait];
+      const weight = tagInfo ? tagInfo.weight : 1;
+      maxTotal += weight;
       if (traitCounts[trait]) {
-        const tagInfo = tagPool[trait];
-        const weight = tagInfo ? tagInfo.weight : 1;
         total += traitCounts[trait] * weight;
       }
     });
-    const raw = total / (maxPossible * dim.traits.length * 1.0);
+    rawScores[dimKey] = {
+      name: dim.name,
+      raw: maxTotal > 0 ? total / maxTotal : 0,
+    };
+  });
+
+  const rawValues = Object.values(rawScores).map((d) => d.raw);
+  const maxRaw = Math.max(...rawValues, 0.01);
+
+  const scores = {};
+  Object.entries(rawScores).forEach(([dimKey, dim]) => {
+    const normalized = dim.raw / maxRaw;
+    const display = 0.3 + normalized * 0.7;
     scores[dimKey] = {
       name: dim.name,
-      score: Math.min(1, raw * 2.5),
+      score: display,
     };
   });
 
