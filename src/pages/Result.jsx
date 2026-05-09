@@ -2,7 +2,6 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RotateCcw, ChevronDown, Zap } from "lucide-react";
 import VectorSpace3D from "../components/VectorSpace3D";
-import ShareButton from "../components/ShareButton";
 import GlassButton from "../components/GlassButton";
 import TraitRadar from "../components/TraitRadar";
 import DimensionMeters from "../components/DimensionMeters";
@@ -418,10 +417,8 @@ export default function Result({ result, onRestart }) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.3 }}
-          className="mt-auto pt-10 space-y-4 w-full"
+          className="mt-auto pt-10 w-full"
         >
-          <ShareButton result={result} />
-
           <div className="flex justify-center md:justify-start">
             <GlassButton variant="ghost" onClick={onRestart}>
               <span className="flex items-center gap-2">
