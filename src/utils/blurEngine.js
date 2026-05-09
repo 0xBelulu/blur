@@ -1,5 +1,19 @@
 import { tagPool, archetypeDescriptions, DIMENSIONS } from "../data/questions";
 
+export const ARCHETYPE_VECTORS = {
+  dreamer: { pos: [0.40, 0.85, 0.55], color: [155, 142, 199], label: "梦者" },
+  watcher: { pos: [0.70, 0.40, 0.20], color: [143, 181, 196], label: "观者" },
+  wanderer: { pos: [0.90, 0.25, 0.45], color: [196, 165, 137], label: "旅人" },
+  echo: { pos: [0.15, 0.80, 0.90], color: [196, 155, 165], label: "回声" },
+  ghost: { pos: [0.90, 0.75, 0.10], color: [165, 184, 155], label: "幽灵" },
+};
+
+export const VECTOR_AXES = [
+  { key: "independence", label: "独立力", color: [143, 181, 196] },
+  { key: "introspection", label: "内省力", color: [155, 142, 199] },
+  { key: "emotion", label: "情感力", color: [196, 155, 165] },
+];
+
 const PALETTE = [
   [155, 142, 199],
   [143, 181, 196],

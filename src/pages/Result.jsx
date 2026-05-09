@@ -1,14 +1,13 @@
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RotateCcw, ChevronDown } from "lucide-react";
-import CloudCanvas from "../components/CloudCanvas";
-import TagParticles from "../components/TagParticles";
+import VectorSpace3D from "../components/VectorSpace3D";
 import ShareButton from "../components/ShareButton";
 import GlassButton from "../components/GlassButton";
 import TraitRadar from "../components/TraitRadar";
 
 const TABS = [
-  { key: "cloud", label: "云图" },
+  { key: "cloud", label: "向量空间" },
   { key: "data", label: "数据" },
   { key: "narrative", label: "叙事" },
 ];
@@ -24,7 +23,7 @@ export default function Result({ result, onRestart }) {
   const [activeTab, setActiveTab] = useState("cloud");
   const [expandedTag, setExpandedTag] = useState(null);
 
-  const { archetype, tags, tagDetails, cloudData, scoredTraits, dimensionScores } = result;
+  const { archetype, archetypeKey, tagDetails, scoredTraits, dimensionScores } = result;
   const narrative = archetype.narrative;
 
   return (
@@ -41,12 +40,13 @@ export default function Result({ result, onRestart }) {
             animate={{ opacity: [0.85, 1, 0.85] }}
             transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
           >
-            <CloudCanvas cloudData={cloudData} width={280} height={280} />
+            <VectorSpace3D
+              dimensionScores={dimensionScores}
+              archetypeKey={archetypeKey}
+              width={280}
+              height={280}
+            />
           </motion.div>
-
-          <div className="absolute inset-0">
-            <TagParticles tags={tags.slice(0, 5)} positions={cloudData.tagPositions.slice(0, 5)} />
-          </div>
 
           <div
             className="absolute inset-0 rounded-full opacity-15 blur-3xl -z-10"
@@ -64,7 +64,7 @@ export default function Result({ result, onRestart }) {
           className="mb-3"
         >
           <span className="text-[11px] text-blur-text-light tracking-[0.25em] uppercase">
-            Blur 人格云图
+            Blur 人格向量空间
           </span>
         </motion.div>
 
