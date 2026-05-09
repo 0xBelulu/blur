@@ -1,6 +1,7 @@
 export const questions = [
   {
     id: 1,
+    required: true,
     text: "当你走进一间陌生的房间，你最先注意到的是？",
     options: [
       { id: "a", text: "光线落在哪面墙上", traits: ["sensitive", "visual"] },
@@ -11,6 +12,7 @@ export const questions = [
   },
   {
     id: 2,
+    required: true,
     text: "深夜失眠时，你通常在思考什么？",
     options: [
       { id: "a", text: "三年前的某句话", traits: ["nostalgic", "reflective"] },
@@ -21,6 +23,7 @@ export const questions = [
   },
   {
     id: 3,
+    required: true,
     text: "如果可以选择一种天气度过一整天？",
     options: [
       { id: "a", text: "大雾弥漫的清晨", traits: ["mysterious", "introspective"] },
@@ -31,6 +34,7 @@ export const questions = [
   },
   {
     id: 4,
+    required: true,
     text: "你更可能被什么样的画面打动？",
     options: [
       { id: "a", text: "一个人坐在窗边发呆", traits: ["lonely", "contemplative"] },
@@ -41,6 +45,7 @@ export const questions = [
   },
   {
     id: 5,
+    required: true,
     text: "当别人问你「你好吗」，你通常？",
     options: [
       { id: "a", text: "说还好，然后反问对方", traits: ["deflecting", "caring"] },
@@ -51,6 +56,7 @@ export const questions = [
   },
   {
     id: 6,
+    required: true,
     text: "如果记忆是一间房间，你的房间？",
     options: [
       { id: "a", text: "堆满了舍不得扔的东西", traits: ["hoarding", "sentimental"] },
@@ -61,6 +67,7 @@ export const questions = [
   },
   {
     id: 7,
+    required: true,
     text: "你觉得最像自己的一种颜色？",
     options: [
       { id: "a", text: "被水洗过很多次的蓝", traits: ["faded", "calm"] },
@@ -71,6 +78,7 @@ export const questions = [
   },
   {
     id: 8,
+    required: true,
     text: "如果明天可以消失一天，你会？",
     options: [
       { id: "a", text: "去一个没人认识的地方走路", traits: ["escapist", "wandering"] },
@@ -81,6 +89,7 @@ export const questions = [
   },
   {
     id: 9,
+    required: true,
     text: "你最容易对什么样的人产生好感？",
     options: [
       { id: "a", text: "说话很慢、会停顿的人", traits: ["patient", "depth"] },
@@ -91,12 +100,123 @@ export const questions = [
   },
   {
     id: 10,
+    required: true,
     text: "如果人生是一张照片，你希望它是？",
     options: [
       { id: "a", text: "失焦但光线很美", traits: ["imperfect", "atmospheric"] },
       { id: "b", text: "只有半个身影入镜", traits: ["incomplete", "mysterious"] },
       { id: "c", text: "拍糊了但表情很真", traits: ["genuine", "raw"] },
       { id: "d", text: "空白处比画面多", traits: ["minimal", "suggestive"] },
+    ],
+  },
+  {
+    id: 11,
+    required: false,
+    text: "你手机里最多的是哪类照片？",
+    options: [
+      { id: "a", text: "天空和光影", traits: ["visual", "atmospheric"] },
+      { id: "b", text: "和朋友在一起的瞬间", traits: ["social", "emotional"] },
+      { id: "c", text: "一个人走路时的街景", traits: ["solitary", "wandering"] },
+      { id: "d", text: "几乎没有照片", traits: ["minimal", "present"] },
+    ],
+  },
+  {
+    id: 12,
+    required: false,
+    text: "你更害怕哪种感觉？",
+    options: [
+      { id: "a", text: "被完全看透", traits: ["guarded", "enigmatic"] },
+      { id: "b", text: "永远不被理解", traits: ["lonely", "introspective"] },
+      { id: "c", text: "失去选择的权利", traits: ["restless", "escapist"] },
+      { id: "d", text: "什么都感觉不到", traits: ["empty", "faded"] },
+    ],
+  },
+  {
+    id: 13,
+    required: false,
+    text: "你理想中的周末？",
+    options: [
+      { id: "a", text: "一个人在家，窗边有光", traits: ["solitary", "contemplative"] },
+      { id: "b", text: "和一两个朋友漫无目的地逛", traits: ["social", "wandering"] },
+      { id: "c", text: "去一个从没去过的地方", traits: ["curious", "escapist"] },
+      { id: "d", text: "什么都不安排，睡到自然醒", traits: ["accepting", "grounded"] },
+    ],
+  },
+  {
+    id: 14,
+    required: false,
+    text: "听到一首喜欢的歌，你会？",
+    options: [
+      { id: "a", text: "单曲循环到腻", traits: ["nostalgic", "sentimental"] },
+      { id: "b", text: "去找同类型的歌", traits: ["curious", "depth"] },
+      { id: "c", text: "闭上眼睛，让旋律带走自己", traits: ["escapist", "sensory"] },
+      { id: "d", text: "记住那个瞬间，不再重听", traits: ["transient", "subtle"] },
+    ],
+  },
+  {
+    id: 15,
+    required: false,
+    text: "你更想拥有哪种能力？",
+    options: [
+      { id: "a", text: "读懂别人的沉默", traits: ["empathetic", "subtle"] },
+      { id: "b", text: "让自己随时消失", traits: ["escapist", "withdrawn"] },
+      { id: "c", text: "记住每一个美好的瞬间", traits: ["sentimental", "visual"] },
+      { id: "d", text: "不再在意别人的看法", traits: ["courageous", "authentic"] },
+    ],
+  },
+  {
+    id: 16,
+    required: false,
+    text: "深夜一个人走在路上，你会？",
+    options: [
+      { id: "a", text: "抬头看月亮和星星", traits: ["philosophical", "wonder"] },
+      { id: "b", text: "戴上耳机，走很快", traits: ["withdrawn", "restless"] },
+      { id: "c", text: "放慢脚步，享受安静", traits: ["contemplative", "calm"] },
+      { id: "d", text: "想一些白天不敢想的事", traits: ["introspective", "vulnerable"] },
+    ],
+  },
+  {
+    id: 17,
+    required: false,
+    text: "你觉得「家」最像什么？",
+    options: [
+      { id: "a", text: "一盏不会灭的灯", traits: ["warm", "hopeful"] },
+      { id: "b", text: "一个可以关上门的房间", traits: ["guarded", "solitary"] },
+      { id: "c", text: "一种气味，说不清但认得出", traits: ["sensory", "nostalgic"] },
+      { id: "d", text: "一个还在路上的概念", traits: ["transitional", "wandering"] },
+    ],
+  },
+  {
+    id: 18,
+    required: false,
+    text: "你什么时候最像自己？",
+    options: [
+      { id: "a", text: "独处的时候", traits: ["solitary", "authentic"] },
+      { id: "b", text: "和最亲近的人在一起", traits: ["vulnerable", "relational"] },
+      { id: "c", text: "做一件没人看的事", traits: ["genuine", "introspective"] },
+      { id: "d", text: "好像什么时候都不太像", traits: ["layered", "enigmatic"] },
+    ],
+  },
+  {
+    id: 19,
+    required: false,
+    text: "如果可以给过去的自己寄一句话？",
+    options: [
+      { id: "a", text: "别怕，都会过去的", traits: ["hopeful", "courageous"] },
+      { id: "b", text: "你不需要那么懂事", traits: ["vulnerable", "honest"] },
+      { id: "c", text: "记住现在的感觉", traits: ["nostalgic", "sentimental"] },
+      { id: "d", text: "没什么好说的，都值得", traits: ["accepting", "grounded"] },
+    ],
+  },
+  {
+    id: 20,
+    required: false,
+    text: "你觉得「模糊」这个词，更接近？",
+    options: [
+      { id: "a", text: "一种保护", traits: ["guarded", "introspective"] },
+      { id: "b", text: "一种自由", traits: ["escapist", "atmospheric"] },
+      { id: "c", text: "一种诚实", traits: ["genuine", "imperfect"] },
+      { id: "d", text: "一种遗憾", traits: ["melancholic", "faded"] },
     ],
   },
 ];
@@ -171,6 +291,7 @@ export const tagPool = {
   human: { text: "欣赏瑕疵", weight: 0.8, detail: "你欣赏有瑕疵的真实胜过完美的虚假" },
   curious: { text: "还有问题想问", weight: 0.8, detail: "你对世界还有问不完的问题" },
   youthful: { text: "心比年龄小", weight: 0.7, detail: "你的心比你的年龄要小" },
+  empathetic: { text: "能听懂沉默", weight: 1, detail: "你能听懂别人没说出口的话" },
   subtle: { text: "细微处见真章", weight: 0.9, detail: "你在细微之处看到别人看不到的东西" },
   imperfect: { text: "接受不完美的构图", weight: 0.9, detail: "你接受不完美的构图，因为那才是真实的" },
   atmospheric: { text: "氛围大于内容", weight: 1, detail: "对你来说，氛围比内容更重要" },
@@ -191,7 +312,7 @@ export const DIMENSIONS = {
   },
   emotion: {
     name: "情感力",
-    traits: ["emotional", "romantic", "melancholic", "sentimental", "vulnerable", "caring", "hopeful", "warm"],
+    traits: ["emotional", "romantic", "melancholic", "sentimental", "vulnerable", "caring", "hopeful", "warm", "empathetic"],
   },
   independence: {
     name: "独立力",
