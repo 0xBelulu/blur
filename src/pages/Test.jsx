@@ -11,7 +11,7 @@ export default function Test({ onComplete }) {
   const [selectedOption, setSelectedOption] = useState(null);
 
   const currentQuestion = questions[currentIndex];
-  const progress = ((currentIndex) / questions.length) * 100;
+  const progress = ((currentIndex + 1) / questions.length) * 100;
 
   const handleSelect = (option) => {
     setSelectedOption(option);
@@ -26,28 +26,29 @@ export default function Test({ onComplete }) {
       traits: selectedOption.traits,
     };
 
-    const newAnswers = [...answers, newAnswer];
+    const newAnswers = [...answers];
+    newAnswers[currentIndex] = newAnswer;
     setAnswers(newAnswers);
 
     if (currentIndex < questions.length - 1) {
       setCurrentIndex(currentIndex + 1);
-      setSelectedOption(null);
+      setSelectedOption(newAnswers[currentIndex + 1]?.optionId ? { id: newAnswers[currentIndex + 1].optionId, traits: newAnswers[currentIndex + 1].traits } : null);
     } else {
-      onComplete(newAnswers);
+      const finalAnswers = newAnswers.slice(0, currentIndex + 1);
+      onComplete(finalAnswers);
     }
   };
 
   const handlePrev = () => {
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
-      setSelectedOption(answers[currentIndex - 1] || null);
-      setAnswers(answers.slice(0, -1));
+      const prevAnswer = answers[currentIndex - 1];
+      setSelectedOption(prevAnswer ? { id: prevAnswer.optionId, traits: prevAnswer.traits } : null);
     }
   };
 
   return (
     <div className="flex-1 flex flex-col px-6 py-8 max-w-lg mx-auto w-full">
-      {/* Progress */}
       <div className="mb-8">
         <div className="flex justify-between items-center mb-3">
           <span className="text-xs text-blur-text-muted">
@@ -76,7 +77,6 @@ export default function Test({ onComplete }) {
           transition={{ duration: 0.4 }}
           className="flex-1 flex flex-col"
         >
-          {/* Question */}
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-4">
               <Eye size={16} className="text-blur-accent" />
@@ -89,7 +89,6 @@ export default function Test({ onComplete }) {
             </h2>
           </div>
 
-          {/* Options */}
           <div className="space-y-3 mb-8">
             {currentQuestion.options.map((option, i) => (
               <BlurCard
@@ -102,7 +101,6 @@ export default function Test({ onComplete }) {
             ))}
           </div>
 
-          {/* Navigation */}
           <div className="flex gap-3 mt-auto">
             {currentIndex > 0 && (
               <GlassButton
@@ -114,7 +112,7 @@ export default function Test({ onComplete }) {
                 上一题
               </GlassButton>
             )}
-            
+
             <GlassButton
               onClick={handleNext}
               disabled={!selectedOption}

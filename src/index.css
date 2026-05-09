@@ -41,13 +41,12 @@ body {
   flex-direction: column;
 }
 
-/* Glass morphism utility */
 .glass {
   background: var(--color-blur-glass);
   backdrop-filter: blur(20px) saturate(140%);
   -webkit-backdrop-filter: blur(20px) saturate(140%);
   border: 1px solid var(--color-blur-border);
-  box-shadow: 
+  box-shadow:
     0 4px 24px rgba(74, 69, 64, 0.06),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
@@ -57,12 +56,11 @@ body {
   backdrop-filter: blur(32px) saturate(160%);
   -webkit-backdrop-filter: blur(32px) saturate(160%);
   border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(74, 69, 64, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
-/* Prism refraction effect */
 .prism-shift {
   position: relative;
 }
@@ -80,15 +78,14 @@ body {
     rgba(196, 165, 137, 0.2) 66%,
     rgba(196, 155, 165, 0.3) 100%
   );
-  -webkit-mask: 
-    linear-gradient(#fff 0 0) content-box, 
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
 }
 
-/* Custom range slider */
 input[type="range"].blur-slider {
   -webkit-appearance: none;
   appearance: none;
@@ -138,7 +135,6 @@ input[type="range"].blur-slider::-moz-range-thumb {
   cursor: grab;
 }
 
-/* Animations */
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-8px); }
@@ -192,7 +188,6 @@ input[type="range"].blur-slider::-moz-range-thumb {
   animation: gentle-breath 5.5s ease-in-out infinite;
 }
 
-/* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;
 }

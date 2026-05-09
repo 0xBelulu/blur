@@ -13,41 +13,39 @@ export default function Result({ result, onRestart }) {
   return (
     <div className="flex-1 flex flex-col px-6 py-10 max-w-md mx-auto w-full">
       <div ref={captureRef} className="flex flex-col items-center">
-        {/* Cloud Visualization */}
         <motion.div
           initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.9, ease: "easeOut" }}
           className="relative w-[320px] h-[320px] mb-8"
         >
-          <div className="absolute inset-0 flex items-center justify-center"
+          <motion.div
+            className="absolute inset-0 flex items-center justify-center"
+            animate={{ opacity: [0.85, 1, 0.85] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
           >
             <CloudCanvas
               cloudData={cloudData}
               width={320}
               height={320}
             />
-          </div>
-          
-          {/* Tags floating around cloud */}
-          <div className="absolute inset-0"
-          >
+          </motion.div>
+
+          <div className="absolute inset-0">
             <TagParticles
               tags={tags.slice(0, 5)}
               positions={cloudData.tagPositions.slice(0, 5)}
             />
           </div>
 
-          {/* Ambient glow */}
           <div
-            className="absolute inset-0 rounded-full opacity-20 blur-3xl -z-10"
+            className="absolute inset-0 rounded-full opacity-15 blur-3xl -z-10"
             style={{
-              background: "radial-gradient(circle at 40% 40%, rgba(155,142,199,0.4) 0%, rgba(143,181,196,0.2) 50%, transparent 70%)",
+              background: "radial-gradient(circle at 40% 40%, rgba(155,142,199,0.35) 0%, rgba(143,181,196,0.15) 50%, transparent 70%)",
             }}
           />
         </motion.div>
 
-        {/* Brand label */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -59,25 +57,21 @@ export default function Result({ result, onRestart }) {
           </span>
         </motion.div>
 
-        {/* Archetype Title */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.5 }}
           className="text-center mb-6"
         >
-          <h1 className="text-[28px] font-medium text-blur-text tracking-tight leading-tight mb-4"
-          >
+          <h1 className="text-[28px] font-medium text-blur-text tracking-tight leading-tight mb-4">
             {archetype.title}
           </h1>
-          
-          <p className="text-sm text-blur-text-muted leading-relaxed px-2"
-          >
+
+          <p className="text-sm text-blur-text-muted leading-relaxed px-2">
             {archetype.description}
           </p>
         </motion.div>
 
-        {/* Divider */}
         <motion.div
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
@@ -85,12 +79,11 @@ export default function Result({ result, onRestart }) {
           className="w-16 h-px bg-gradient-to-r from-transparent via-blur-border to-transparent mx-auto mb-6"
         />
 
-        {/* All Tags */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
-          className="mb-8"
+          className="mb-6"
         >
           <div className="flex flex-wrap justify-center gap-2">
             {tags.map((tag, i) => (
@@ -107,7 +100,6 @@ export default function Result({ result, onRestart }) {
           </div>
         </motion.div>
 
-        {/* Quote */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -118,7 +110,6 @@ export default function Result({ result, onRestart }) {
         </motion.p>
       </div>
 
-      {/* Actions */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -126,7 +117,7 @@ export default function Result({ result, onRestart }) {
         className="mt-auto pt-10 space-y-4"
       >
         <ShareButton targetRef={captureRef} />
-        
+
         <div className="flex justify-center">
           <GlassButton variant="ghost" onClick={onRestart}>
             <span className="flex items-center gap-2">

@@ -6,9 +6,15 @@ export default function BlurCard({ option, index, isSelected, onClick }) {
 
   const isActive = isSelected || isHovered;
 
-  // Each card breathes at a slightly different pace
   const breatheSpeeds = ["animate-breathe", "animate-breathe-fast", "animate-breathe-slow", "animate-breathe"];
   const breatheClass = isActive ? "" : breatheSpeeds[index % breatheSpeeds.length];
+
+  const handleClick = () => {
+    if (navigator.vibrate) {
+      navigator.vibrate(10);
+    }
+    onClick();
+  };
 
   return (
     <motion.div
@@ -17,7 +23,11 @@ export default function BlurCard({ option, index, isSelected, onClick }) {
       transition={{ delay: index * 0.08, duration: 0.5 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onClick={onClick}
+      onTouchStart={() => setIsHovered(true)}
+      onTouchEnd={() => {
+        setIsHovered(false);
+      }}
+      onClick={handleClick}
       className={`
         relative p-5 rounded-2xl cursor-pointer transition-all duration-300
         ${isSelected ? "glass-strong prism-shift" : "glass"}
@@ -26,17 +36,15 @@ export default function BlurCard({ option, index, isSelected, onClick }) {
       `}
       style={{
         animationDelay: `${index * 0.5}s`,
-        // When active, force clear state overriding the keyframe
         filter: isActive ? "blur(0px)" : undefined,
         opacity: isActive ? 1 : undefined,
       }}
       whileTap={{ scale: 0.98 }}
     >
-      <div className="text-sm leading-relaxed text-blur-text"
-      >
+      <div className="text-sm leading-relaxed text-blur-text">
         {option.text}
       </div>
-      
+
       {isSelected && (
         <motion.div
           initial={{ scale: 0 }}

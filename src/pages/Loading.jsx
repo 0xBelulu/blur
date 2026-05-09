@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
 
 const loadingTexts = [
@@ -11,6 +12,15 @@ const loadingTexts = [
 ];
 
 export default function Loading() {
+  const [textIndex, setTextIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTextIndex((prev) => (prev + 1) % loadingTexts.length);
+    }, 2400);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6 min-h-[100svh]">
       <div className="text-center max-w-sm">
@@ -22,11 +32,11 @@ export default function Loading() {
         >
           <motion.div
             className="w-16 h-16 mx-auto mb-6 rounded-full glass flex items-center justify-center"
-            animate={{ 
+            animate={{
               rotate: 360,
               scale: [1, 1.05, 1],
             }}
-            transition={{ 
+            transition={{
               rotate: { duration: 3, repeat: Infinity, ease: "linear" },
               scale: { duration: 2, repeat: Infinity, ease: "easeInOut" },
             }}
@@ -41,7 +51,7 @@ export default function Loading() {
           transition={{ delay: 0.3 }}
         >
           <motion.h2
-            className="text-xl font-medium text-blur-text mb-3"
+            className="text-xl font-medium text-blur-text mb-6"
             animate={{ filter: ["blur(0px)", "blur(1px)", "blur(0px)"] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           >
@@ -49,32 +59,20 @@ export default function Loading() {
           </motion.h2>
         </motion.div>
 
-        <motion.div
-          className="space-y-2"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-        >
-          {loadingTexts.map((text, i) => (
+        <div className="h-8 flex items-center justify-center">
+          <AnimatePresence mode="wait">
             <motion.p
-              key={i}
+              key={textIndex}
               className="text-sm text-blur-text-muted"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ 
-                opacity: [0, 1, 1, 0],
-                y: [10, 0, 0, -10],
-              }}
-              transition={{
-                duration: 3,
-                delay: i * 0.8,
-                repeat: Infinity,
-                repeatDelay: loadingTexts.length * 0.8 - 3,
-              }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.4 }}
             >
-              {text}
+              {loadingTexts[textIndex]}
             </motion.p>
-          ))}
-        </motion.div>
+          </AnimatePresence>
+        </div>
 
         <motion.div
           className="mt-12"
