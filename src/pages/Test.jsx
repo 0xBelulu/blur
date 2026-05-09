@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Eye, Sparkles, SkipForward, GripVertical } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, Sparkles, SkipForward } from "lucide-react";
 import { questions } from "../data/questions";
 import BlurCard from "../components/BlurCard";
 import GlassButton from "../components/GlassButton";
@@ -13,7 +13,7 @@ export default function Test({ onComplete }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
   const [selectedOption, setSelectedOption] = useState(null);
-  const [rankOrder, setRankOrder] = useState([0, 1, 2, 3]);
+  const [rankOrder, setRankOrder] = useState([]);
 
   const currentList = phase === "required" ? requiredQuestions : optionalQuestions;
   const currentQuestion = currentList[currentIndex];
@@ -31,12 +31,15 @@ export default function Test({ onComplete }) {
     setSelectedOption(option);
   };
 
-  const handleRankMove = (index, direction) => {
-    const newOrder = [...rankOrder];
-    const swapIndex = direction === "up" ? index - 1 : index + 1;
-    if (swapIndex < 0 || swapIndex >= newOrder.length) return;
-    [newOrder[index], newOrder[swapIndex]] = [newOrder[swapIndex], newOrder[index]];
-    setRankOrder(newOrder);
+  const handleRankClick = (optionIndex) => {
+    setRankOrder((prev) => {
+      const existingPos = prev.indexOf(optionIndex);
+      if (existingPos !== -1) {
+        return prev.slice(0, existingPos);
+      }
+      if (prev.length >= 4) return prev;
+      return [...prev, optionIndex];
+    });
   };
 
   const finishTest = (finalAnswers) => {
@@ -85,7 +88,7 @@ export default function Test({ onComplete }) {
         setSelectedOption(
           nextPrev ? { id: nextPrev.optionId, traits: nextPrev.traits } : null
         );
-        setRankOrder([0, 1, 2, 3]);
+        setRankOrder([]);
       }
     } else if (phase === "required") {
       setPhase("transition");
@@ -103,7 +106,7 @@ export default function Test({ onComplete }) {
     if (currentIndex < optionalQuestions.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setSelectedOption(null);
-      setRankOrder([0, 1, 2, 3]);
+      setRankOrder([]);
     } else {
       finishTest(newAnswers);
     }
@@ -128,7 +131,7 @@ export default function Test({ onComplete }) {
         setSelectedOption(
           prevAnswer ? { id: prevAnswer.optionId, traits: prevAnswer.traits } : null
         );
-        setRankOrder([0, 1, 2, 3]);
+        setRankOrder([]);
       }
     }
   };
@@ -137,7 +140,7 @@ export default function Test({ onComplete }) {
     setPhase("optional");
     setCurrentIndex(0);
     setSelectedOption(null);
-    setRankOrder([0, 1, 2, 3]);
+    setRankOrder([]);
   };
 
   const handleSeeResult = () => {
@@ -257,40 +260,50 @@ export default function Test({ onComplete }) {
             {isRankQuestion ? (
               <div className="space-y-2 mb-8">
                 <p className="text-xs text-blur-text-muted mb-3">
-                  点击箭头调整顺序，最上方为最像你
+                  按顺序点击选项，从最像你的开始
                 </p>
-                {rankOrder.map((optionIndex, rankIndex) => {
-                  const option = currentQuestion.options[optionIndex];
+                {currentQuestion.options.map((option, optionIndex) => {
+                  const rankPos = rankOrder.indexOf(optionIndex);
+                  const isRanked = rankPos !== -1;
                   return (
-                    <motion.div
+                    <motion.button
                       key={option.id}
-                      layout
-                      className="flex items-center gap-3 glass rounded-xl px-4 py-3"
+                      onClick={() => handleRankClick(optionIndex)}
+                      className={`w-full text-left flex items-center gap-3 glass rounded-xl px-4 py-3 transition-all duration-300 ${
+                        isRanked
+                          ? "border-blur-accent/50 bg-blur-accent/5 shadow-[0_0_12px_rgba(180,185,195,0.15)]"
+                          : "hover:border-blur-text-muted/30"
+                      }`}
                     >
-                      <span className="text-xs text-blur-text-light w-6 text-center">
-                        {rankIndex + 1}
-                      </span>
-                      <span className="flex-1 text-sm text-blur-text">
+                      <motion.span
+                        key={isRanked ? `rank-${rankPos + 1}` : `empty-${option.id}`}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                          isRanked
+                            ? "bg-blur-accent text-blur-bg"
+                            : "bg-blur-surface/50 text-blur-text-muted border border-blur-border"
+                        }`}
+                      >
+                        {isRanked ? rankPos + 1 : ""}
+                      </motion.span>
+                      <span
+                        className={`flex-1 text-sm transition-colors ${
+                          isRanked ? "text-blur-text" : "text-blur-text-muted"
+                        }`}
+                      >
                         {option.text}
                       </span>
-                      <div className="flex flex-col gap-0.5">
-                        <button
-                          onClick={() => handleRankMove(rankIndex, "up")}
-                          disabled={rankIndex === 0}
-                          className="p-1 rounded hover:bg-blur-surface disabled:opacity-30 transition-opacity"
-                        >
-                          <ChevronLeft size={14} className="-rotate-90 text-blur-text-light" />
-                        </button>
-                        <button
-                          onClick={() => handleRankMove(rankIndex, "down")}
-                          disabled={rankIndex === 3}
-                          className="p-1 rounded hover:bg-blur-surface disabled:opacity-30 transition-opacity"
-                        >
-                          <ChevronLeft size={14} className="rotate-90 text-blur-text-light" />
-                        </button>
-                      </div>
-                      <GripVertical size={16} className="text-blur-text-light opacity-40" />
-                    </motion.div>
+                      {isRanked && (
+                        <span className="text-xs text-blur-accent/60">
+                          {rankPos === 0
+                            ? "最像"
+                            : rankPos === 3
+                              ? "最不像"
+                              : `第${rankPos + 1}`}
+                        </span>
+                      )}
+                    </motion.button>
                   );
                 })}
               </div>
