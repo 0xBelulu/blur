@@ -84,7 +84,6 @@ export default function CloudCanvas({ cloudData, width = 320, height = 320, focu
       }
 
       cloudData.vectors.forEach((v, i) => {
-        const vs = cloudData.vectors[i];
         const angle = v.angle + Math.sin(t * 0.002) * 0.08;
         const lengthMod = 1 + Math.sin(t * 0.008 + i) * 0.05;
         const endX = cx + Math.cos(angle) * v.length * lengthMod;

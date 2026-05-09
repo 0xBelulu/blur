@@ -1,4 +1,4 @@
-import { tagPool, archetypeDescriptions } from "../data/questions";
+import { tagPool, archetypeDescriptions, DIMENSIONS } from "../data/questions";
 
 const PALETTE = [
   [155, 142, 199],
@@ -37,6 +37,7 @@ export function generateResult(answers) {
       trait,
       score: count * weight + noise,
       text: tagInfo ? tagInfo.text : trait,
+      detail: tagInfo ? tagInfo.detail : "",
     };
   });
 
@@ -44,19 +45,54 @@ export function generateResult(answers) {
 
   const numTags = 6;
   const selectedTags = scoredTraits.slice(0, numTags).map((t) => t.text);
+  const selectedTagDetails = scoredTraits.slice(0, numTags).map((t) => ({
+    trait: t.trait,
+    text: t.text,
+    detail: t.detail,
+    score: t.score,
+  }));
 
   const topTraits = scoredTraits.slice(0, 3).map((t) => t.trait);
-  const archetype = determineArchetype(topTraits);
+  const { key: archetypeKey, archetype } = determineArchetype(topTraits);
 
   const clarity = 0.45 + seededRandom(answerHash + 7) * 0.15;
   const cloudData = generateCloudData(selectedTags.length, clarity, answerHash);
 
+  const dimensionScores = computeDimensionScores(traitCounts);
+
   return {
     archetype,
+    archetypeKey,
     tags: selectedTags,
+    tagDetails: selectedTagDetails,
     clarity,
     cloudData,
+    scoredTraits: scoredTraits.slice(0, 10),
+    dimensionScores,
   };
+}
+
+function computeDimensionScores(traitCounts) {
+  const scores = {};
+  const maxPossible = 4;
+
+  Object.entries(DIMENSIONS).forEach(([dimKey, dim]) => {
+    let total = 0;
+    dim.traits.forEach((trait) => {
+      if (traitCounts[trait]) {
+        const tagInfo = tagPool[trait];
+        const weight = tagInfo ? tagInfo.weight : 1;
+        total += traitCounts[trait] * weight;
+      }
+    });
+    const raw = total / (maxPossible * dim.traits.length * 1.0);
+    scores[dimKey] = {
+      name: dim.name,
+      score: Math.min(1, raw * 2.5),
+    };
+  });
+
+  return scores;
 }
 
 function determineArchetype(traits) {
@@ -68,7 +104,7 @@ function determineArchetype(traits) {
     traitSet.has("wonder") ||
     traitSet.has("mysterious")
   ) {
-    return archetypeDescriptions.dreamer;
+    return { key: "dreamer", archetype: archetypeDescriptions.dreamer };
   }
 
   if (
@@ -77,7 +113,7 @@ function determineArchetype(traits) {
     traitSet.has("observer") ||
     traitSet.has("guarded")
   ) {
-    return archetypeDescriptions.watcher;
+    return { key: "watcher", archetype: archetypeDescriptions.watcher };
   }
 
   if (
@@ -86,7 +122,7 @@ function determineArchetype(traits) {
     traitSet.has("restless") ||
     traitSet.has("transient")
   ) {
-    return archetypeDescriptions.wanderer;
+    return { key: "wanderer", archetype: archetypeDescriptions.wanderer };
   }
 
   if (
@@ -95,7 +131,7 @@ function determineArchetype(traits) {
     traitSet.has("lonely") ||
     traitSet.has("nostalgic")
   ) {
-    return archetypeDescriptions.echo;
+    return { key: "echo", archetype: archetypeDescriptions.echo };
   }
 
   if (
@@ -106,11 +142,13 @@ function determineArchetype(traits) {
     traitSet.has("withdrawn") ||
     traitSet.has("suggestive")
   ) {
-    return archetypeDescriptions.ghost;
+    return { key: "ghost", archetype: archetypeDescriptions.ghost };
   }
 
-  const archetypes = Object.values(archetypeDescriptions);
-  return archetypes[traits.reduce((h, t) => h + t.charCodeAt(0), 0) % archetypes.length];
+  const keys = Object.keys(archetypeDescriptions);
+  const fallbackIndex = traits.reduce((h, t) => h + t.charCodeAt(0), 0) % keys.length;
+  const fallbackKey = keys[fallbackIndex];
+  return { key: fallbackKey, archetype: archetypeDescriptions[fallbackKey] };
 }
 
 function generateCloudData(numTags, clarity, seed) {

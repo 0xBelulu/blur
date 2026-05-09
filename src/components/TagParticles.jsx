@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 
-export default function TagParticles({ tags, positions, focus = 0.5 }) {
+export default function TagParticles({ tags, positions }) {
   return (
     <div className="relative w-full h-full">
       {tags.map((tag, i) => {
