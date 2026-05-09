@@ -66,8 +66,7 @@ export function generateResult(answers) {
     score: t.score,
   }));
 
-  const topTraits = scoredTraits.slice(0, 3).map((t) => t.trait);
-  const { key: archetypeKey, archetype } = determineArchetype(topTraits);
+  const { key: archetypeKey, archetype } = determineArchetype(scoredTraits);
 
   const clarity = 0.45 + seededRandom(answerHash + 7) * 0.15;
   const cloudData = generateCloudData(selectedTags.length, clarity, answerHash);
@@ -122,60 +121,45 @@ function computeDimensionScores(traitCounts) {
   return scores;
 }
 
-function determineArchetype(traits) {
-  const traitSet = new Set(traits);
+const ARCHETYPE_TRAITS = {
+  dreamer: ["philosophical", "abstract", "wonder", "mysterious"],
+  watcher: ["observant", "detached", "observer", "guarded"],
+  wanderer: ["escapist", "wandering", "restless", "transient"],
+  echo: ["introspective", "reflective", "lonely", "nostalgic"],
+  ghost: ["enigmatic", "empty", "obscure", "layered", "withdrawn", "suggestive"],
+};
 
-  if (
-    traitSet.has("philosophical") ||
-    traitSet.has("abstract") ||
-    traitSet.has("wonder") ||
-    traitSet.has("mysterious")
-  ) {
-    return { key: "dreamer", archetype: archetypeDescriptions.dreamer };
+function determineArchetype(scoredTraits) {
+  const archetypeScores = {};
+
+  for (const [key, traits] of Object.entries(ARCHETYPE_TRAITS)) {
+    let score = 0;
+    for (const st of scoredTraits) {
+      if (traits.includes(st.trait)) {
+        score += st.score;
+      }
+    }
+    archetypeScores[key] = score;
   }
 
-  if (
-    traitSet.has("observant") ||
-    traitSet.has("detached") ||
-    traitSet.has("observer") ||
-    traitSet.has("guarded")
-  ) {
-    return { key: "watcher", archetype: archetypeDescriptions.watcher };
+  let bestKey = null;
+  let bestScore = -Infinity;
+
+  for (const [key, score] of Object.entries(archetypeScores)) {
+    if (score > bestScore) {
+      bestScore = score;
+      bestKey = key;
+    }
   }
 
-  if (
-    traitSet.has("escapist") ||
-    traitSet.has("wandering") ||
-    traitSet.has("restless") ||
-    traitSet.has("transient")
-  ) {
-    return { key: "wanderer", archetype: archetypeDescriptions.wanderer };
+  if (bestScore === 0) {
+    const keys = Object.keys(archetypeDescriptions);
+    const fallbackIndex =
+      scoredTraits.reduce((h, t) => h + t.trait.charCodeAt(0), 0) % keys.length;
+    bestKey = keys[fallbackIndex];
   }
 
-  if (
-    traitSet.has("introspective") ||
-    traitSet.has("reflective") ||
-    traitSet.has("lonely") ||
-    traitSet.has("nostalgic")
-  ) {
-    return { key: "echo", archetype: archetypeDescriptions.echo };
-  }
-
-  if (
-    traitSet.has("enigmatic") ||
-    traitSet.has("empty") ||
-    traitSet.has("obscure") ||
-    traitSet.has("layered") ||
-    traitSet.has("withdrawn") ||
-    traitSet.has("suggestive")
-  ) {
-    return { key: "ghost", archetype: archetypeDescriptions.ghost };
-  }
-
-  const keys = Object.keys(archetypeDescriptions);
-  const fallbackIndex = traits.reduce((h, t) => h + t.charCodeAt(0), 0) % keys.length;
-  const fallbackKey = keys[fallbackIndex];
-  return { key: fallbackKey, archetype: archetypeDescriptions[fallbackKey] };
+  return { key: bestKey, archetype: archetypeDescriptions[bestKey] };
 }
 
 function generateCloudData(numTags, clarity, seed) {
