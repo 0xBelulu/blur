@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RotateCcw, ChevronDown, Zap } from "lucide-react";
 import VectorSpace3D from "../components/VectorSpace3D";
@@ -13,6 +13,67 @@ const TABS = [
   { key: "narrative", label: "叙事" },
 ];
 
+function TagCard({ tag, i, maxScore, expandedTag, onToggle }) {
+  const pct = Math.max(5, (tag.score / maxScore) * 100);
+  const isExpanded = expandedTag === i;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.15 + i * 0.06 }}
+      onClick={() => onToggle(isExpanded ? null : i)}
+      className={`glass rounded-xl p-3.5 cursor-pointer transition-colors duration-200 ${
+        isExpanded ? "bg-blur-surface-hover" : "hover:bg-blur-surface-hover"
+      }`}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <span className={`text-xs font-medium ${isExpanded ? "text-blur-accent" : "text-blur-text"}`}>
+          {tag.text}
+        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-blur-text-light tabular-nums">
+            {Math.round((tag.score / maxScore) * 100)}%
+          </span>
+          <motion.span
+            animate={{ rotate: isExpanded ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+            className="inline-flex"
+          >
+            <ChevronDown size={12} className="text-blur-text-light" />
+          </motion.span>
+        </div>
+      </div>
+      <div className="h-1 rounded-full bg-blur-surface overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ delay: 0.2 + i * 0.06, duration: 0.5, ease: "easeOut" }}
+          className="h-full rounded-full"
+          style={{
+            background: "linear-gradient(90deg, rgba(155,142,199,0.7), rgba(143,181,196,0.7))",
+          }}
+        />
+      </div>
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <p className="text-xs text-blur-text-muted leading-relaxed mt-2 pt-2 border-t border-blur-border/50">
+              {tag.detail}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
 const tabContentVariants = {
   enter: { opacity: 0, y: 8 },
   center: { opacity: 1, y: 0 },
@@ -20,7 +81,6 @@ const tabContentVariants = {
 };
 
 export default function Result({ result, onRestart }) {
-  const captureRef = useRef(null);
   const [activeTab, setActiveTab] = useState("cloud");
   const [expandedTag, setExpandedTag] = useState(null);
   const [hoveredArchetype, setHoveredArchetype] = useState(null);
@@ -81,7 +141,7 @@ export default function Result({ result, onRestart }) {
 
       {/* Right: Info Panel */}
       <div className="flex-1 flex flex-col items-center md:items-start min-w-0 max-w-md mx-auto md:mx-0 w-full">
-        <div ref={captureRef} className="flex flex-col items-center md:items-start w-full">
+        <div className="flex flex-col items-center md:items-start w-full">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -203,53 +263,37 @@ export default function Result({ result, onRestart }) {
                   className="w-12 h-px bg-gradient-to-r from-transparent via-blur-border to-transparent mx-auto md:mx-0 mb-5"
                 />
 
-                <div className="flex flex-col gap-2 mb-5">
-                  {tagDetails.map((tag, i) => (
-                    <motion.div
-                      key={tag.trait}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.15 + i * 0.06 }}
-                    >
-                      <button
-                        onClick={() => setExpandedTag(expandedTag === i ? null : i)}
-                        className="w-full text-left cursor-pointer"
-                      >
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs glass transition-all duration-200 ${
-                            expandedTag === i
-                              ? "text-blur-accent bg-blur-surface"
-                              : "text-blur-text hover:bg-blur-surface-hover"
-                          }`}
-                        >
-                          {tag.text}
-                          <motion.span
-                            animate={{ rotate: expandedTag === i ? 180 : 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="inline-flex"
-                          >
-                            <ChevronDown size={12} className="text-blur-text-light" />
-                          </motion.span>
-                        </span>
-                      </button>
-                      <AnimatePresence>
-                        {expandedTag === i && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.25, ease: "easeInOut" }}
-                            className="overflow-hidden"
-                          >
-                            <p className="text-xs text-blur-text-muted leading-relaxed mt-2 ml-1 pl-3 border-l-2 border-blur-accent/30">
-                              {tag.detail}
-                            </p>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </motion.div>
-                  ))}
-                </div>
+                {(() => {
+                  const maxScore = tagDetails[0]?.score || 1;
+                  return (
+                    <div className="flex flex-col md:flex-row gap-3 mb-5">
+                      <div className="flex-1 flex flex-col gap-3">
+                        {tagDetails.slice(0, 3).map((tag, i) => (
+                          <TagCard
+                            key={tag.trait}
+                            tag={tag}
+                            i={i}
+                            maxScore={maxScore}
+                            expandedTag={expandedTag}
+                            onToggle={setExpandedTag}
+                          />
+                        ))}
+                      </div>
+                      <div className="flex-1 flex flex-col gap-3">
+                        {tagDetails.slice(3).map((tag, i) => (
+                          <TagCard
+                            key={tag.trait}
+                            tag={tag}
+                            i={i + 3}
+                            maxScore={maxScore}
+                            expandedTag={expandedTag}
+                            onToggle={setExpandedTag}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {suppressedTraits && suppressedTraits.length > 0 && (
                   <motion.div
@@ -376,7 +420,7 @@ export default function Result({ result, onRestart }) {
           transition={{ delay: 1.3 }}
           className="mt-auto pt-10 space-y-4 w-full"
         >
-          <ShareButton targetRef={captureRef} />
+          <ShareButton result={result} />
 
           <div className="flex justify-center md:justify-start">
             <GlassButton variant="ghost" onClick={onRestart}>
