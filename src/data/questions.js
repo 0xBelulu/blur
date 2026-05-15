@@ -1,7 +1,8 @@
 export const questions = [
+  // ========== 四选一单选题（24道） ==========
   {
     id: 1,
-    required: true,
+    type: "single",
     text: "当你走进一间陌生的房间，你最先注意到的是？",
     options: [
       { id: "a", text: "阴影和角落，下意识想降低存在感", traits: ["shielded", "softedge"] },
@@ -12,7 +13,7 @@ export const questions = [
   },
   {
     id: 2,
-    required: true,
+    type: "single",
     text: "深夜失眠时，你的大脑更像？",
     options: [
       { id: "a", text: "一盏调暗的灯，只照亮一小片", traits: ["filtered", "vague"] },
@@ -23,7 +24,7 @@ export const questions = [
   },
   {
     id: 3,
-    required: true,
+    type: "single",
     text: "如果可以选择一种天气度过一整天？",
     options: [
       { id: "a", text: "大雾，能见度不到十米", traits: ["misty", "guarded"] },
@@ -34,7 +35,7 @@ export const questions = [
   },
   {
     id: 4,
-    required: true,
+    type: "single",
     text: "你更可能被什么样的画面打动？",
     options: [
       { id: "a", text: "一个人站在雾气里，背影模糊", traits: ["vague", "softedge"] },
@@ -45,7 +46,7 @@ export const questions = [
   },
   {
     id: 5,
-    required: true,
+    type: "single",
     text: "当别人问你「你好吗」，你通常？",
     options: [
       { id: "a", text: "笑一下，然后反问对方", traits: ["filtered", "shielded"] },
@@ -56,7 +57,7 @@ export const questions = [
   },
   {
     id: 6,
-    required: true,
+    type: "single",
     text: "如果记忆是一间房间，你的房间？",
     options: [
       { id: "a", text: "拉着纱帘，只有柔和的光斑", traits: ["misty", "guarded"] },
@@ -67,7 +68,7 @@ export const questions = [
   },
   {
     id: 7,
-    required: true,
+    type: "single",
     text: "你觉得最像自己的一种颜色？",
     options: [
       { id: "a", text: "被水洗过很多次的灰蓝", traits: ["faded", "vague"] },
@@ -78,7 +79,7 @@ export const questions = [
   },
   {
     id: 8,
-    required: true,
+    type: "single",
     text: "如果明天可以消失一天，你会？",
     options: [
       { id: "a", text: "待在家，拉上窗帘，假装不在家", traits: ["shielded", "filtered"] },
@@ -89,7 +90,7 @@ export const questions = [
   },
   {
     id: 9,
-    required: true,
+    type: "single",
     text: "你最容易对什么样的人产生好感？",
     options: [
       { id: "a", text: "让你感到安全、不刺眼的人", traits: ["softedge", "guarded"] },
@@ -100,7 +101,7 @@ export const questions = [
   },
   {
     id: 10,
-    required: true,
+    type: "single",
     text: "如果人生是一张照片，你希望它是？",
     options: [
       { id: "a", text: "失焦的，但氛围很对", traits: ["misty", "vague"] },
@@ -111,7 +112,7 @@ export const questions = [
   },
   {
     id: 11,
-    required: false,
+    type: "single",
     text: "你手机里最多的是哪类照片？",
     options: [
       { id: "a", text: "天空和光影变化——同一个角度的不同天色", traits: ["vague", "misty"] },
@@ -122,7 +123,7 @@ export const questions = [
   },
   {
     id: 12,
-    required: false,
+    type: "single",
     text: "你更害怕哪种感觉？",
     options: [
       { id: "a", text: "突然成为所有人的焦点，无处可躲", traits: ["shielded", "softedge"] },
@@ -133,7 +134,7 @@ export const questions = [
   },
   {
     id: 13,
-    required: false,
+    type: "single",
     text: "你理想中的周末？",
     options: [
       { id: "a", text: "一个人在家，窗帘半拉，光线柔和", traits: ["filtered", "guarded"] },
@@ -144,7 +145,7 @@ export const questions = [
   },
   {
     id: 14,
-    required: false,
+    type: "single",
     text: "听到一首喜欢的歌，你会？",
     options: [
       { id: "a", text: "调低音量，只在背景存在", traits: ["softedge", "filtered"] },
@@ -155,7 +156,7 @@ export const questions = [
   },
   {
     id: 15,
-    required: false,
+    type: "single",
     text: "你更想拥有哪种能力？",
     options: [
       { id: "a", text: "让自己在人群中隐形", traits: ["shielded", "vague"] },
@@ -166,7 +167,7 @@ export const questions = [
   },
   {
     id: 16,
-    required: false,
+    type: "single",
     text: "深夜一个人走在路上，你会？",
     options: [
       { id: "a", text: "贴着墙根走，避开路灯正下方", traits: ["guarded", "faded"] },
@@ -177,7 +178,7 @@ export const questions = [
   },
   {
     id: 17,
-    required: false,
+    type: "single",
     text: "你觉得「家」最像什么？",
     options: [
       { id: "a", text: "一个可以调暗灯光的房间", traits: ["misty", "softedge"] },
@@ -187,8 +188,136 @@ export const questions = [
     ],
   },
   {
+    id: 21,
+    type: "single",
+    text: "你更常在什么时候感到最像自己？",
+    options: [
+      { id: "a", text: "深夜独处，世界安静得只剩下呼吸声", traits: ["stilled", "deepwatch"] },
+      { id: "b", text: "和一个不需要解释太多的朋友在一起", traits: ["softedge", "shielded"] },
+      { id: "c", text: "在人群中观察，但不参与", traits: ["guarded", "patient"] },
+      { id: "d", text: "突然被某个想法击中，急着记录下来", traits: ["acute", "reverberant"] },
+    ],
+  },
+  {
+    id: 22,
+    type: "single",
+    text: "如果有一段空闲时间，你最可能？",
+    options: [
+      { id: "a", text: "整理旧物，发现一些遗忘的东西", traits: ["sedimentary", "sunken"] },
+      { id: "b", text: "什么都不规划，看当天心情决定", traits: ["fluid", "shifting"] },
+      { id: "c", text: "列一个清单，把想做的事排序", traits: ["manifold", "patient"] },
+      { id: "d", text: "打开社交媒体，浏览但不互动", traits: ["filtered", "vague"] },
+    ],
+  },
+  {
+    id: 23,
+    type: "single",
+    text: "描述你最近一次的梦境，它更可能是？",
+    options: [
+      { id: "a", text: "在一个熟悉但有点陌生的地方徘徊", traits: ["misty", "unmoored"] },
+      { id: "b", text: "很多场景快速切换，没有主线", traits: ["shifting", "overwhelming"] },
+      { id: "c", text: "非常清晰，醒来还能记得细节", traits: ["acute", "saturated"] },
+      { id: "d", text: "深不见底的水或空间，自己在下沉", traits: ["abyssal", "sunken"] },
+    ],
+  },
+  {
+    id: 24,
+    type: "single",
+    text: "面对一个不确定的未来，你更倾向于？",
+    options: [
+      { id: "a", text: "保持现状，至少现在的模糊是可以忍受的", traits: ["guarded", "misty"] },
+      { id: "b", text: "主动制造变化，哪怕方向不清", traits: ["fleeing", "tidal"] },
+      { id: "c", text: "列出所有可能性，然后一个一个排除", traits: ["manifold", "prismatic"] },
+      { id: "d", text: "等待，相信时间会给答案", traits: ["patient", "stilled"] },
+    ],
+  },
+  {
+    id: 25,
+    type: "single",
+    text: "如果必须给过去的自己写一句话，你会写？",
+    options: [
+      { id: "a", text: "没关系，看不清也是一种看清", traits: ["misty", "vague"] },
+      { id: "b", text: "那些你以为是噪音的东西，其实都在说话", traits: ["reverberant", "thunder"] },
+      { id: "c", text: "你不需要一直流动，停下来也可以", traits: ["stilled", "patient"] },
+      { id: "d", text: "没有正确答案的时候，所有方向都是方向", traits: ["equivocal", "prismatic"] },
+    ],
+  },
+  {
+    id: 26,
+    type: "single",
+    text: "以下哪种场景让你感到莫名的安心？",
+    options: [
+      { id: "a", text: "旧书店里的霉味和尘埃", traits: ["sedimentary", "faded"] },
+      { id: "b", text: "机场候机厅，很多人但没人认识你", traits: ["unmoored", "guarded"] },
+      { id: "c", text: "暴雨前的低气压，世界变得安静", traits: ["thunder", "stilled"] },
+      { id: "d", text: "站在高处看城市的灯火，但不融入", traits: ["adrift", "deepwatch"] },
+    ],
+  },
+  {
+    id: 27,
+    type: "single",
+    text: "你最容易被什么类型的故事打动？",
+    options: [
+      { id: "a", text: "关于一个人在雾中行走，不知道要去哪", traits: ["misty", "adrift"] },
+      { id: "b", text: "关于一个人同时经历好几个平行人生", traits: ["manifold", "prismatic"] },
+      { id: "c", text: "关于一个人在水下憋气，看着光线慢慢消失", traits: ["abyssal", "sunken"] },
+      { id: "d", text: "关于一个人在人群中突然听到一首歌", traits: ["acute", "saturated"] },
+    ],
+  },
+
+  // ========== 量表题（8道） ==========
+  {
+    id: 28,
+    type: "scale",
+    text: "当别人问我「你在想什么」时，我经常真的不知道该怎么回答。",
+    traits: ["equivocal", "suspended"],
+  },
+  {
+    id: 29,
+    type: "scale",
+    text: "我习惯在说话之前先把句子在脑子里过好几遍。",
+    traits: ["filtered", "softedge"],
+  },
+  {
+    id: 30,
+    type: "scale",
+    text: "我很容易被环境中的细节分心，比如光线变化或背景噪音。",
+    traits: ["saturated", "acute"],
+  },
+  {
+    id: 31,
+    type: "scale",
+    text: "我不害怕独处，甚至有时候会主动寻找独处的时刻。",
+    traits: ["stilled", "abyssal"],
+  },
+  {
+    id: 32,
+    type: "scale",
+    text: "我经常在两个选择之间摇摆，因为两边都有道理。",
+    traits: ["equivocal", "prismatic"],
+  },
+  {
+    id: 33,
+    type: "scale",
+    text: "我有过突然决定改变生活轨迹的经历，哪怕当时看起来很冲动。",
+    traits: ["fleeing", "tidal"],
+  },
+  {
+    id: 34,
+    type: "scale",
+    text: "我觉得过去比现在更真实，或者未来比现在更有吸引力。",
+    traits: ["sedimentary", "unmoored"],
+  },
+  {
+    id: 35,
+    type: "scale",
+    text: "我能同时感受到几种矛盾的情绪，而且不觉得需要解决这种矛盾。",
+    traits: ["manifold", "refracted"],
+  },
+
+  // ========== 排序题（8道） ==========
+  {
     id: 18,
-    required: false,
     type: "rank",
     text: "以下四种状态，按「最像你 → 最不像你」排序：",
     options: [
@@ -200,7 +329,6 @@ export const questions = [
   },
   {
     id: 19,
-    required: false,
     type: "rank",
     text: "以下四种反应，按「最像你 → 最不像你」排序：",
     options: [
@@ -212,7 +340,6 @@ export const questions = [
   },
   {
     id: 20,
-    required: false,
     type: "rank",
     text: "以下四种场景，按「最让你安心 → 最让你不安」排序：",
     options: [
@@ -220,6 +347,61 @@ export const questions = [
       { id: "b", text: "暴雨打在窗户上，声音填满房间", traits: ["thunder", "loud"] },
       { id: "c", text: "海边的悬崖，潮水在下方进退", traits: ["tidal", "shifting"] },
       { id: "d", text: "深夜的湖面，没有波纹也没有声音", traits: ["deepwatch", "stilled"] },
+    ],
+  },
+  {
+    id: 36,
+    type: "rank",
+    text: "以下四种早晨，按「最像你 → 最不像你」排序：",
+    options: [
+      { id: "a", text: "被闹钟惊醒，脑子里已经有十个待办", traits: ["saturated", "overwhelming"] },
+      { id: "b", text: "自然醒，但不知道今天该做什么", traits: ["adrift", "vague"] },
+      { id: "c", text: "醒得很早，躺着听雨声", traits: ["stilled", "patient"] },
+      { id: "d", text: "睡过头了，但无所谓", traits: ["fluid", "shifting"] },
+    ],
+  },
+  {
+    id: 37,
+    type: "rank",
+    text: "以下四种对话方式，按「你最常使用 → 你最不常用」排序：",
+    options: [
+      { id: "a", text: "先说「让我想想」，然后沉默很久", traits: ["sunken", "abyssal"] },
+      { id: "b", text: "同时抛出好几个观点，让对方自己整理", traits: ["manifold", "reverberant"] },
+      { id: "c", text: "用比喻和暗示，不直接表达", traits: ["misty", "softedge"] },
+      { id: "d", text: "直接说出当下最真实的感受", traits: ["acute", "loud"] },
+    ],
+  },
+  {
+    id: 38,
+    type: "rank",
+    text: "以下四种旅行方式，按「最吸引你 → 最不吸引你」排序：",
+    options: [
+      { id: "a", text: "去一个完全陌生、语言不通的地方", traits: ["fleeing", "unmoored"] },
+      { id: "b", text: "回到一个去过很多次的地方", traits: ["sedimentary", "deepwatch"] },
+      { id: "c", text: "临时决定目的地，不做攻略", traits: ["fluid", "tidal"] },
+      { id: "d", text: "跟着别人走，不需要自己做决定", traits: ["guarded", "filtered"] },
+    ],
+  },
+  {
+    id: 39,
+    type: "rank",
+    text: "以下四种房间，按「最想待在里面 → 最不想待」排序：",
+    options: [
+      { id: "a", text: "四面都是落地窗，阳光直射", traits: ["acute", "saturated"] },
+      { id: "b", text: "拉着厚窗帘，只有一盏暖光灯", traits: ["shielded", "softedge"] },
+      { id: "c", text: "墙上挂满不同地方的地图和照片", traits: ["unmoored", "shifting"] },
+      { id: "d", text: "空无一物，只有一把椅子和一扇窗", traits: ["stilled", "abyssal"] },
+    ],
+  },
+  {
+    id: 40,
+    type: "rank",
+    text: "以下四种时间感受，按「最像你 → 最不像你」排序：",
+    options: [
+      { id: "a", text: "时间像潮水，有涨有退，不受我控制", traits: ["tidal", "fluid"] },
+      { id: "b", text: "时间像深井，所有事情都沉在底部", traits: ["sedimentary", "sunken"] },
+      { id: "c", text: "时间像棱镜，同一段经历折射出不同版本", traits: ["prismatic", "refracted"] },
+      { id: "d", text: "时间像雾，过去和未来都看不清", traits: ["misty", "vague"] },
     ],
   },
 ];

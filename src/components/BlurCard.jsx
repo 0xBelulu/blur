@@ -6,9 +6,6 @@ export default function BlurCard({ option, index, isSelected, onClick }) {
 
   const isActive = isSelected || isHovered;
 
-  const breatheSpeeds = ["animate-breathe", "animate-breathe-fast", "animate-breathe-slow", "animate-breathe"];
-  const breatheClass = isActive ? "" : breatheSpeeds[index % breatheSpeeds.length];
-
   const handleClick = () => {
     if (navigator.vibrate) {
       navigator.vibrate(10);
@@ -18,9 +15,6 @@ export default function BlurCard({ option, index, isSelected, onClick }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.08, duration: 0.5 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onTouchStart={() => setIsHovered(true)}
@@ -32,12 +26,9 @@ export default function BlurCard({ option, index, isSelected, onClick }) {
         relative p-5 rounded-2xl cursor-pointer transition-all duration-300
         ${isSelected ? "glass-strong prism-shift" : "glass"}
         ${!isSelected && isHovered ? "bg-blur-surface-hover" : ""}
-        ${breatheClass}
       `}
       style={{
-        animationDelay: `${index * 0.5}s`,
-        filter: isActive ? "blur(0px)" : undefined,
-        opacity: isActive ? 1 : undefined,
+        opacity: isActive ? 1 : 0.78,
       }}
       whileTap={{ scale: 0.98 }}
     >

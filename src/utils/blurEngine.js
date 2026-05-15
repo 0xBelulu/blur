@@ -65,6 +65,13 @@ export function generateResult(answers) {
           });
         }
       });
+    } else if (answer.type === "scale" && answer.traits) {
+      // 量表题：1-5分映射到权重
+      const scaleWeights = [0, 0.4, 0.7, 1.0, 1.3, 1.6];
+      const weight = scaleWeights[answer.value] ?? 1.0;
+      answer.traits.forEach((trait) => {
+        traitCounts[trait] = (traitCounts[trait] || 0) + weight;
+      });
     } else if (answer.traits) {
       // 普通四选一
       answer.traits.forEach((trait) => {
@@ -76,6 +83,9 @@ export function generateResult(answers) {
   const answerHash = answers.reduce((h, a) => {
     if (a.rankOrder) {
       return h + a.rankOrder.reduce((s, i) => s + i, 0);
+    }
+    if (a.type === "scale") {
+      return h + (a.value || 0);
     }
     return h + (a.optionId ? a.optionId.charCodeAt(0) : 0);
   }, 0);

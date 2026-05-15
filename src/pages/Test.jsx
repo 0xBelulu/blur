@@ -1,31 +1,102 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Eye, Sparkles, SkipForward } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, Sparkles } from "lucide-react";
 import { questions } from "../data/questions";
 import BlurCard from "../components/BlurCard";
 import GlassButton from "../components/GlassButton";
 
-const requiredQuestions = questions.filter((q) => q.required);
-const optionalQuestions = questions.filter((q) => !q.required);
+const REQUIRED_COUNT = 10;
+
+function shuffleQuestions(questionList) {
+  const single = questionList
+    .filter((q) => q.type === "single" || !q.type)
+    .sort(() => Math.random() - 0.5);
+  const scale = questionList
+    .filter((q) => q.type === "scale")
+    .sort(() => Math.random() - 0.5);
+  const rank = questionList
+    .filter((q) => q.type === "rank")
+    .sort(() => Math.random() - 0.5);
+
+  // 必做题（前10题）：按简单 → 复杂排列
+  const requiredSingle = Math.min(Math.round(REQUIRED_COUNT * 0.6), single.length);
+  const requiredScale = Math.min(Math.round(REQUIRED_COUNT * 0.2), scale.length);
+  const requiredRank = REQUIRED_COUNT - requiredSingle - requiredScale;
+
+  const required = [
+    ...single.slice(0, requiredSingle),
+    ...scale.slice(0, requiredScale),
+    ...rank.slice(0, requiredRank),
+  ];
+
+  // 探索题（剩余30题）：3:1:1 配比交错
+  const remainingSingle = single.slice(requiredSingle);
+  const remainingScale = scale.slice(requiredScale);
+  const remainingRank = rank.slice(requiredRank);
+
+  const exploratory = [];
+  let s = 0,
+    sc = 0,
+    r = 0;
+  const totalRemaining =
+    remainingSingle.length + remainingScale.length + remainingRank.length;
+
+  while (exploratory.length < totalRemaining) {
+    for (let i = 0; i < 3 && s < remainingSingle.length; i++) {
+      exploratory.push(remainingSingle[s++]);
+    }
+    if (sc < remainingScale.length) exploratory.push(remainingScale[sc++]);
+    if (r < remainingRank.length) exploratory.push(remainingRank[r++]);
+  }
+
+  return [...required, ...exploratory];
+}
 
 export default function Test({ onComplete }) {
-  const [phase, setPhase] = useState("required");
+  const shuffledQuestions = useMemo(() => shuffleQuestions(questions), []);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
   const [selectedOption, setSelectedOption] = useState(null);
   const [rankOrder, setRankOrder] = useState([]);
+  const [scaleValue, setScaleValue] = useState(null);
 
-  const currentList = phase === "required" ? requiredQuestions : optionalQuestions;
-  const currentQuestion = currentList[currentIndex];
+  const currentQuestion = shuffledQuestions[currentIndex];
   const isRankQuestion = currentQuestion?.type === "rank";
+  const isScaleQuestion = currentQuestion?.type === "scale";
+  const isRequiredPhase = currentIndex < REQUIRED_COUNT;
+  const isTransition = currentIndex === REQUIRED_COUNT;
+  const isExplorePhase = currentIndex > REQUIRED_COUNT;
 
-  const requiredProgress = phase === "required"
-    ? ((currentIndex + 1) / requiredQuestions.length) * 100
-    : 100;
-
-  const optionalProgress = phase === "optional"
-    ? ((currentIndex + 1) / optionalQuestions.length) * 100
+  const progress = isRequiredPhase
+    ? ((currentIndex + 1) / REQUIRED_COUNT) * 100
     : 0;
+
+  const restoreState = (answer, question) => {
+    if (!answer || !question) {
+      setSelectedOption(null);
+      setRankOrder([]);
+      setScaleValue(null);
+      return;
+    }
+
+    if (question.type === "rank") {
+      setRankOrder(answer.rankOrder || []);
+      setSelectedOption(null);
+      setScaleValue(null);
+    } else if (question.type === "scale") {
+      setScaleValue(answer.value ?? null);
+      setSelectedOption(null);
+      setRankOrder([]);
+    } else {
+      setSelectedOption(
+        answer.optionId
+          ? { id: answer.optionId, traits: answer.traits }
+          : null
+      );
+      setRankOrder([]);
+      setScaleValue(null);
+    }
+  };
 
   const handleSelect = (option) => {
     setSelectedOption(option);
@@ -42,150 +113,178 @@ export default function Test({ onComplete }) {
     });
   };
 
+  const handleScaleSelect = (value) => {
+    setScaleValue(value);
+  };
+
   const finishTest = (finalAnswers) => {
     const valid = finalAnswers.filter(Boolean);
     onComplete(valid);
   };
 
   const handleNext = () => {
-    if (!selectedOption && phase === "required" && !isRankQuestion) return;
+    if (isTransition) return;
 
-    let newAnswer;
+    // 必做阶段必须回答
+    if (isRequiredPhase) {
+      if (isRankQuestion && rankOrder.length < 4) return;
+      if (isScaleQuestion && scaleValue === null) return;
+      if (!isRankQuestion && !isScaleQuestion && !selectedOption) return;
+    }
+
+    // 构建答案
+    let newAnswer = null;
     if (isRankQuestion) {
-      newAnswer = {
-        questionId: currentQuestion.id,
-        rankOrder,
-        options: currentQuestion.options,
-      };
-    } else {
-      newAnswer = selectedOption
-        ? {
-            questionId: currentQuestion.id,
-            optionId: selectedOption.id,
-            traits: selectedOption.traits,
-          }
-        : null;
-    }
-
-    const newAnswers = [...answers];
-    const globalIndex = phase === "required"
-      ? currentIndex
-      : requiredQuestions.length + currentIndex;
-    newAnswers[globalIndex] = newAnswer;
-    setAnswers(newAnswers);
-
-    if (currentIndex < currentList.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-      const nextGlobalIndex = phase === "required"
-        ? currentIndex + 1
-        : requiredQuestions.length + currentIndex + 1;
-      const nextPrev = newAnswers[nextGlobalIndex];
-
-      if (nextPrev?.rankOrder) {
-        setRankOrder(nextPrev.rankOrder);
-        setSelectedOption(null);
-      } else {
-        setSelectedOption(
-          nextPrev ? { id: nextPrev.optionId, traits: nextPrev.traits } : null
-        );
-        setRankOrder([]);
+      if (rankOrder.length > 0) {
+        newAnswer = {
+          questionId: currentQuestion.id,
+          type: "rank",
+          rankOrder,
+          options: currentQuestion.options,
+        };
       }
-    } else if (phase === "required") {
-      setPhase("transition");
+    } else if (isScaleQuestion) {
+      if (scaleValue !== null) {
+        newAnswer = {
+          questionId: currentQuestion.id,
+          type: "scale",
+          value: scaleValue,
+          traits: currentQuestion.traits,
+        };
+      }
     } else {
-      finishTest(newAnswers);
+      if (selectedOption) {
+        newAnswer = {
+          questionId: currentQuestion.id,
+          type: "single",
+          optionId: selectedOption.id,
+          traits: selectedOption.traits,
+        };
+      }
     }
-  };
 
-  const handleSkip = () => {
     const newAnswers = [...answers];
-    const globalIndex = requiredQuestions.length + currentIndex;
-    newAnswers[globalIndex] = null;
+    newAnswers[currentIndex] = newAnswer;
     setAnswers(newAnswers);
 
-    if (currentIndex < optionalQuestions.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-      setSelectedOption(null);
-      setRankOrder([]);
+    if (currentIndex < shuffledQuestions.length - 1) {
+      const nextIndex = currentIndex + 1;
+      setCurrentIndex(nextIndex);
+      restoreState(newAnswers[nextIndex], shuffledQuestions[nextIndex]);
     } else {
       finishTest(newAnswers);
     }
   };
 
   const handlePrev = () => {
-    if (phase === "optional" && currentIndex === 0) {
-      setPhase("transition");
-      return;
-    }
     if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-      const prevGlobalIndex = phase === "required"
-        ? currentIndex - 1
-        : requiredQuestions.length + currentIndex - 1;
-      const prevAnswer = answers[prevGlobalIndex];
-
-      if (prevAnswer?.rankOrder) {
-        setRankOrder(prevAnswer.rankOrder);
-        setSelectedOption(null);
-      } else {
-        setSelectedOption(
-          prevAnswer ? { id: prevAnswer.optionId, traits: prevAnswer.traits } : null
-        );
-        setRankOrder([]);
-      }
+      const prevIndex = currentIndex - 1;
+      setCurrentIndex(prevIndex);
+      restoreState(answers[prevIndex], shuffledQuestions[prevIndex]);
     }
-  };
-
-  const handleContinueExplore = () => {
-    setPhase("optional");
-    setCurrentIndex(0);
-    setSelectedOption(null);
-    setRankOrder([]);
   };
 
   const handleSeeResult = () => {
-    finishTest(answers);
+    // 保存当前答案（如果有）
+    let newAnswer = null;
+    if (!isTransition && currentQuestion) {
+      if (isRankQuestion && rankOrder.length > 0) {
+        newAnswer = {
+          questionId: currentQuestion.id,
+          type: "rank",
+          rankOrder,
+          options: currentQuestion.options,
+        };
+      } else if (isScaleQuestion && scaleValue !== null) {
+        newAnswer = {
+          questionId: currentQuestion.id,
+          type: "scale",
+          value: scaleValue,
+          traits: currentQuestion.traits,
+        };
+      } else if (selectedOption) {
+        newAnswer = {
+          questionId: currentQuestion.id,
+          type: "single",
+          optionId: selectedOption.id,
+          traits: selectedOption.traits,
+        };
+      }
+    }
+
+    const newAnswers = [...answers];
+    if (newAnswer) {
+      newAnswers[currentIndex] = newAnswer;
+    }
+    finishTest(newAnswers);
+  };
+
+  const handleContinueExplore = () => {
+    setCurrentIndex(REQUIRED_COUNT + 1);
+    restoreState(answers[REQUIRED_COUNT + 1], shuffledQuestions[REQUIRED_COUNT + 1]);
+  };
+
+  const canProceed = () => {
+    if (!isRequiredPhase) return true;
+    if (isRankQuestion) return rankOrder.length === 4;
+    if (isScaleQuestion) return scaleValue !== null;
+    return !!selectedOption;
+  };
+
+  const getQuestionLabel = () => {
+    if (isRequiredPhase) return `第 ${currentIndex + 1} 题`;
+    if (isExplorePhase) return `继续探索 · 第 ${currentIndex + 1} 题`;
+    return "";
+  };
+
+  const getNextButtonText = () => {
+    if (currentIndex === REQUIRED_COUNT - 1) return "完成基本题";
+    if (currentIndex === shuffledQuestions.length - 1) return "查看结果";
+    return "下一题";
   };
 
   return (
     <div className="flex-1 flex flex-col px-6 py-8 max-w-lg mx-auto w-full">
-      {phase !== "transition" && (
+      {/* 进度条 - 仅在必做阶段显示 */}
+      {isRequiredPhase && (
         <div className="mb-8">
           <div className="flex justify-between items-center mb-3">
             <span className="text-xs text-blur-text-muted">
-              {phase === "required"
-                ? `${currentIndex + 1} / ${requiredQuestions.length}`
-                : `探索题 ${currentIndex + 1} / ${optionalQuestions.length}`}
+              {currentIndex + 1} / {REQUIRED_COUNT}
             </span>
             <span className="text-xs text-blur-text-light">
-              {phase === "required"
-                ? `${Math.round(requiredProgress)}%`
-                : `+${currentIndex + 1}`}
+              {Math.round(progress)}%
             </span>
           </div>
           <div className="h-1 bg-blur-border rounded-full overflow-hidden">
             <motion.div
               className="h-full bg-gradient-to-r from-blur-accent to-blur-accent-cool rounded-full"
               initial={{ width: 0 }}
-              animate={{
-                width: phase === "required"
-                  ? `${requiredProgress}%`
-                  : `${(requiredProgress * (0.6 + 0.4 * optionalProgress / 100))}%`,
-              }}
+              animate={{ width: `${progress}%` }}
               transition={{ duration: 0.5 }}
             />
           </div>
         </div>
       )}
 
+      {/* 探索阶段简洁提示 */}
+      {isExplorePhase && (
+        <div className="mb-6 flex items-center gap-2">
+          <Sparkles size={14} className="text-blur-accent" />
+          <span className="text-xs text-blur-text-muted">
+            已获得基本画像 · 继续探索中
+          </span>
+        </div>
+      )}
+
       <AnimatePresence mode="wait">
-        {phase === "transition" ? (
+        {isTransition ? (
           <motion.div
             key="transition"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -30 }}
-            transition={{ duration: 0.5 }}
+            initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -30, filter: "blur(10px)" }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
             className="flex-1 flex flex-col items-center justify-center text-center"
           >
             <motion.div
@@ -198,7 +297,7 @@ export default function Test({ onComplete }) {
             </motion.div>
 
             <h2 className="text-2xl font-medium text-blur-text mb-3">
-              核心题已完成
+              已获得基本画像
             </h2>
             <p className="text-sm text-blur-text-muted leading-relaxed mb-2 max-w-xs">
               你的基础画像已经成型，但还有一些更深层的问题——
@@ -227,28 +326,22 @@ export default function Test({ onComplete }) {
           </motion.div>
         ) : (
           <motion.div
-            key={`${phase}-${currentQuestion.id}`}
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -40 }}
-            transition={{ duration: 0.4 }}
+            key={`question-${currentQuestion.id}`}
+            initial={{ opacity: 0, x: 40, filter: "blur(10px)" }}
+            animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, x: -40, filter: "blur(10px)" }}
+            transition={{ duration: 0.45, ease: "easeInOut" }}
             className="flex-1 flex flex-col"
           >
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-4">
-                {phase === "optional" ? (
-                  <Sparkles size={16} className="text-blur-accent" />
-                ) : (
-                  <Eye size={16} className="text-blur-accent" />
-                )}
+                <Eye size={16} className="text-blur-accent" />
                 <span className="text-xs text-blur-accent tracking-wider">
-                  {phase === "required"
-                    ? `第 ${currentIndex + 1} 题`
-                    : `探索题 ${currentIndex + 1}`}
+                  {getQuestionLabel()}
                 </span>
-                {phase === "optional" && (
+                {isExplorePhase && (
                   <span className="text-xs text-blur-text-muted ml-auto">
-                    可跳过
+                    随时可结束
                   </span>
                 )}
               </div>
@@ -307,6 +400,28 @@ export default function Test({ onComplete }) {
                   );
                 })}
               </div>
+            ) : isScaleQuestion ? (
+              <div className="space-y-4 mb-8">
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-xs text-blur-text-muted">完全不同意</span>
+                  <span className="text-xs text-blur-text-muted">完全同意</span>
+                </div>
+                <div className="flex justify-between gap-2">
+                  {[1, 2, 3, 4, 5].map((value) => (
+                    <button
+                      key={value}
+                      onClick={() => handleScaleSelect(value)}
+                      className={`flex-1 h-14 rounded-xl flex items-center justify-center text-base font-bold transition-all duration-300 border-2 ${
+                        scaleValue === value
+                          ? "border-blur-accent bg-blur-accent/20 text-blur-accent shadow-[0_0_16px_rgba(180,185,195,0.25)] scale-105"
+                          : "border-blur-border/60 glass text-blur-text-muted hover:border-blur-text-muted/40 hover:bg-blur-surface-hover"
+                      }`}
+                    >
+                      {value}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ) : (
               <div className="space-y-3 mb-8">
                 {currentQuestion.options.map((option, i) => (
@@ -322,7 +437,7 @@ export default function Test({ onComplete }) {
             )}
 
             <div className="flex gap-3 mt-auto">
-              {!(phase === "required" && currentIndex === 0) && (
+              {currentIndex > 0 && (
                 <GlassButton
                   variant="secondary"
                   onClick={handlePrev}
@@ -333,42 +448,25 @@ export default function Test({ onComplete }) {
                 </GlassButton>
               )}
 
-              {phase === "optional" && (
+              {isExplorePhase && (
                 <GlassButton
                   variant="ghost"
-                  onClick={handleSkip}
+                  onClick={handleSeeResult}
                   className="flex items-center gap-1"
                 >
-                  <SkipForward size={16} />
-                  跳过
+                  查看结果
                 </GlassButton>
               )}
 
               <GlassButton
                 onClick={handleNext}
-                disabled={phase === "required" && !isRankQuestion && !selectedOption}
+                disabled={isRequiredPhase && !canProceed()}
                 className="flex-1 flex items-center justify-center gap-1"
               >
-                {phase === "required" && currentIndex === requiredQuestions.length - 1
-                  ? "完成核心题"
-                  : phase === "optional" && currentIndex === optionalQuestions.length - 1
-                    ? "查看结果"
-                    : "下一题"}
+                {getNextButtonText()}
                 <ChevronRight size={16} />
               </GlassButton>
             </div>
-
-            {phase === "optional" && (
-              <div className="mt-4 flex justify-center">
-                <GlassButton
-                  variant="ghost"
-                  onClick={handleSeeResult}
-                  className="text-xs"
-                >
-                  不想继续了，查看结果
-                </GlassButton>
-              </div>
-            )}
           </motion.div>
         )}
       </AnimatePresence>

@@ -32,17 +32,6 @@ export default function Landing({ onStart }) {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="mb-8"
         >
-          <motion.div
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-6"
-            animate={{ y: [0, -4, 0] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <Sparkles size={14} className="text-blur-accent" />
-            <span className="text-xs text-blur-text-muted tracking-wider">
-              基本看不清
-            </span>
-          </motion.div>
-
           <h1 className="text-5xl font-medium tracking-tight text-blur-text mb-4"
           >
             Blur

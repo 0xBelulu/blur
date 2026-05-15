@@ -12,6 +12,14 @@ for (const [dimKey, dim] of Object.entries(DIMENSIONS)) {
   }
 }
 
+function stableHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+  }
+  return ((h >>> 0) % 10000) / 10000;
+}
+
 function rgba(rgb, a) {
   return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`;
 }
@@ -290,21 +298,21 @@ export default function VectorSpace3D({
       return;
     }
     const maxScore = scoredTraits[0].score;
-    const dimGroupCount = {};
     traitDotsRef.current = scoredTraits.map((st, i) => {
       const dimKey = TRAIT_DIM_MAP[st.trait];
       const protoPos = dimKey ? ARCHETYPES[dimKey].pos : [0, 0, 0];
       const color = dimKey ? ARCHETYPES[dimKey].color : [180, 180, 180];
       const normScore = maxScore > 0 ? st.score / maxScore : 0;
       const scale = 0.12 + normScore * 0.88;
-      const idx = dimGroupCount[dimKey] || 0;
-      dimGroupCount[dimKey] = idx + 1;
-      const angleOffset = idx * 0.45;
-      const spreadAngle = 0.35;
+
+      const hash = stableHash(st.trait);
+      const spreadAngle = 0.12;
+      const angleOffset = (hash - 0.5) * spreadAngle;
+
       const [px, py, pz] = protoPos;
       const angle = Math.atan2(pz, px);
       const radius = Math.sqrt(px * px + pz * pz);
-      const newAngle = angle + angleOffset * spreadAngle + (idx * 0.3);
+      const newAngle = angle + angleOffset;
       let pos;
       if (radius > 0.01) {
         const newX = radius * Math.cos(newAngle);
