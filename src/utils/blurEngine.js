@@ -2,7 +2,6 @@ import {
   tagPool,
   archetypeDescriptions,
   DIMENSIONS,
-  ARCHETYPE_TRAITS,
   ARCHETYPE_SUPPRESSED,
 } from "../data/questions";
 
@@ -113,15 +112,15 @@ export function generateResult(answers) {
     score: t.score,
   }));
 
+  const dimensionScores = computeDimensionScores(traitCounts);
+
   const { key: archetypeKey, archetype, secondaryArchetype } =
-    determineArchetype(scoredTraits);
+    determineArchetype(dimensionScores);
 
   const suppressedTraits = determineSuppressedTraits(archetypeKey, scoredTraits);
 
   const clarity = 0.4 + seededRandom(answerHash + 7) * 0.2;
   const cloudData = generateCloudData(selectedTags.length, clarity, answerHash);
-
-  const dimensionScores = computeDimensionScores(traitCounts);
 
   return {
     archetype,
@@ -142,18 +141,16 @@ function computeDimensionScores(traitCounts) {
 
   Object.entries(DIMENSIONS).forEach(([dimKey, dim]) => {
     let total = 0;
-    let maxTotal = 0;
     dim.traits.forEach((trait) => {
       const tagInfo = tagPool[trait];
       const weight = tagInfo ? tagInfo.weight : 1;
-      maxTotal += weight * 3; // 假设每特质最多出现3次
       if (traitCounts[trait]) {
         total += traitCounts[trait] * weight;
       }
     });
     rawScores[dimKey] = {
       name: dim.name,
-      raw: maxTotal > 0 ? Math.min(total / maxTotal, 1) : 0,
+      raw: total,
     };
   });
 
@@ -167,38 +164,29 @@ function computeDimensionScores(traitCounts) {
     scores[dimKey] = {
       name: dim.name,
       score: display,
+      raw: dim.raw,
     };
   });
 
   return scores;
 }
 
-function determineArchetype(scoredTraits) {
-  const archetypeScores = {};
-
-  for (const [key, traits] of Object.entries(ARCHETYPE_TRAITS)) {
-    let score = 0;
-    for (const st of scoredTraits) {
-      if (traits.includes(st.trait)) {
-        score += st.score;
-      }
-    }
-    archetypeScores[key] = score;
-  }
-
-  // 排序找出最高和次高
-  const sorted = Object.entries(archetypeScores).sort((a, b) => b[1] - a[1]);
+function determineArchetype(dimensionScores) {
+  const sorted = Object.entries(dimensionScores).sort(
+    (a, b) => b[1].raw - a[1].raw
+  );
   const bestKey = sorted[0][0];
-  const secondKey = sorted[1] && sorted[1][1] > 0 ? sorted[1][0] : null;
+  const secondKey = sorted[1] && sorted[1][1].raw > 0 ? sorted[1][0] : null;
 
-  // 如果最高分是0，回退到随机
-  if (sorted[0][1] === 0) {
+  if (sorted[0][1].raw === 0) {
     const keys = Object.keys(archetypeDescriptions);
-    const fallbackIndex =
-      scoredTraits.reduce((h, t) => h + t.trait.charCodeAt(0), 0) % keys.length;
+    const hash = Object.entries(dimensionScores).reduce(
+      (h, [k]) => h + k.charCodeAt(0),
+      0
+    );
     return {
-      key: keys[fallbackIndex],
-      archetype: archetypeDescriptions[keys[fallbackIndex]],
+      key: keys[hash % keys.length],
+      archetype: archetypeDescriptions[keys[hash % keys.length]],
       secondaryArchetype: null,
     };
   }
