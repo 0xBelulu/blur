@@ -20,11 +20,13 @@ export const VECTOR_AXES = [
 ];
 
 export function mapTo3D(scores) {
-  const mist = scores?.mist?.score ?? 0.5;
-  const chime = scores?.chime?.score ?? 0.5;
-  const drift = scores?.drift?.score ?? 0.5;
-  const still = scores?.still?.score ?? 0.5;
-  const rainbow = scores?.rainbow?.score ?? 0.5;
+  const to01 = (v) => Math.max(0, Math.min(1, ((v ?? 0.5) - 0.25) / 0.75));
+
+  const mist = to01(scores?.mist?.score);
+  const chime = to01(scores?.chime?.score);
+  const drift = to01(scores?.drift?.score);
+  const still = to01(scores?.still?.score);
+  const rainbow = to01(scores?.rainbow?.score);
 
   return [
     mist - drift,

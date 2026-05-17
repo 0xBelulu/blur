@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 
-export default function BlurCard({ option, index, isSelected, onClick }) {
+export default function BlurCard({ option, isSelected, onClick }) {
   const [isHovered, setIsHovered] = useState(false);
 
   const isActive = isSelected || isHovered;
