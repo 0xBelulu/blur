@@ -508,7 +508,7 @@ export default function VectorSpace3D({
 
       drawItems.forEach((item) => {
         if (item.type === "arch") {
-          drawArchetypeVector(ctx, origin, item.end, item.color, item.label, item.isClosest, item.isHovered, t);
+          drawArchetypeVector(ctx, origin, item.end, item.color, item.label, false, item.isHovered, t);
         } else if (item.type === "trait") {
           drawTraitDot(ctx, item.screen, item.color, item.size, item.opacity, item.label, item.isTop, t);
         } else if (item.type === "test") {
@@ -516,11 +516,7 @@ export default function VectorSpace3D({
         }
       });
 
-      const activeArch = ARCHETYPE_VECTORS[aKey];
-      if (activeArch) {
-        const activeScreen = toScreen(activeArch.pos);
-        drawClosestLine(ctx, testScreen, activeScreen, activeArch.color, t);
-      }
+
 
       ctx.fillStyle = "rgba(140,132,122,0.65)";
       ctx.font = "10px system-ui,-apple-system,sans-serif";

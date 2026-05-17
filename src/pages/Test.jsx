@@ -320,7 +320,6 @@ export default function Test({ onComplete }) {
                 继续探索
               </GlassButton>
               <GlassButton
-                variant="ghost"
                 onClick={handleSeeResult}
                 className="flex items-center justify-center gap-2"
               >
