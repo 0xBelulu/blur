@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
 
-const loadingTexts = [
+const LOADING_TEXTS = [
   "正在收集你的模糊信号…",
   "调焦中，请勿眨眼…",
   "分析你的不精确性…",
@@ -16,7 +16,7 @@ export default function Loading() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setTextIndex((prev) => (prev + 1) % loadingTexts.length);
+      setTextIndex((prev) => (prev + 1) % LOADING_TEXTS.length);
     }, 2400);
     return () => clearInterval(interval);
   }, []);
@@ -69,7 +69,7 @@ export default function Loading() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.4 }}
             >
-              {loadingTexts[textIndex]}
+              {LOADING_TEXTS[textIndex]}
             </motion.p>
           </AnimatePresence>
         </div>

@@ -1,9 +1,6 @@
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import { ARCHETYPE_VECTORS, VECTOR_AXES, mapTo3D } from "../utils/blurEngine";
 import { DIMENSIONS } from "../data/questions";
-
-const AXES = VECTOR_AXES;
-const ARCHETYPES = ARCHETYPE_VECTORS;
 
 const TRAIT_DIM_MAP = {};
 for (const [dimKey, dim] of Object.entries(DIMENSIONS)) {
@@ -40,6 +37,24 @@ function project3D(p, cx, cy, fov) {
   const d = fov + p[2];
   const s = d > 0.1 ? fov / d : fov / 0.1;
   return { x: cx + p[0] * s, y: cy - p[1] * s, s, z: p[2] };
+}
+
+function makeToScreen(width, height, rotRef, progress = 1) {
+  const cx = width / 2;
+  const cy = height / 2;
+  const fov = 350;
+  const spaceScale = Math.min(width, height) * 0.4;
+
+  return (pos) => {
+    const centered = [
+      (pos[0] * progress * spaceScale) / 2,
+      (pos[1] * progress * spaceScale) / 2,
+      (pos[2] * progress * spaceScale) / 2,
+    ];
+    const r1 = rotateY(centered, rotRef.current.theta);
+    const r2 = rotateX(r1, rotRef.current.phi);
+    return project3D(r2, cx, cy, fov);
+  };
 }
 
 function drawWireframe(ctx, toScreen) {
@@ -90,9 +105,9 @@ function drawWireframe(ctx, toScreen) {
 
 function drawAxes(ctx, toScreen) {
   const axisLines = [
-    { from: [-1, 0, 0], to: [1, 0, 0], color: AXES[0].color },
-    { from: [0, -1, 0], to: [0, 1, 0], color: AXES[1].color },
-    { from: [0, 0, -1], to: [0, 0, 1], color: AXES[2].color },
+    { from: [-1, 0, 0], to: [1, 0, 0], color: VECTOR_AXES[0].color },
+    { from: [0, -1, 0], to: [0, 1, 0], color: VECTOR_AXES[1].color },
+    { from: [0, 0, -1], to: [0, 0, 1], color: VECTOR_AXES[2].color },
   ];
 
   axisLines.forEach((axis) => {
@@ -284,13 +299,13 @@ export default function VectorSpace3D({
   const traitDotsRef = useRef([]);
   const progressRef = useRef(0);
   const dataRef = useRef({});
-  const [hovered, setHovered] = useState(null);
+  const hoveredRef = useRef(null);
 
   useEffect(() => {
     dataRef.current.scores = dimensionScores;
     dataRef.current.archetypeKey = archetypeKey;
     dataRef.current.scoredTraits = scoredTraits;
-  });
+  }, [dimensionScores, archetypeKey, scoredTraits]);
 
   useEffect(() => {
     if (!scoredTraits || scoredTraits.length === 0) {
@@ -300,8 +315,8 @@ export default function VectorSpace3D({
     const maxScore = scoredTraits[0].score;
     traitDotsRef.current = scoredTraits.map((st, i) => {
       const dimKey = TRAIT_DIM_MAP[st.trait];
-      const protoPos = dimKey ? ARCHETYPES[dimKey].pos : [0, 0, 0];
-      const color = dimKey ? ARCHETYPES[dimKey].color : [180, 180, 180];
+      const protoPos = dimKey ? ARCHETYPE_VECTORS[dimKey].pos : [0, 0, 0];
+      const color = dimKey ? ARCHETYPE_VECTORS[dimKey].color : [180, 180, 180];
       const normScore = maxScore > 0 ? st.score / maxScore : 0;
       const scale = 0.12 + normScore * 0.88;
 
@@ -341,27 +356,13 @@ export default function VectorSpace3D({
       const x = (e.clientX - rect.left) * (width / rect.width);
       const y = (e.clientY - rect.top) * (height / rect.height);
 
-      const cx = width / 2;
-      const cy = height / 2;
-      const fov = 350;
-      const spaceScale = Math.min(width, height) * 0.4;
-
-      const toScreen = (pos, progress = 1) => {
-        const centered = [
-          (pos[0] * progress * spaceScale) / 2,
-          (pos[1] * progress * spaceScale) / 2,
-          (pos[2] * progress * spaceScale) / 2,
-        ];
-        const r1 = rotateY(centered, rotRef.current.theta);
-        const r2 = rotateX(r1, rotRef.current.phi);
-        return project3D(r2, cx, cy, fov);
-      };
+      const toScreen = makeToScreen(width, height, rotRef);
 
       let closest = null;
       let closestDist = Infinity;
 
-      Object.entries(ARCHETYPES).forEach(([key, arch]) => {
-        const end = toScreen(arch.pos, 1);
+      Object.entries(ARCHETYPE_VECTORS).forEach(([key, arch]) => {
+        const end = toScreen(arch.pos);
         const dist = Math.hypot(end.x - x, end.y - y);
         if (dist < 24 && dist < closestDist) {
           closestDist = dist;
@@ -369,7 +370,7 @@ export default function VectorSpace3D({
         }
       });
 
-      setHovered(closest);
+      hoveredRef.current = closest;
       if (onHoverArchetype) {
         onHoverArchetype(closest?.key || null);
       }
@@ -378,7 +379,7 @@ export default function VectorSpace3D({
   );
 
   const handlePointerLeave = useCallback(() => {
-    setHovered(null);
+    hoveredRef.current = null;
     if (onHoverArchetype) onHoverArchetype(null);
   }, [onHoverArchetype]);
 
@@ -387,26 +388,11 @@ export default function VectorSpace3D({
     if (!canvas) return;
 
     const ctx = canvas.getContext("2d");
+    if (!ctx) return;
     const dpr = window.devicePixelRatio || 1;
     canvas.width = width * dpr;
     canvas.height = height * dpr;
     ctx.scale(dpr, dpr);
-
-    const cx = width / 2;
-    const cy = height / 2;
-    const fov = 350;
-    const spaceScale = Math.min(width, height) * 0.4;
-
-    const toScreen = (pos, progress = 1) => {
-      const centered = [
-        (pos[0] * progress * spaceScale) / 2,
-        (pos[1] * progress * spaceScale) / 2,
-        (pos[2] * progress * spaceScale) / 2,
-      ];
-      const r1 = rotateY(centered, rotRef.current.theta);
-      const r2 = rotateX(r1, rotRef.current.phi);
-      return project3D(r2, cx, cy, fov);
-    };
 
     const onDown = (e) => {
       e.preventDefault();
@@ -454,12 +440,16 @@ export default function VectorSpace3D({
       const progress = progressRef.current;
       const easedProgress = 1 - Math.pow(1 - progress, 3);
 
+      const toScreen = (pos) => makeToScreen(width, height, rotRef, easedProgress)(pos);
+
       const scores = dataRef.current.scores;
       const aKey = dataRef.current.archetypeKey;
       const testPos = mapTo3D(scores);
 
       ctx.clearRect(0, 0, width, height);
 
+      const cx = width / 2;
+      const cy = height / 2;
       const bg = ctx.createRadialGradient(cx, cy, 20, cx, cy, width * 0.48);
       bg.addColorStop(0, "rgba(240,238,234,0.7)");
       bg.addColorStop(0.7, "rgba(240,238,234,0.25)");
@@ -467,17 +457,18 @@ export default function VectorSpace3D({
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, width, height);
 
-      drawWireframe(ctx, (pos) => toScreen(pos, easedProgress));
-      drawAxes(ctx, (pos) => toScreen(pos, easedProgress));
+      drawWireframe(ctx, toScreen);
+      drawAxes(ctx, toScreen);
 
-      const origin = toScreen([0, 0, 0], easedProgress);
+      const origin = toScreen([0, 0, 0]);
 
       const drawItems = [];
 
-      Object.entries(ARCHETYPES).forEach(([key, arch]) => {
-        const end = toScreen(arch.pos, easedProgress);
+      const currentHovered = hoveredRef.current;
+      Object.entries(ARCHETYPE_VECTORS).forEach(([key, arch]) => {
+        const end = toScreen(arch.pos);
         const isClosest = key === aKey;
-        const isHovered = hovered?.key === key;
+        const isHovered = currentHovered?.key === key;
         drawItems.push({
           type: "arch",
           z: end.z,
@@ -492,7 +483,7 @@ export default function VectorSpace3D({
 
       if (traitDotsRef.current) {
         traitDotsRef.current.forEach((dot) => {
-          const screen = toScreen(dot.pos, easedProgress);
+          const screen = toScreen(dot.pos);
           drawItems.push({
             type: "trait",
             z: screen.z,
@@ -506,7 +497,7 @@ export default function VectorSpace3D({
         });
       }
 
-      const testScreen = toScreen(testPos, easedProgress);
+      const testScreen = toScreen(testPos);
       drawItems.push({
         type: "test",
         z: testScreen.z - 0.01,
@@ -525,9 +516,9 @@ export default function VectorSpace3D({
         }
       });
 
-      const activeArch = ARCHETYPES[aKey];
+      const activeArch = ARCHETYPE_VECTORS[aKey];
       if (activeArch) {
-        const activeScreen = toScreen(activeArch.pos, easedProgress);
+        const activeScreen = toScreen(activeArch.pos);
         drawClosestLine(ctx, testScreen, activeScreen, activeArch.color, t);
       }
 
@@ -551,11 +542,13 @@ export default function VectorSpace3D({
       canvas.removeEventListener("pointerleave", handlePointerLeave);
       if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
     };
-  }, [width, height, hovered, handlePointerMove, handlePointerLeave]);
+  }, [width, height, handlePointerMove, handlePointerLeave]);
 
   return (
     <canvas
       ref={canvasRef}
+      role="img"
+      aria-label="3D 人格向量空间可视化"
       style={{ width: `${width}px`, height: `${height}px`, cursor: "grab", touchAction: "none" }}
     />
   );

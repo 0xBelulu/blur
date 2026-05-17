@@ -448,7 +448,7 @@ export const tagPool = {
   suspended: { text: "悬停者", weight: 0.8, detail: "你习惯让结论保持在空中，不急于落地" },
 };
 
-export const ARCHETYPE_TRAITS = {
+const ARCHETYPE_TRAITS = {
   mist: ["shielded", "softedge", "filtered", "vague", "misty", "guarded", "faded"],
   chime: ["saturated", "acute", "reverberant", "overwhelming", "thunder", "loud"],
   drift: ["adrift", "fleeing", "unmoored", "shifting", "tidal", "fluid"],

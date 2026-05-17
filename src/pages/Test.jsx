@@ -220,8 +220,13 @@ export default function Test({ onComplete }) {
   };
 
   const handleContinueExplore = () => {
-    setCurrentIndex(REQUIRED_COUNT + 1);
-    restoreState(answers[REQUIRED_COUNT + 1], shuffledQuestions[REQUIRED_COUNT + 1]);
+    const nextIdx = REQUIRED_COUNT + 1;
+    if (nextIdx >= shuffledQuestions.length) {
+      finishTest(answers);
+      return;
+    }
+    setCurrentIndex(nextIdx);
+    restoreState(answers[nextIdx], shuffledQuestions[nextIdx]);
   };
 
   const canProceed = () => {
@@ -424,11 +429,10 @@ export default function Test({ onComplete }) {
               </div>
             ) : (
               <div className="space-y-3 mb-8">
-                {currentQuestion.options.map((option, i) => (
+                {currentQuestion.options.map((option) => (
                   <BlurCard
                     key={option.id}
                     option={option}
-                    index={i}
                     isSelected={selectedOption?.id === option.id}
                     onClick={() => handleSelect(option)}
                   />

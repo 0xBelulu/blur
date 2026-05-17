@@ -35,20 +35,18 @@ export function mapTo3D(scores) {
   ];
 }
 
-const PALETTE = [
-  [180, 185, 195],
-  [195, 175, 155],
-  [155, 180, 195],
-  [155, 165, 185],
-  [185, 165, 195],
-  [175, 185, 175],
-  [195, 185, 165],
-  [165, 175, 195],
-];
-
 function seededRandom(seed) {
   const x = Math.sin(seed) * 10000;
   return x - Math.floor(x);
+}
+
+function getTagInfo(trait) {
+  const info = tagPool[trait];
+  return {
+    weight: info ? info.weight : 1,
+    text: info ? info.text : trait,
+    detail: info ? info.detail : "",
+  };
 }
 
 export function generateResult(answers) {
@@ -92,21 +90,19 @@ export function generateResult(answers) {
   }, 0);
 
   const scoredTraits = Object.entries(traitCounts).map(([trait, count]) => {
-    const tagInfo = tagPool[trait];
-    const weight = tagInfo ? tagInfo.weight : 1;
+    const info = getTagInfo(trait);
     const noise = (seededRandom(trait.length + answerHash) - 0.5) * 0.15;
     return {
       trait,
-      score: count * weight + noise,
-      text: tagInfo ? tagInfo.text : trait,
-      detail: tagInfo ? tagInfo.detail : "",
+      score: count * info.weight + noise,
+      text: info.text,
+      detail: info.detail,
     };
   });
 
   scoredTraits.sort((a, b) => b.score - a.score);
 
   const numTags = 5;
-  const selectedTags = scoredTraits.slice(0, numTags).map((t) => t.text);
   const selectedTagDetails = scoredTraits.slice(0, numTags).map((t) => ({
     trait: t.trait,
     text: t.text,
@@ -121,18 +117,12 @@ export function generateResult(answers) {
 
   const suppressedTraits = determineSuppressedTraits(archetypeKey, scoredTraits);
 
-  const clarity = 0.4 + seededRandom(answerHash + 7) * 0.2;
-  const cloudData = generateCloudData(selectedTags.length, clarity, answerHash);
-
   return {
     archetype,
     archetypeKey,
     secondaryArchetype,
-    tags: selectedTags,
     tagDetails: selectedTagDetails,
     suppressedTraits,
-    clarity,
-    cloudData,
     scoredTraits: scoredTraits.slice(0, 10),
     dimensionScores,
   };
@@ -144,10 +134,9 @@ function computeDimensionScores(traitCounts) {
   Object.entries(DIMENSIONS).forEach(([dimKey, dim]) => {
     let total = 0;
     dim.traits.forEach((trait) => {
-      const tagInfo = tagPool[trait];
-      const weight = tagInfo ? tagInfo.weight : 1;
+      const info = getTagInfo(trait);
       if (traitCounts[trait]) {
-        total += traitCounts[trait] * weight;
+        total += traitCounts[trait] * info.weight;
       }
     });
     rawScores[dimKey] = {
@@ -214,59 +203,15 @@ function determineSuppressedTraits(archetypeKey, scoredTraits) {
 
   return suppressedList
     .map((trait) => {
-      const tagInfo = tagPool[trait];
+      const info = getTagInfo(trait);
       const score = traitScoreMap[trait] || 0;
       return {
         trait,
-        text: tagInfo ? tagInfo.text : trait,
-        detail: tagInfo ? tagInfo.detail : "",
+        text: info.text,
+        detail: info.detail,
         score,
       };
     })
     .sort((a, b) => a.score - b.score); // 分数越低，越被压抑
 }
 
-function generateCloudData(numTags, clarity, seed) {
-  const particles = [];
-  const vectors = [];
-
-  const numParticles = 45 + Math.floor(seededRandom(seed + 1) * 20);
-
-  for (let i = 0; i < numParticles; i++) {
-    const angle = seededRandom(seed + i * 3) * Math.PI * 2;
-    const distance = Math.pow(seededRandom(seed + i * 3 + 1), 0.8) * 110 * (1.1 - clarity * 0.25);
-
-    particles.push({
-      x: Math.cos(angle) * distance,
-      y: Math.sin(angle) * distance,
-      size: 2 + seededRandom(seed + i * 3 + 2) * 6,
-      opacity: 0.3 + seededRandom(seed + i * 3 + 3) * 0.5,
-      color: PALETTE[Math.floor(seededRandom(seed + i * 3 + 4) * PALETTE.length)],
-    });
-  }
-
-  const numVectors = 3 + Math.floor(seededRandom(seed + 100) * 2);
-  for (let i = 0; i < numVectors; i++) {
-    const angle = (Math.PI * 2 * i) / numVectors + (seededRandom(seed + 100 + i) - 0.5) * 0.4;
-    const length = 60 + seededRandom(seed + 100 + i + 10) * 50;
-    vectors.push({
-      angle,
-      length,
-      opacity: 0.3 + seededRandom(seed + 100 + i + 20) * 0.3,
-      color: PALETTE[Math.floor(seededRandom(seed + 100 + i + 30) * PALETTE.length)],
-    });
-  }
-
-  const tagPositions = [];
-  for (let i = 0; i < numTags; i++) {
-    const angle = (Math.PI * 2 * i) / numTags + (seededRandom(seed + 200 + i) - 0.5) * 0.3;
-    const distance = 100 + seededRandom(seed + 200 + i + 10) * 40;
-    tagPositions.push({
-      x: Math.cos(angle) * distance,
-      y: Math.sin(angle) * distance,
-      blur: 0.3 + seededRandom(seed + 200 + i + 20) * 1.0,
-    });
-  }
-
-  return { particles, vectors, tagPositions };
-}

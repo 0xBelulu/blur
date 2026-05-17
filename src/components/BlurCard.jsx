@@ -7,14 +7,19 @@ export default function BlurCard({ option, isSelected, onClick }) {
   const isActive = isSelected || isHovered;
 
   const handleClick = () => {
-    if (navigator.vibrate) {
-      navigator.vibrate(10);
+    try {
+      navigator?.vibrate?.(10);
+    } catch {
+      // vibrate not supported
     }
     onClick();
   };
 
   return (
     <motion.div
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(); } }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onTouchStart={() => setIsHovered(true)}

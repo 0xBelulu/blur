@@ -5,6 +5,7 @@ import VectorSpace3D from "../components/VectorSpace3D";
 import GlassButton from "../components/GlassButton";
 import TraitRadar from "../components/TraitRadar";
 import DimensionMeters from "../components/DimensionMeters";
+import ProgressBar from "../components/ProgressBar";
 
 const TABS = [
   { key: "cloud", label: "画像" },
@@ -43,17 +44,7 @@ function TagCard({ tag, i, maxScore, expandedTag, onToggle }) {
           </motion.span>
         </div>
       </div>
-      <div className="h-1 rounded-full bg-blur-surface overflow-hidden">
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${pct}%` }}
-          transition={{ delay: 0.2 + i * 0.06, duration: 0.5, ease: "easeOut" }}
-          className="h-full rounded-full"
-          style={{
-            background: "linear-gradient(90deg, rgba(155,142,199,0.7), rgba(143,181,196,0.7))",
-          }}
-        />
-      </div>
+      <ProgressBar pct={pct} delay={i * 0.06} />
       <AnimatePresence>
         {isExpanded && (
           <motion.div
@@ -361,17 +352,8 @@ export default function Result({ result, onRestart }) {
                         <span className="text-xs text-blur-text-muted w-20 shrink-0 truncate">
                           {trait.text}
                         </span>
-                        <div className="flex-1 h-1.5 rounded-full bg-blur-surface overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${pct}%` }}
-                            transition={{ delay: 0.2 + i * 0.05, duration: 0.5, ease: "easeOut" }}
-                            className="h-full rounded-full"
-                            style={{
-                              background:
-                                "linear-gradient(90deg, rgba(155,142,199,0.7), rgba(143,181,196,0.7))",
-                            }}
-                          />
+                        <div className="flex-1">
+                          <ProgressBar pct={pct} delay={i * 0.05} />
                         </div>
                       </motion.div>
                     );

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Landing from "./pages/Landing";
 import Test from "./pages/Test";
@@ -7,6 +7,7 @@ import Result from "./pages/Result";
 import { generateResult } from "./utils/blurEngine";
 
 const screenOrder = ["landing", "test", "loading", "result"];
+const LOADING_DURATION = 3500;
 
 const pageVariants = {
   enter: (direction) => ({
@@ -29,10 +30,13 @@ const pageVariants = {
   }),
 };
 
+const pageTransition = { duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] };
+
 export default function App() {
   const [screen, setScreen] = useState("landing");
   const [result, setResult] = useState(null);
   const [direction, setDirection] = useState(1);
+  const loadingTimerRef = useRef(null);
 
   const navigate = useCallback((nextScreen) => {
     setDirection(screenOrder.indexOf(nextScreen) > screenOrder.indexOf(screen) ? 1 : -1);
@@ -47,15 +51,20 @@ export default function App() {
   const handleComplete = useCallback((finalAnswers) => {
     navigate("loading");
 
-    setTimeout(() => {
-      const generatedResult = generateResult(finalAnswers);
-      setResult(generatedResult);
-      setDirection(1);
-      setScreen("result");
-    }, 3500);
+    if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
+    loadingTimerRef.current = setTimeout(() => {
+      try {
+        const generatedResult = generateResult(finalAnswers);
+        setResult(generatedResult);
+        navigate("result");
+      } catch {
+        navigate("landing");
+      }
+    }, LOADING_DURATION);
   }, [navigate]);
 
   const handleRestart = useCallback(() => {
+    if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
     navigate("landing");
     setResult(null);
   }, [navigate]);
@@ -71,7 +80,7 @@ export default function App() {
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+            transition={pageTransition}
           >
             <Landing onStart={handleStart} />
           </motion.div>
@@ -85,7 +94,7 @@ export default function App() {
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+            transition={pageTransition}
           >
             <Test onComplete={handleComplete} />
           </motion.div>
@@ -99,7 +108,7 @@ export default function App() {
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+            transition={pageTransition}
           >
             <Loading />
           </motion.div>
@@ -113,7 +122,7 @@ export default function App() {
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+            transition={pageTransition}
           >
             <Result result={result} onRestart={handleRestart} />
           </motion.div>
