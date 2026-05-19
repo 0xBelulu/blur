@@ -269,18 +269,6 @@ function drawTestSubject(ctx, screen, origin, t) {
   ctx.shadowBlur = 0;
 }
 
-function drawClosestLine(ctx, testScreen, closestScreen, color, t) {
-  const pulse = 0.5 + Math.sin(t * 0.02) * 0.35;
-  ctx.beginPath();
-  ctx.moveTo(testScreen.x, testScreen.y);
-  ctx.lineTo(closestScreen.x, closestScreen.y);
-  ctx.strokeStyle = rgba(color, 0.35 * pulse);
-  ctx.lineWidth = 1.5;
-  ctx.setLineDash([4, 5]);
-  ctx.stroke();
-  ctx.setLineDash([]);
-}
-
 export default function VectorSpace3D({
   dimensionScores,
   archetypeKey,
