@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { List } from "lucide-react";
 import GlassButton from "../components/GlassButton";
+import QuestionBank from "../components/QuestionBank";
 
 const TIPS = [
   "如果你在读这句话，说明你确实在读。",
@@ -30,6 +32,7 @@ function useRotatingTip(interval = 4000) {
 
 export default function Landing({ onStart }) {
   const tip = useRotatingTip(4200);
+  const [showQuestionBank, setShowQuestionBank] = useState(false);
 
   return (
     <div className="flex-1 flex flex-col md:flex-row items-center md:justify-center px-6 md:px-16 lg:px-24 pt-20 pb-12 md:py-16 min-h-[100svh] relative overflow-hidden max-w-6xl mx-auto w-full">
@@ -203,6 +206,22 @@ export default function Landing({ onStart }) {
           </GlassButton>
         </motion.div>
 
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.1, duration: 0.6 }}
+          className="flex justify-center md:justify-start w-full mt-3"
+        >
+          <GlassButton
+            variant="ghost"
+            onClick={() => setShowQuestionBank(true)}
+            className="text-xs flex items-center gap-1.5"
+          >
+            <List size={14} />
+            浏览全部题目
+          </GlassButton>
+        </motion.div>
+
         {/* Footer note */}
         <motion.p
           initial={{ opacity: 0 }}
@@ -212,6 +231,12 @@ export default function Landing({ onStart }) {
         >
           本测试结果不具备任何科学参考价值，但可能意外地准确
         </motion.p>
+
+        <AnimatePresence>
+          {showQuestionBank && (
+            <QuestionBank onClose={() => setShowQuestionBank(false)} />
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
