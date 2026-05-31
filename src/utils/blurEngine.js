@@ -11,6 +11,10 @@ export const ARCHETYPE_VECTORS = {
   drift: { pos: [-1, 0, -1], color: [155, 180, 195], label: "漂流者" },
   still: { pos: [0, -1, -1], color: [155, 165, 185], label: "静观者" },
   rainbow: { pos: [0, 0, 1], color: [185, 165, 195], label: "虹" },
+  salt: { pos: [0.7, 0.7, 0], color: [195, 190, 175], label: "盐" },
+  negative: { pos: [-0.7, -0.7, 0.5], color: [170, 170, 185], label: "底片" },
+  tide: { pos: [-0.7, 0.7, -0.3], color: [160, 185, 180], label: "潮汐" },
+  silhouette: { pos: [0.7, -0.7, 0.5], color: [175, 165, 170], label: "剪影" },
 };
 
 export const VECTOR_AXES = [
@@ -22,17 +26,21 @@ export const VECTOR_AXES = [
 export function mapTo3D(scores) {
   const to01 = (v) => Math.max(0, Math.min(1, ((v ?? 0.5) - 0.25) / 0.75));
 
-  const mist = to01(scores?.mist?.score);
-  const chime = to01(scores?.chime?.score);
-  const drift = to01(scores?.drift?.score);
-  const still = to01(scores?.still?.score);
-  const rainbow = to01(scores?.rainbow?.score);
-
-  return [
-    mist - drift,
-    chime - still,
-    2 * rainbow - 1,
-  ];
+  let x = 0, y = 0, z = 0, totalWeight = 0;
+  for (const [key, arch] of Object.entries(ARCHETYPE_VECTORS)) {
+    const s = to01(scores?.[key]?.score);
+    const w = s * s;
+    x += arch.pos[0] * w;
+    y += arch.pos[1] * w;
+    z += arch.pos[2] * w;
+    totalWeight += w;
+  }
+  if (totalWeight > 0) {
+    x /= totalWeight;
+    y /= totalWeight;
+    z /= totalWeight;
+  }
+  return [x, y, z];
 }
 
 function seededRandom(seed) {

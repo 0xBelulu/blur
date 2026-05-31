@@ -353,4 +353,70 @@ export const singleQuestions = [
       { id: "d", text: "反复犹豫，拖到最后才走", traits: ["equivocal", "adrift"] },
     ],
   },
+  {
+    id: 61,
+    type: "single",
+    text: "当你走进一间满是人的房间，你最真实的反应是？",
+    options: [
+      { id: "a", text: "只站在边缘，让别人看到你的轮廓就够了", traits: ["outlined", "partial"] },
+      { id: "b", text: "所有人的情绪同时涌进来，像走进了一团雾", traits: ["absorbing", "osmotic"] },
+      { id: "c", text: "没什么感觉，但回家后会突然想明白刚才的氛围", traits: ["latent", "delayed"] },
+      { id: "d", text: "感受到房间里的能量在涨还是在退", traits: ["rhythmic", "cyclical"] },
+    ],
+  },
+  {
+    id: 62,
+    type: "single",
+    text: "看一张旧照片里的自己，你通常？",
+    options: [
+      { id: "a", text: "觉得那个人很熟悉，但好像颜色是反的", traits: ["inverse", "undeveloped"] },
+      { id: "b", text: "那一刻的情绪会重新渗进你身体里", traits: ["permeable", "seeping"] },
+      { id: "c", text: "那时候的潮水已经退了，现在是另一片海", traits: ["ebbing", "oscillating"] },
+      { id: "d", text: "只能看见轮廓，里面是暗的", traits: ["backlit", "edgeonly"] },
+    ],
+  },
+  {
+    id: 63,
+    type: "single",
+    text: "以下哪个比喻最像你？",
+    options: [
+      { id: "a", text: "一滴墨落进水里", traits: ["dissolving", "blended"] },
+      { id: "b", text: "暗房里慢慢显影的照片", traits: ["darkroom", "belated"] },
+      { id: "c", text: "永不停歇地拍岸又退去的海浪", traits: ["pulsing", "swelling"] },
+      { id: "d", text: "烛光映在墙上的影子", traits: ["shadowed", "angled"] },
+    ],
+  },
+  {
+    id: 64,
+    type: "single",
+    text: "和一群朋友在一起时，你更像是？",
+    options: [
+      { id: "a", text: "自动吸收群体的氛围，变得和周围一样", traits: ["osmotic", "blended"] },
+      { id: "b", text: "当时很安静，但回家后整晚都在回放", traits: ["delayed", "latent"] },
+      { id: "c", text: "有时候很活跃，有时候完全消失，有周期", traits: ["ebbing", "swelling"] },
+      { id: "d", text: "呈现一个清晰的版本，但从不展示全貌", traits: ["partial", "outlined"] },
+    ],
+  },
+  {
+    id: 65,
+    type: "single",
+    text: "你更害怕哪种体验？",
+    options: [
+      { id: "a", text: "被完全看透，连内心角落都暴露", traits: ["edgeonly", "backlit"] },
+      { id: "b", text: "分不清自己的想法和别人的想法", traits: ["osmotic", "blended"] },
+      { id: "c", text: "永远停留在同一个状态里无法变化", traits: ["oscillating", "rhythmic"] },
+      { id: "d", text: "事情发生了很久，你依然没有感受到任何东西", traits: ["undeveloped", "belated"] },
+    ],
+  },
+  {
+    id: 66,
+    type: "single",
+    text: "你更习惯用哪种方式理解自己？",
+    options: [
+      { id: "a", text: "通过别人的反馈——他们像镜子照出你", traits: ["permeable", "absorbing"] },
+      { id: "b", text: "通过事后的回忆——当时不懂，后来才懂", traits: ["darkroom", "inverse"] },
+      { id: "c", text: "通过周期性的变化——你像一条波浪线", traits: ["cyclical", "pulsing"] },
+      { id: "d", text: "通过自己选择展示的部分——那才是真正的你", traits: ["angled", "shadowed"] },
+    ],
+  },
 ];

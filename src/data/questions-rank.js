@@ -133,4 +133,26 @@ export const rankQuestions = [
       { id: "d", text: "留白很多、意味深长的沉默", traits: ["vague", "abyssal"] },
     ],
   },
+  {
+    id: 71,
+    type: "rank",
+    text: "以下四种状态，按「最像你 → 最不像你」排序：",
+    options: [
+      { id: "a", text: "融化在一个地方的气氛里，分不清自己和环境", traits: ["dissolving", "permeable"] },
+      { id: "b", text: "看着自己的感受像照片一样慢慢显影", traits: ["darkroom", "latent"] },
+      { id: "c", text: "随着自己能量的自然节律起伏", traits: ["rhythmic", "pulsing"] },
+      { id: "d", text: "站在一个只露出轮廓的角度", traits: ["backlit", "edgeonly"] },
+    ],
+  },
+  {
+    id: 72,
+    type: "rank",
+    text: "以下四种场景，按「最让你安心 → 最让你不安」排序：",
+    options: [
+      { id: "a", text: "所有边界都模糊的空间，什么都连在一起", traits: ["blended", "seeping"] },
+      { id: "b", text: "一间暗房，图像会慢慢浮现", traits: ["undeveloped", "inverse"] },
+      { id: "c", text: "海浪的声音，持续而有节奏", traits: ["cyclical", "oscillating"] },
+      { id: "d", text: "一束强光从身后打来，你的影子很清晰", traits: ["shadowed", "outlined"] },
+    ],
+  },
 ];

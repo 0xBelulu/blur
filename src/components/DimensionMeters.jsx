@@ -6,6 +6,10 @@ const DIM_CONFIG = {
   drift: { label: "漂流者", color: "#9bb4c3", desc: "流动 · 追寻" },
   still: { label: "静观者", color: "#9ba5b9", desc: "沉淀 · 内省" },
   rainbow: { label: "虹", color: "#b9a5c3", desc: "折射 · 多元" },
+  salt: { label: "盐", color: "#c3beaf", desc: "渗透 · 融合" },
+  negative: { label: "底片", color: "#aaaab9", desc: "延迟 · 反转" },
+  tide: { label: "潮汐", color: "#a0b9b4", desc: "涨落 · 节律" },
+  silhouette: { label: "剪影", color: "#afa5aa", desc: "轮廓 · 方向" },
 };
 
 export default function DimensionMeters({ dimensionScores, activeKey }) {
