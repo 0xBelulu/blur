@@ -193,6 +193,7 @@ function determineArchetype(userVector) {
       key: r.key,
       sim: r.sim,
       prob: r.prob,
+      profile: r.profile,
     })),
     archetypeProbabilities: ranked.map((r) => ({
       key: r.key,
