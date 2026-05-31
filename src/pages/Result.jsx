@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RotateCcw, ChevronDown, Zap } from "lucide-react";
-import VectorSpace3D from "../components/VectorSpace3D";
+import TraitSpace2D from "../components/TraitSpace2D";
 import GlassButton from "../components/GlassButton";
+import { DIMENSION_PAIRS } from "../utils/blurEngine";
 import TraitRadar from "../components/TraitRadar";
 import DimensionMeters from "../components/DimensionMeters";
 import ProgressBar from "../components/ProgressBar";
@@ -72,23 +73,25 @@ const tabContentVariants = {
 
 export default function Result({ result, onRestart }) {
   const [activeTab, setActiveTab] = useState("cloud");
+  const [activePairIndex, setActivePairIndex] = useState(0);
   const [expandedTag, setExpandedTag] = useState(null);
   const [hoveredArchetype, setHoveredArchetype] = useState(null);
 
-  const { archetype, archetypeKey, secondaryArchetype, tagDetails, scoredTraits, dimensionScores, suppressedTraits, userVector, similarities } = result;
+  const { archetype, secondaryArchetype, tagDetails, scoredTraits, dimensionScores, suppressedTraits, userVector, similarities } = result;
   const narrative = archetype.narrative;
 
   const vectorSize = typeof window !== "undefined" && window.innerWidth >= 768 ? 420 : 320;
+  const activePair = DIMENSION_PAIRS[activePairIndex];
 
   return (
     <div className="flex-1 flex flex-col md:flex-row md:items-start md:justify-center gap-6 md:gap-10 px-6 py-8 md:py-12 max-w-5xl mx-auto w-full overflow-y-auto">
-      {/* Left: Vector Space + Meters */}
+      {/* Left: Trait Space + Meters */}
       <div className="flex flex-col items-center md:items-start md:w-[420px] shrink-0">
         <motion.div
           initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.9, ease: "easeOut" }}
-          className="relative mb-4 md:mb-6"
+          className="relative mb-3"
           style={{ width: vectorSize, height: vectorSize }}
         >
           <motion.div
@@ -96,9 +99,10 @@ export default function Result({ result, onRestart }) {
             animate={{ opacity: [0.85, 1, 0.85] }}
             transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
           >
-            <VectorSpace3D
+            <TraitSpace2D
               userVector={userVector}
-              archetypeKey={archetypeKey}
+              xKey={activePair.xKey}
+              yKey={activePair.yKey}
               width={vectorSize}
               height={vectorSize}
               onHoverArchetype={setHoveredArchetype}
@@ -113,6 +117,23 @@ export default function Result({ result, onRestart }) {
             }}
           />
         </motion.div>
+
+        {/* Pair selector */}
+        <div className="w-full flex flex-wrap justify-center md:justify-start gap-1.5 mb-4">
+          {DIMENSION_PAIRS.map((pair, i) => (
+            <button
+              key={pair.key}
+              onClick={() => setActivePairIndex(i)}
+              className={`px-2.5 py-1 rounded-lg text-[10px] transition-colors cursor-pointer ${
+                activePairIndex === i
+                  ? "bg-blur-surface text-blur-text font-medium shadow-sm"
+                  : "text-blur-text-muted hover:text-blur-text hover:bg-blur-surface-hover"
+              }`}
+            >
+              {pair.label}
+            </button>
+          ))}
+        </div>
 
         {/* Dimension Meters - desktop sticky side panel */}
         <motion.div

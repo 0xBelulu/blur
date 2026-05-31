@@ -171,6 +171,14 @@ function determineSuppressedTraits(archetypeKey, userVector) {
     .sort((a, b) => Math.abs(a.score) - Math.abs(b.score));
 }
 
+export const DIMENSION_PAIRS = [
+  { key: "energy-express", xKey: "energySource", yKey: "expressivity", label: "能量·表达" },
+  { key: "sense-change", xKey: "sensorySensitivity", yKey: "changeAffinity", label: "感知·流动" },
+  { key: "cognition-boundary", xKey: "cognitiveRange", yKey: "boundaryClarity", label: "认知·边界" },
+  { key: "time-depth", xKey: "temporalDepth", yKey: "processingDepth", label: "沉淀·深度" },
+  { key: "emotion-closure", xKey: "emotionalLatency", yKey: "closureTolerance", label: "反应·模糊" },
+];
+
 export function generateResult(answers, questions) {
   const rawDims = accumulateDimensions(answers, questions);
   const userVector = normalizeDimensions(rawDims);
