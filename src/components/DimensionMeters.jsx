@@ -13,16 +13,16 @@ export default function DimensionMeters({ similarities, activeKey }) {
 
   if (!similarities || similarities.length === 0) return null;
 
-  const maxSim = Math.max(...similarities.map((s) => s.sim), 0.01);
+  const maxProb = Math.max(...similarities.map((s) => s.prob), 0.01);
   const displayItems = expanded ? similarities : similarities.slice(0, SHOW_COUNT);
 
   return (
     <div className="w-full">
       <div className="w-full space-y-2.5">
-        {displayItems.map(({ key, sim, profile }, i) => {
-      const pct = Math.max(4, (sim / maxSim) * 100);
+        {displayItems.map(({ key, prob, profile }, i) => {
+      const pct = Math.max(4, (prob / maxProb) * 100);
       const isActive = activeKey === key;
-      const displayPct = Math.round(((sim + 1) / 2) * 100);
+      const displayPct = Math.round(prob * 100);
 
       return (
         <motion.div
