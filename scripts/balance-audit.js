@@ -17,6 +17,45 @@ const DIMENSION_KEYS = [
 const OVER_REP_THRESHOLD = 0.20;
 const UNDER_REP_THRESHOLD = 0.05;
 
+/* ── Calibrated softmax matching (mirrors blurEngine) ──── */
+const RANDOM_BASELINES = {
+  rainbow: 0.6848,
+  drift: 0.5362,
+  tide: 0.4824,
+  negative: 0.4755,
+  still: 0.4131,
+  mist: 0.3271,
+  salt: 0.3145,
+  silhouette: 0.1885,
+  chime: 0.1268,
+};
+const RANDOM_STDS = {
+  mist: 0.0949,
+  chime: 0.0950,
+  drift: 0.0718,
+  still: 0.0860,
+  rainbow: 0.0432,
+  salt: 0.0836,
+  negative: 0.0746,
+  tide: 0.0846,
+  silhouette: 0.0967,
+};
+const SOFTMAX_TEMPERATURE = 2.0;
+
+function softmax(scores, temperature) {
+  const expScores = {};
+  let sum = 0;
+  for (const key of Object.keys(scores)) {
+    expScores[key] = Math.exp(scores[key] / temperature);
+    sum += expScores[key];
+  }
+  const probs = {};
+  for (const key of Object.keys(expScores)) {
+    probs[key] = expScores[key] / sum;
+  }
+  return probs;
+}
+
 /* ── CLI args ────────────────────────────────────────────── */
 const args = process.argv.slice(2);
 let TRIALS = 5000;
@@ -149,7 +188,23 @@ function determineArchetype(userVector, profiles) {
     similarities.push({ key, sim });
   }
   similarities.sort((a, b) => b.sim - a.sim);
-  return similarities;
+
+  // Calibrated z-score + softmax (mirrors blurEngine)
+  const calibrated = {};
+  for (const { key, sim } of similarities) {
+    const mu = RANDOM_BASELINES[key] || 0;
+    const sigma = RANDOM_STDS[key] || 1;
+    calibrated[key] = (sim - mu) / sigma;
+  }
+  const probs = softmax(calibrated, SOFTMAX_TEMPERATURE);
+
+  return Object.entries(probs)
+    .sort((a, b) => b[1] - a[1])
+    .map(([key, prob]) => ({
+      key,
+      sim: similarities.find((s) => s.key === key).sim,
+      prob,
+    }));
 }
 
 /* ── Monte-Carlo simulation ─────────────────────────────── */
@@ -164,7 +219,7 @@ function runSimulation(trials, strategy, profiles) {
     const sims = determineArchetype(vec, profiles);
     const best = sims[0];
     counts[best.key] = (counts[best.key] || 0) + 1;
-    gaps.push(sims[0].sim - (sims[1]?.sim || 0));
+    gaps.push(sims[0].prob - (sims[1]?.prob || 0));
   }
 
   return { counts, gaps };

@@ -2,6 +2,38 @@ import { DIMENSIONS, DIMENSION_KEYS } from "../data/dimensions.js";
 import { ARCHETYPE_PROFILES } from "../data/archetypeProfiles.js";
 import { projectTo3D } from "../data/projection.js";
 
+/**
+ * 纯随机回答下每个原型的余弦相似度分布参数（20000 次 Monte Carlo）
+ * 校准公式：z[k] = (cos_sim - μ[k]) / σ[k]
+ * z-score 标准化后所有原型在随机输入下均值为 0、方差为 1，消除基线偏差
+ */
+const RANDOM_BASELINES = {
+  rainbow: 0.6848,
+  drift: 0.5362,
+  tide: 0.4824,
+  negative: 0.4755,
+  still: 0.4131,
+  mist: 0.3271,
+  salt: 0.3145,
+  silhouette: 0.1885,
+  chime: 0.1268,
+};
+
+const RANDOM_STDS = {
+  mist: 0.0949,
+  chime: 0.0950,
+  drift: 0.0718,
+  still: 0.0860,
+  rainbow: 0.0432,
+  salt: 0.0836,
+  negative: 0.0746,
+  tide: 0.0846,
+  silhouette: 0.0967,
+};
+
+/** Softmax 温度，控制概率分布的锐度。T 越大分布越均匀 */
+const SOFTMAX_TEMPERATURE = 2.0;
+
 export const ARCHETYPE_VECTORS = {};
 export const VECTOR_AXES = [
   { key: "x", label: "", color: [180, 185, 195] },
@@ -126,6 +158,20 @@ function computeDimensionScores(userVector) {
   return scores;
 }
 
+function softmax(scores, temperature) {
+  const expScores = {};
+  let sum = 0;
+  for (const key of Object.keys(scores)) {
+    expScores[key] = Math.exp(scores[key] / temperature);
+    sum += expScores[key];
+  }
+  const probs = {};
+  for (const key of Object.keys(expScores)) {
+    probs[key] = expScores[key] / sum;
+  }
+  return probs;
+}
+
 function determineArchetype(userVector) {
   const similarities = [];
   for (const [key, profile] of Object.entries(ARCHETYPE_PROFILES)) {
@@ -134,8 +180,26 @@ function determineArchetype(userVector) {
   }
   similarities.sort((a, b) => b.sim - a.sim);
 
-  const best = similarities[0];
-  const second = similarities[1];
+  // Calibrate: z-score = (sim - μ) / σ, then softmax
+  const calibratedScores = {};
+  for (const { key, sim } of similarities) {
+    const mu = RANDOM_BASELINES[key] || 0;
+    const sigma = RANDOM_STDS[key] || 1;
+    calibratedScores[key] = (sim - mu) / sigma;
+  }
+  const probs = softmax(calibratedScores, SOFTMAX_TEMPERATURE);
+
+  const ranked = Object.entries(probs)
+    .sort((a, b) => b[1] - a[1])
+    .map(([key, prob]) => ({
+      key,
+      prob,
+      sim: similarities.find((s) => s.key === key).sim,
+      profile: ARCHETYPE_PROFILES[key],
+    }));
+
+  const best = ranked[0];
+  const second = ranked[1];
 
   return {
     key: best.key,
@@ -147,7 +211,15 @@ function determineArchetype(userVector) {
           symbol: second.profile.symbol,
         }
       : null,
-    similarities,
+    similarities: ranked.map((r) => ({
+      key: r.key,
+      sim: r.sim,
+      prob: r.prob,
+    })),
+    archetypeProbabilities: ranked.map((r) => ({
+      key: r.key,
+      prob: r.prob,
+    })),
   };
 }
 
@@ -185,7 +257,7 @@ export function generateResult(answers, questions) {
 
   const dimensionScores = computeDimensionScores(userVector);
 
-  const { key: archetypeKey, archetype, secondaryArchetype, similarities } =
+  const { key: archetypeKey, archetype, secondaryArchetype, similarities, archetypeProbabilities } =
     determineArchetype(userVector);
 
   const suppressedTraits = determineSuppressedTraits(archetypeKey, userVector);
@@ -225,6 +297,7 @@ export function generateResult(answers, questions) {
     dimensionScores,
     userVector,
     similarities,
+    archetypeProbabilities,
     rawAnswers: answers,
     specialNarratives: [],
   };
