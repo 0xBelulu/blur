@@ -1,17 +1,10 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
 
 export default function BlurCard({ option, isSelected, onClick }) {
-  const [isHovered, setIsHovered] = useState(false);
-
-  const isActive = isSelected || isHovered;
-
   const handleClick = () => {
     try {
       navigator?.vibrate?.(10);
-    } catch {
-      // vibrate not supported
-    }
+    } catch { /* vibrate not supported */ }
     onClick();
   };
 
@@ -20,24 +13,21 @@ export default function BlurCard({ option, isSelected, onClick }) {
       role="button"
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(); } }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onTouchStart={() => setIsHovered(true)}
-      onTouchEnd={() => {
-        setIsHovered(false);
-      }}
       onClick={handleClick}
       className={`
         relative p-5 rounded-2xl cursor-pointer transition-all duration-300
-        ${isSelected ? "glass-strong prism-shift" : "glass"}
-        ${!isSelected && isHovered ? "bg-blur-surface-hover" : ""}
+        ${isSelected ? "glass-strong prism-shift" : "glass hover:bg-blur-surface-hover"}
+        group
       `}
       style={{
-        opacity: isActive ? 1 : 0.78,
+        opacity: isSelected ? 1 : undefined,
       }}
       whileTap={{ scale: 0.98 }}
     >
-      <div className="text-sm leading-relaxed text-blur-text">
+      <div
+        className="text-sm leading-relaxed text-blur-text transition-opacity duration-300"
+        style={{ opacity: isSelected ? 1 : 0.78 }}
+      >
         {option.text}
       </div>
 

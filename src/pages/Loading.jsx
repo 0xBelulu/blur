@@ -52,7 +52,7 @@ export default function Loading() {
         >
           <motion.h2
             className="text-xl font-medium text-blur-text mb-6"
-            animate={{ filter: ["blur(0px)", "blur(1px)", "blur(0px)"] }}
+            animate={{ opacity: [0.85, 1, 0.85] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           >
             正在精确模糊计算中

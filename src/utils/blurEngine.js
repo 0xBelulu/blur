@@ -1,6 +1,5 @@
 import { DIMENSIONS, DIMENSION_KEYS } from "../data/dimensions.js";
 import { ARCHETYPE_PROFILES } from "../data/archetypeProfiles.js";
-import { projectTo3D } from "../data/projection.js";
 
 /**
  * 纯随机回答下每个原型的余弦相似度分布参数（20000 次 Monte Carlo）
@@ -34,33 +33,6 @@ const RANDOM_STDS = {
 /** Softmax 温度，控制概率分布的锐度。T 越大分布越均匀 */
 const SOFTMAX_TEMPERATURE = 2.0;
 
-export const ARCHETYPE_VECTORS = {};
-export const VECTOR_AXES = [
-  { key: "x", label: "", color: [180, 185, 195] },
-  { key: "y", label: "", color: [195, 175, 155] },
-  { key: "z", label: "", color: [155, 180, 195] },
-];
-
-/**
- * 根据 archetypeProfiles 自动生成 3D 空间坐标
- * 新增人格时此处无需手动维护
- */
-function initArchetypeVectors() {
-  for (const [key, profile] of Object.entries(ARCHETYPE_PROFILES)) {
-    const pos = projectTo3D(profile.vector);
-    ARCHETYPE_VECTORS[key] = {
-      pos,
-      color: profile.color,
-      label: profile.title,
-    };
-  }
-}
-initArchetypeVectors();
-
-export function mapTo3D(userVector) {
-  return projectTo3D(userVector);
-}
-
 function cosineSimilarity(a, b) {
   let dot = 0;
   let normA = 0;
@@ -80,8 +52,14 @@ function cosineSimilarity(a, b) {
 /**
  * 从原始答案中解析出用户维度的累加值
  */
+const questionMapCache = new WeakMap();
+
 function accumulateDimensions(answers, questions) {
-  const questionMap = new Map(questions.map((q) => [q.id, q]));
+  let questionMap = questionMapCache.get(questions);
+  if (!questionMap) {
+    questionMap = new Map(questions.map((q) => [q.id, q]));
+    questionMapCache.set(questions, questionMap);
+  }
   const dims = {};
 
   for (const answer of answers) {

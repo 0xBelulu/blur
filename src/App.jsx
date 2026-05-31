@@ -15,7 +15,7 @@ const pageVariants = {
     opacity: 0,
     x: direction > 0 ? 60 : -60,
     scale: 0.97,
-    filter: "blur(4px)",
+    filter: "blur(2px)",
   }),
   center: {
     opacity: 1,
@@ -27,7 +27,7 @@ const pageVariants = {
     opacity: 0,
     x: direction > 0 ? -60 : 60,
     scale: 0.97,
-    filter: "blur(4px)",
+    filter: "blur(2px)",
   }),
 };
 
@@ -82,6 +82,7 @@ export default function App() {
             animate="center"
             exit="exit"
             transition={pageTransition}
+            style={{ willChange: "filter, transform, opacity", contain: "layout style paint" }}
           >
             <Landing onStart={handleStart} />
           </motion.div>
@@ -96,6 +97,7 @@ export default function App() {
             animate="center"
             exit="exit"
             transition={pageTransition}
+            style={{ willChange: "filter, transform, opacity", contain: "layout style paint" }}
           >
             <Test onComplete={handleComplete} />
           </motion.div>
@@ -110,6 +112,7 @@ export default function App() {
             animate="center"
             exit="exit"
             transition={pageTransition}
+            style={{ willChange: "filter, transform, opacity", contain: "layout style paint" }}
           >
             <Loading />
           </motion.div>
@@ -124,6 +127,7 @@ export default function App() {
             animate="center"
             exit="exit"
             transition={pageTransition}
+            style={{ willChange: "filter, transform, opacity", contain: "layout style paint" }}
           >
             <Result result={result} onRestart={handleRestart} />
           </motion.div>

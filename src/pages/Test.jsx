@@ -264,10 +264,11 @@ export default function Test({ onComplete }) {
         {isTransition ? (
           <motion.div
             key="transition"
-            initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}
+            initial={{ opacity: 0, y: 30, filter: "blur(3px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, y: -30, filter: "blur(10px)" }}
+            exit={{ opacity: 0, y: -30, filter: "blur(3px)" }}
             transition={{ duration: 0.5, ease: "easeInOut" }}
+            style={{ willChange: "filter, transform, opacity" }}
             className="flex-1 flex flex-col items-center justify-center text-center"
           >
             <motion.div
@@ -309,10 +310,11 @@ export default function Test({ onComplete }) {
         ) : (
           <motion.div
             key={`question-${currentQuestion.id}`}
-            initial={{ opacity: 0, x: 40, filter: "blur(10px)" }}
+            initial={{ opacity: 0, x: 40, filter: "blur(3px)" }}
             animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, x: -40, filter: "blur(10px)" }}
+            exit={{ opacity: 0, x: -40, filter: "blur(3px)" }}
             transition={{ duration: 0.45, ease: "easeInOut" }}
+            style={{ willChange: "filter, transform, opacity" }}
             className="flex-1 flex flex-col"
           >
             <div className="mb-6">

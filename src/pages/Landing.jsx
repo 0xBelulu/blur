@@ -38,31 +38,25 @@ export default function Landing({ onStart }) {
     <div className="flex-1 flex flex-col md:flex-row items-center md:justify-center px-6 md:px-16 lg:px-24 pt-20 pb-12 md:py-16 min-h-[100svh] relative overflow-hidden max-w-6xl mx-auto w-full">
       {/* Background ambience */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <motion.div
+        <div
           className="absolute top-[12%] left-[10%] w-36 h-36 rounded-full bg-blur-accent/8 blur-3xl"
-          animate={{ scale: [1, 1.3, 1], opacity: [0.2, 0.4, 0.2] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          style={{ animation: "orb-scale-1 10s ease-in-out infinite" }}
         />
-        <motion.div
+        <div
           className="absolute bottom-[18%] right-[12%] w-44 h-44 rounded-full bg-blur-accent-cool/8 blur-3xl"
-          animate={{ scale: [1.3, 1, 1.3], opacity: [0.15, 0.35, 0.15] }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+          style={{ animation: "orb-scale-2 12s ease-in-out infinite" }}
         />
-        <motion.div
+        <div
           className="absolute top-[48%] right-[28%] w-24 h-24 rounded-full bg-blur-accent-warm/8 blur-2xl"
-          animate={{ y: [0, -20, 0], x: [0, 10, 0], opacity: [0.1, 0.25, 0.1] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          style={{ animation: "orb-drift 8s ease-in-out infinite" }}
         />
-        <motion.div
+        <div
           className="absolute bottom-[38%] left-[14%] w-20 h-20 rounded-full bg-blur-accent-rose/6 blur-2xl"
-          animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
-          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          style={{ animation: "orb-scale-3 9s ease-in-out 2s infinite" }}
         />
-        {/* Desktop-only large left glow */}
-        <motion.div
+        <div
           className="hidden md:block absolute bottom-[8%] left-[-6%] w-72 h-72 rounded-full bg-blur-accent/5 blur-3xl"
-          animate={{ scale: [1, 1.15, 1], opacity: [0.1, 0.2, 0.1] }}
-          transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
+          style={{ animation: "orb-scale-4 11s ease-in-out infinite" }}
         />
       </div>
 
@@ -165,9 +159,9 @@ export default function Landing({ onStart }) {
           <AnimatePresence mode="wait">
             <motion.p
               key={tip}
-              initial={{ opacity: 0, y: 6, filter: "blur(3px)" }}
+              initial={{ opacity: 0, y: 6, filter: "blur(2px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: -6, filter: "blur(3px)" }}
+              exit={{ opacity: 0, y: -6, filter: "blur(2px)" }}
               transition={{ duration: 0.5, ease: "easeInOut" }}
               className="text-[13px] text-blur-text-light italic leading-relaxed"
             >

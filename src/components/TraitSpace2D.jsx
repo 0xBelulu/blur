@@ -6,6 +6,8 @@ function rgba(rgb, a) {
   return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`;
 }
 
+const THROTTLE_IDLE = 4;
+
 export default function TraitSpace2D({
   userVector,
   xKey,
@@ -19,14 +21,23 @@ export default function TraitSpace2D({
   const startRef = useRef(0);
   const hoveredRef = useRef(null);
   const onHoverRef = useRef(onHoverArchetype);
+  const userVectorRef = useRef(userVector);
+  const frameCountRef = useRef(0);
+  const idleRef = useRef(false);
 
   useEffect(() => {
     onHoverRef.current = onHoverArchetype;
   });
 
   useEffect(() => {
+    userVectorRef.current = userVector;
+  }, [userVector]);
+
+  useEffect(() => {
     startRef.current = performance.now();
     hoveredRef.current = null;
+    idleRef.current = false;
+    frameCountRef.current = 0;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -37,7 +48,6 @@ export default function TraitSpace2D({
     const ctx = canvas.getContext("2d");
     ctx.scale(dpr, dpr);
 
-    // toScreen is only used inside this effect
     const toScreen = (x, y, progress = 1) => {
       const cx = width / 2;
       const cy = height / 2;
@@ -45,7 +55,6 @@ export default function TraitSpace2D({
       return { x: cx + x * scale, y: cy - y * scale };
     };
 
-    // archetypes are computed once per effect, not on every render
     const archetypes = Object.entries(ARCHETYPE_PROFILES).map(([key, profile]) => ({
       key,
       label: profile.title,
@@ -53,6 +62,13 @@ export default function TraitSpace2D({
       x: profile.vector[xKey] || 0,
       y: profile.vector[yKey] || 0,
     }));
+
+    const bgCx = width / 2;
+    const bgCy = height / 2;
+    const bgGrad = ctx.createRadialGradient(bgCx, bgCy, 20, bgCx, bgCy, width * 0.48);
+    bgGrad.addColorStop(0, "rgba(240,238,234,0.7)");
+    bgGrad.addColorStop(0.7, "rgba(240,238,234,0.25)");
+    bgGrad.addColorStop(1, "rgba(240,238,234,0)");
 
     const handlePointerMove = (e) => {
       const rect = canvas.getBoundingClientRect();
@@ -71,12 +87,19 @@ export default function TraitSpace2D({
         }
       });
 
+      const prev = hoveredRef.current;
       hoveredRef.current = closest;
+      if (prev !== closest) {
+        idleRef.current = false;
+        frameCountRef.current = 0;
+      }
       if (onHoverRef.current) onHoverRef.current(closest);
     };
 
     const handlePointerLeave = () => {
       hoveredRef.current = null;
+      idleRef.current = false;
+      frameCountRef.current = 0;
       if (onHoverRef.current) onHoverRef.current(null);
     };
 
@@ -88,19 +111,27 @@ export default function TraitSpace2D({
       const p = Math.min(1, elapsed / 700);
       const eased = 1 - Math.pow(1 - p, 3);
 
+      if (p >= 1) {
+        frameCountRef.current++;
+        if (frameCountRef.current > 30 && !idleRef.current) {
+          idleRef.current = true;
+          frameCountRef.current = 0;
+        }
+        if (idleRef.current && frameCountRef.current % THROTTLE_IDLE !== 0) {
+          animRef.current = requestAnimationFrame(draw);
+          return;
+        }
+      }
+
+      const uv = userVectorRef.current;
+      const ux = uv?.[xKey] || 0;
+      const uy = uv?.[yKey] || 0;
+
       ctx.clearRect(0, 0, width, height);
 
-      // radial background
-      const cx = width / 2;
-      const cy = height / 2;
-      const bg = ctx.createRadialGradient(cx, cy, 20, cx, cy, width * 0.48);
-      bg.addColorStop(0, "rgba(240,238,234,0.7)");
-      bg.addColorStop(0.7, "rgba(240,238,234,0.25)");
-      bg.addColorStop(1, "rgba(240,238,234,0)");
-      ctx.fillStyle = bg;
+      ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, width, height);
 
-      // grid lines
       ctx.setLineDash([2, 3]);
       ctx.lineWidth = 0.8;
       const gridAlpha = 0.2;
@@ -122,7 +153,6 @@ export default function TraitSpace2D({
       }
       ctx.setLineDash([]);
 
-      // axes
       const xStart = toScreen(-1, 0, eased);
       const xEnd = toScreen(1, 0, eased);
       const yStart = toScreen(0, -1, eased);
@@ -142,7 +172,6 @@ export default function TraitSpace2D({
       ctx.lineWidth = 1.2;
       ctx.stroke();
 
-      // axis arrows
       function drawArrow(from, to, color) {
         const dir = { x: to.x - from.x, y: to.y - from.y };
         const len = Math.hypot(dir.x, dir.y);
@@ -162,30 +191,24 @@ export default function TraitSpace2D({
       drawArrow(xStart, xEnd, "rgba(180,185,195,0.55)");
       drawArrow(yStart, yEnd, "rgba(195,175,155,0.55)");
 
-      // axis labels
       const xInfo = DIMENSIONS[xKey];
       const yInfo = DIMENSIONS[yKey];
       const center = toScreen(0, 0, eased);
       ctx.font = "10px system-ui,-apple-system,sans-serif";
       ctx.fillStyle = "rgba(140,132,122,0.75)";
 
-      // x negative
       ctx.textAlign = "right";
       ctx.textBaseline = "middle";
       ctx.fillText(xInfo.negative, xStart.x - 10, xStart.y);
-      // x positive
       ctx.textAlign = "left";
       ctx.fillText(xInfo.positive, xEnd.x + 10, xEnd.y);
-      // y negative
       ctx.textAlign = "right";
       ctx.textBaseline = "middle";
       ctx.fillText(yInfo.negative, center.x - 8, yStart.y + 8);
-      // y positive
       ctx.textAlign = "right";
       ctx.textBaseline = "middle";
       ctx.fillText(yInfo.positive, center.x - 8, yEnd.y - 8);
 
-      // archetype dots
       const currentHover = hoveredRef.current;
 
       archetypes.forEach((arch) => {
@@ -212,7 +235,6 @@ export default function TraitSpace2D({
         ctx.lineWidth = 0.8;
         ctx.stroke();
 
-        // label
         ctx.font = `${isHover ? "bold " : ""}10px system-ui,-apple-system,sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "bottom";
@@ -220,9 +242,6 @@ export default function TraitSpace2D({
         ctx.fillText(arch.label, pos.x, pos.y - size - 4);
       });
 
-      // user point
-      const ux = userVector?.[xKey] || 0;
-      const uy = userVector?.[yKey] || 0;
       const upos = toScreen(ux, uy, eased);
       const pulse = 0.75 + Math.sin(elapsed * 0.0018) * 0.25;
 
@@ -264,7 +283,7 @@ export default function TraitSpace2D({
       canvas.removeEventListener("pointermove", handlePointerMove);
       canvas.removeEventListener("pointerleave", handlePointerLeave);
     };
-  }, [width, height, xKey, yKey, userVector]);
+  }, [width, height, xKey, yKey]);
 
   return (
     <canvas
