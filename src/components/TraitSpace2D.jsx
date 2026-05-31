@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect } from "react";
 import { ARCHETYPE_PROFILES } from "../data/archetypeProfiles.js";
 import { DIMENSIONS } from "../data/dimensions.js";
 
@@ -16,61 +16,18 @@ export default function TraitSpace2D({
 }) {
   const canvasRef = useRef(null);
   const animRef = useRef(null);
-  const timeRef = useRef(0);
-  const progressRef = useRef(0);
+  const startRef = useRef(0);
   const hoveredRef = useRef(null);
-
-  const toScreen = useCallback(
-    (x, y, progress = 1) => {
-      const cx = width / 2;
-      const cy = height / 2;
-      const scale = Math.min(width, height) * 0.32 * progress;
-      return { x: cx + x * scale, y: cy - y * scale };
-    },
-    [width, height]
-  );
-
-  const archetypes = Object.entries(ARCHETYPE_PROFILES).map(([key, profile]) => ({
-    key,
-    label: profile.title,
-    color: profile.color,
-    x: profile.vector[xKey] || 0,
-    y: profile.vector[yKey] || 0,
-  }));
-
-  const handlePointerMove = useCallback(
-    (e) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      const mx = (e.clientX - rect.left) * (width / rect.width);
-      const my = (e.clientY - rect.top) * (height / rect.height);
-
-      let closest = null;
-      let closestDist = Infinity;
-      const eased = 1 - Math.pow(1 - progressRef.current, 3);
-
-      archetypes.forEach((arch) => {
-        const pos = toScreen(arch.x, arch.y, eased);
-        const dist = Math.hypot(pos.x - mx, pos.y - my);
-        if (dist < 22 && dist < closestDist) {
-          closestDist = dist;
-          closest = arch.key;
-        }
-      });
-
-      hoveredRef.current = closest;
-      if (onHoverArchetype) onHoverArchetype(closest);
-    },
-    [archetypes, toScreen, width, height, onHoverArchetype]
-  );
-
-  const handlePointerLeave = useCallback(() => {
-    hoveredRef.current = null;
-    if (onHoverArchetype) onHoverArchetype(null);
-  }, [onHoverArchetype]);
+  const onHoverRef = useRef(onHoverArchetype);
 
   useEffect(() => {
+    onHoverRef.current = onHoverArchetype;
+  });
+
+  useEffect(() => {
+    startRef.current = performance.now();
+    hoveredRef.current = null;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -80,17 +37,55 @@ export default function TraitSpace2D({
     const ctx = canvas.getContext("2d");
     ctx.scale(dpr, dpr);
 
+    // toScreen is only used inside this effect
+    const toScreen = (x, y, progress = 1) => {
+      const cx = width / 2;
+      const cy = height / 2;
+      const scale = Math.min(width, height) * 0.32 * progress;
+      return { x: cx + x * scale, y: cy - y * scale };
+    };
+
+    // archetypes are computed once per effect, not on every render
+    const archetypes = Object.entries(ARCHETYPE_PROFILES).map(([key, profile]) => ({
+      key,
+      label: profile.title,
+      color: profile.color,
+      x: profile.vector[xKey] || 0,
+      y: profile.vector[yKey] || 0,
+    }));
+
+    const handlePointerMove = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) * (width / rect.width);
+      const my = (e.clientY - rect.top) * (height / rect.height);
+
+      let closest = null;
+      let closestDist = Infinity;
+
+      archetypes.forEach((arch) => {
+        const pos = toScreen(arch.x, arch.y, 1);
+        const dist = Math.hypot(pos.x - mx, pos.y - my);
+        if (dist < 22 && dist < closestDist) {
+          closestDist = dist;
+          closest = arch.key;
+        }
+      });
+
+      hoveredRef.current = closest;
+      if (onHoverRef.current) onHoverRef.current(closest);
+    };
+
+    const handlePointerLeave = () => {
+      hoveredRef.current = null;
+      if (onHoverRef.current) onHoverRef.current(null);
+    };
+
     canvas.addEventListener("pointermove", handlePointerMove);
     canvas.addEventListener("pointerleave", handlePointerLeave);
 
-    const draw = () => {
-      timeRef.current += 1;
-      const t = timeRef.current;
-
-      if (progressRef.current < 1) {
-        progressRef.current = Math.min(1, progressRef.current + 0.025);
-      }
-      const p = progressRef.current;
+    const draw = (timestamp) => {
+      const elapsed = timestamp - startRef.current;
+      const p = Math.min(1, elapsed / 700);
       const eased = 1 - Math.pow(1 - p, 3);
 
       ctx.clearRect(0, 0, width, height);
@@ -170,6 +165,7 @@ export default function TraitSpace2D({
       // axis labels
       const xInfo = DIMENSIONS[xKey];
       const yInfo = DIMENSIONS[yKey];
+      const center = toScreen(0, 0, eased);
       ctx.font = "10px system-ui,-apple-system,sans-serif";
       ctx.fillStyle = "rgba(140,132,122,0.75)";
 
@@ -181,12 +177,13 @@ export default function TraitSpace2D({
       ctx.textAlign = "left";
       ctx.fillText(xInfo.positive, xEnd.x + 10, xEnd.y);
       // y negative
-      ctx.textAlign = "center";
-      ctx.textBaseline = "top";
-      ctx.fillText(yInfo.negative, xStart.x, yStart.y + 10);
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      ctx.fillText(yInfo.negative, center.x - 8, yStart.y + 8);
       // y positive
-      ctx.textBaseline = "bottom";
-      ctx.fillText(yInfo.positive, xStart.x, yEnd.y - 10);
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      ctx.fillText(yInfo.positive, center.x - 8, yEnd.y - 8);
 
       // archetype dots
       const currentHover = hoveredRef.current;
@@ -227,7 +224,7 @@ export default function TraitSpace2D({
       const ux = userVector?.[xKey] || 0;
       const uy = userVector?.[yKey] || 0;
       const upos = toScreen(ux, uy, eased);
-      const pulse = 0.75 + Math.sin(t * 0.03) * 0.25;
+      const pulse = 0.75 + Math.sin(elapsed * 0.0018) * 0.25;
 
       const glow = ctx.createRadialGradient(upos.x, upos.y, 0, upos.x, upos.y, 24);
       glow.addColorStop(0, `rgba(74,69,64,${0.25 * pulse})`);
@@ -267,7 +264,7 @@ export default function TraitSpace2D({
       canvas.removeEventListener("pointermove", handlePointerMove);
       canvas.removeEventListener("pointerleave", handlePointerLeave);
     };
-  }, [width, height, xKey, yKey, userVector, archetypes, toScreen, handlePointerMove, handlePointerLeave]);
+  }, [width, height, xKey, yKey, userVector]);
 
   return (
     <canvas

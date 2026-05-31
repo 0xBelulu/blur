@@ -88,9 +88,10 @@ export default function Result({ result, onRestart }) {
       {/* Left: Trait Space + Meters */}
       <div className="flex flex-col items-center md:items-start md:w-[420px] shrink-0">
         <motion.div
+          key={activePair.key}
           initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.9, ease: "easeOut" }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
           className="relative mb-3"
           style={{ width: vectorSize, height: vectorSize }}
         >
@@ -119,21 +120,32 @@ export default function Result({ result, onRestart }) {
         </motion.div>
 
         {/* Pair selector */}
-        <div className="w-full flex flex-wrap justify-center md:justify-start gap-1.5 mb-4">
+        <motion.div className="relative flex rounded-2xl glass p-1 mb-4 w-full">
           {DIMENSION_PAIRS.map((pair, i) => (
             <button
               key={pair.key}
               onClick={() => setActivePairIndex(i)}
-              className={`px-2.5 py-1 rounded-lg text-[10px] transition-colors cursor-pointer ${
-                activePairIndex === i
-                  ? "bg-blur-surface text-blur-text font-medium shadow-sm"
-                  : "text-blur-text-muted hover:text-blur-text hover:bg-blur-surface-hover"
-              }`}
+              className="flex-1 relative z-10 px-1 py-1.5 text-[10px] cursor-pointer"
             >
-              {pair.label}
+              {activePairIndex === i && (
+                <motion.div
+                  layoutId="activePairTab"
+                  className="absolute inset-0 rounded-xl bg-blur-surface shadow-sm"
+                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                />
+              )}
+              <span
+                className={`relative z-10 transition-colors duration-300 ${
+                  activePairIndex === i
+                    ? "text-blur-text font-medium"
+                    : "text-blur-text-muted hover:text-blur-text"
+                }`}
+              >
+                {pair.label}
+              </span>
             </button>
           ))}
-        </div>
+        </motion.div>
 
         {/* Dimension Meters - desktop sticky side panel */}
         <motion.div
