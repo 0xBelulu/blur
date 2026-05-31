@@ -7,27 +7,27 @@ import { ARCHETYPE_PROFILES } from "../data/archetypeProfiles.js";
  * z-score 标准化后所有原型在随机输入下均值为 0、方差为 1，消除基线偏差
  */
 const RANDOM_BASELINES = {
-  rainbow: 0.6848,
-  drift: 0.5362,
-  tide: 0.4824,
-  negative: 0.4755,
-  still: 0.4131,
-  mist: 0.3271,
-  salt: 0.3145,
-  silhouette: 0.1885,
-  chime: 0.1268,
+  rainbow: 0.6844,
+  drift: 0.5356,
+  tide: 0.4817,
+  negative: 0.4766,
+  still: 0.4139,
+  mist: 0.3284,
+  salt: 0.3130,
+  silhouette: 0.1898,
+  chime: 0.1254,
 };
 
 const RANDOM_STDS = {
-  mist: 0.0949,
-  chime: 0.0950,
-  drift: 0.0718,
-  still: 0.0860,
-  rainbow: 0.0432,
+  silhouette: 0.0966,
+  mist: 0.0947,
+  chime: 0.0946,
+  still: 0.0861,
+  tide: 0.0850,
   salt: 0.0836,
-  negative: 0.0746,
-  tide: 0.0846,
-  silhouette: 0.0967,
+  negative: 0.0745,
+  drift: 0.0722,
+  rainbow: 0.0433,
 };
 
 /** Softmax 温度，控制概率分布的锐度。T 越大分布越均匀 */
