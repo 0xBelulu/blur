@@ -2,39 +2,33 @@
 
 ## Stack
 - React 19 + Vite 8 + Tailwind CSS v4 (plain `.jsx`, no TypeScript)
-- **Framer Motion** for page transitions, **html2canvas** for screenshot export, **lucide-react** for icons
-- Tailwind v4: configured via `@tailwindcss/vite` plugin and `@import "tailwindcss"` in CSS (no `tailwind.config.js`)
-- `@types/react` installed for editor intellisense only — do not add `.ts/.tsx` files
+- Framer Motion (page transitions), lucide-react (icons)
+- Tailwind v4: `@tailwindcss/vite` plugin, `@import "tailwindcss"` in CSS, no `tailwind.config.js`
+- `@types/react` for editor intellisense only — do not add `.ts/.tsx` files
 
 ## Commands
 | Command | Purpose |
 |---------|---------|
 | `npm run dev` | Dev server with HMR |
 | `npm run build` | Production build |
-| `npm run lint` | ESLint v10 flat config (single command, no typecheck step) |
+| `npm run lint` | ESLint v10 (single command, no typecheck) |
 | `npm run preview` | Preview production build |
 
-No test framework — there are no test scripts or test files.
+No test framework — zero test files.
 
 ## Architecture
-- **App.jsx** — screen router (state machine: `landing → test → loading → result`), uses `AnimatePresence` with a `custom=direction` prop for slide direction; all state lives in App, pages receive callbacks via props. No routing library.
-- **src/pages/** — 4 screens: `Landing`, `Test`, `Loading`, `Result`
-- **src/components/** — `BlurCard`, `CloudCanvas` (canvas at device pixel ratio), `DimensionMeters` (5-bar gauge), `FocusSlider` (range input), `GlassButton` (3 variants), `ShareButton` (html2canvas download + Web Share API, clipboard fallback), `TagParticles`, `TraitRadar` (SVG radar chart), `VectorSpace3D` (3D canvas visualization)
-- **src/data/questions.js** — 10 questions (single-choice with `optionId`, scale with `traits`, rank-order with `rankOrder`), ~70 trait tags with weights, 5 archetype descriptions, dimension configs (all UI text is Chinese)
-- **src/utils/blurEngine.js** — `generateResult(answers)` scores traits (weight × count + seed-based noise), picks top 5 tags, determines archetype, generates cloud particle data; also exports `mapTo3D`, `ARCHETYPE_VECTORS`, `VECTOR_AXES`
-- **src/index.css** — Tailwind v4 `@theme` custom color tokens (`--color-blur-*`), glass morphism classes, custom `blur-slider` range input, keyframe animations, custom scrollbar
-- **public/** — `favicon.svg` (referenced in index.html); `icons.svg` is unused
+- **App.jsx** — state machine (`landing → test → loading → result`), all state lives here, pages receive callbacks via props. No routing library. Uses `AnimatePresence mode="wait"` with `custom=direction` for slide transitions. Loading has a hardcoded **3.5s `setTimeout`**.
+- **Test.jsx two-phase flow**: first ~10 questions required with progress bar, then "已获得基本画像" transition, then optional explore phase (~62 more questions) that can be ended anytime.
+- **Question bank**: ~72 questions across 3 data files re-exported from `src/data/questions.js`: `questions-single.js` (40, 4-choice), `questions-scale.js` (16, Likert 1-5), `questions-rank.js` (16, rank 4). ~60/20/20 split. All UI text is Chinese.
+- **src/data/tags.js** — ~70 trait tags in 9 archetype groups, 9 archetype descriptions (with narrative sub-sections `innerWorld`/`inRelation`/`hiddenSide`), 9 dimension configs.
+- **src/utils/blurEngine.js** — `generateResult(answers)` scores traits (weight × count + seed-based noise), picks top 5 tags, determines archetype + secondary archetype, computes suppressed traits, returns `dimensionScores`. Also exports `mapTo3D`, `ARCHETYPE_VECTORS`, `VECTOR_AXES`.
+- **Components** (7): `BlurCard`, `DimensionMeters`, `GlassButton` (3 variants), `ProgressBar`, `QuestionBank`, `TraitRadar` (SVG), `VectorSpace3D` (3D canvas). All default exports.
+- **src/index.css** — `@theme` custom color tokens (`--color-blur-*`), glass morphism classes (`.glass`, `.glass-strong`), gradient border (`.prism-shift`), animation utilities (`animate-float`, `animate-pulse-glow`, `animate-drift`, `animate-breathe*`), custom range input (`.blur-slider`), custom scrollbar.
 
-## Style & configuration quirks
-- Custom theme colors: `blur-bg`, `blur-surface`, `blur-border`, `blur-text`, `blur-accent`, etc. (all in `index.css` `@theme` block)
-- Glass morphism utility classes: `.glass` and `.glass-strong`; gradient border via `.prism-shift`
-- Animation utility classes: `animate-float`, `animate-pulse-glow`, `animate-drift`, `animate-breathe*`
-- Custom range input: use class `.blur-slider` (styled track + thumb)
-- React: `useState`, `useCallback`, arrow functions, named exports for pages/components
-- ESLint v10: config imports `defineConfig` and `globalIgnores` from `eslint/config` (subpath — not from `eslint` package root); uses `reactHooks.configs.flat.recommended` and `reactRefresh.configs.vite`; `globalIgnores(['dist'])` ignores build output
-
-## Quirks & gotchas
-- Loading screen uses a hardcoded **3.5s `setTimeout`** in `App.jsx` before transitioning to Result
-- `CloudCanvas` renders at `devicePixelRatio` for sharp output
-- `ShareButton` falls back to clipboard copy when Web Share API is unavailable
-- `public/icons.svg` is not referenced anywhere in the app
+## Conventions
+- Components: `export default function Component(...)` with destructured props; named exports for util functions/constants.
+- State: `useState`/`useCallback`/`useRef` (no custom hooks except inline `useRotatingTip` in Landing.jsx).
+- `VectorSpace3D` uses refs (`hoveredRef`, `rotRef`, `dataRef`) over state to avoid useEffect dependency rebuilds.
+- `BlurCard` uses `navigator?.vibrate?.(10)` for optional haptic feedback.
+- ESLint v10: imports `defineConfig`/`globalIgnores` from `eslint/config` subpath (not root `eslint`); uses `reactHooks.configs.flat.recommended` and `reactRefresh.configs.vite`.
+- CSS theme colors referenced as Tailwind classes: `bg-blur-bg`, `text-blur-text`, `border-blur-border`, etc.
