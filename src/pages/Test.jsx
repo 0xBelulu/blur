@@ -122,6 +122,41 @@ export default function Test({ onComplete }) {
     onComplete(valid);
   };
 
+  const buildAnswer = (question, currentRankOrder, currentScaleValue, currentSelectedOption) => {
+    if (!question) return null;
+
+    if (question.type === "rank") {
+      if (currentRankOrder.length > 0) {
+        return {
+          questionId: question.id,
+          type: "rank",
+          rankOrder: currentRankOrder,
+          options: question.options,
+        };
+      }
+    } else if (question.type === "scale") {
+      if (currentScaleValue !== null) {
+        return {
+          questionId: question.id,
+          type: "scale",
+          value: currentScaleValue,
+          traits: question.traits,
+        };
+      }
+    } else {
+      if (currentSelectedOption) {
+        return {
+          questionId: question.id,
+          type: "single",
+          optionId: currentSelectedOption.id,
+          traits: currentSelectedOption.traits,
+        };
+      }
+    }
+
+    return null;
+  };
+
   const handleNext = () => {
     if (isTransition) return;
 
@@ -132,36 +167,7 @@ export default function Test({ onComplete }) {
       if (!isRankQuestion && !isScaleQuestion && !selectedOption) return;
     }
 
-    // 构建答案
-    let newAnswer = null;
-    if (isRankQuestion) {
-      if (rankOrder.length > 0) {
-        newAnswer = {
-          questionId: currentQuestion.id,
-          type: "rank",
-          rankOrder,
-          options: currentQuestion.options,
-        };
-      }
-    } else if (isScaleQuestion) {
-      if (scaleValue !== null) {
-        newAnswer = {
-          questionId: currentQuestion.id,
-          type: "scale",
-          value: scaleValue,
-          traits: currentQuestion.traits,
-        };
-      }
-    } else {
-      if (selectedOption) {
-        newAnswer = {
-          questionId: currentQuestion.id,
-          type: "single",
-          optionId: selectedOption.id,
-          traits: selectedOption.traits,
-        };
-      }
-    }
+    const newAnswer = buildAnswer(currentQuestion, rankOrder, scaleValue, selectedOption);
 
     const newAnswers = [...answers];
     newAnswers[currentIndex] = newAnswer;
@@ -185,32 +191,7 @@ export default function Test({ onComplete }) {
   };
 
   const handleSeeResult = () => {
-    // 保存当前答案（如果有）
-    let newAnswer = null;
-    if (!isTransition && currentQuestion) {
-      if (isRankQuestion && rankOrder.length > 0) {
-        newAnswer = {
-          questionId: currentQuestion.id,
-          type: "rank",
-          rankOrder,
-          options: currentQuestion.options,
-        };
-      } else if (isScaleQuestion && scaleValue !== null) {
-        newAnswer = {
-          questionId: currentQuestion.id,
-          type: "scale",
-          value: scaleValue,
-          traits: currentQuestion.traits,
-        };
-      } else if (selectedOption) {
-        newAnswer = {
-          questionId: currentQuestion.id,
-          type: "single",
-          optionId: selectedOption.id,
-          traits: selectedOption.traits,
-        };
-      }
-    }
+    const newAnswer = isTransition ? null : buildAnswer(currentQuestion, rankOrder, scaleValue, selectedOption);
 
     const newAnswers = [...answers];
     if (newAnswer) {
