@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 
 const CX = 120;
 const CY = 120;
-const MAX_R = 80;
+const MAX_R = 85;
 const GRID_LEVELS = [0.2, 0.4, 0.6, 0.8, 1.0];
 
 function getPoint(index, radius, num) {
@@ -21,7 +21,7 @@ function getPolygonPoints(radius, num) {
 }
 
 function getLabelPosition(index, num) {
-  const p = getPoint(index, MAX_R + 22, num);
+  const p = getPoint(index, MAX_R + 24, num);
   return p;
 }
 

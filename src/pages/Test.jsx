@@ -90,7 +90,7 @@ export default function Test({ onComplete }) {
     } else {
       setSelectedOption(
         answer.optionId
-          ? { id: answer.optionId, traits: answer.traits }
+          ? { id: answer.optionId }
           : null
       );
       setRankOrder([]);
@@ -131,7 +131,6 @@ export default function Test({ onComplete }) {
           questionId: question.id,
           type: "rank",
           rankOrder: currentRankOrder,
-          options: question.options,
         };
       }
     } else if (question.type === "scale") {
@@ -140,7 +139,6 @@ export default function Test({ onComplete }) {
           questionId: question.id,
           type: "scale",
           value: currentScaleValue,
-          traits: question.traits,
         };
       }
     } else {
@@ -149,7 +147,6 @@ export default function Test({ onComplete }) {
           questionId: question.id,
           type: "single",
           optionId: currentSelectedOption.id,
-          traits: currentSelectedOption.traits,
         };
       }
     }

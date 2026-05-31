@@ -1,225 +1,223 @@
-import {
-  tagPool,
-  archetypeDescriptions,
-  DIMENSIONS,
-  ARCHETYPE_SUPPRESSED,
-} from "../data/questions";
+import { DIMENSIONS, DIMENSION_KEYS } from "../data/dimensions.js";
+import { ARCHETYPE_PROFILES } from "../data/archetypeProfiles.js";
+import { projectTo3D } from "../data/projection.js";
 
-export const ARCHETYPE_VECTORS = {
-  mist: { pos: [1, 0, -1], color: [180, 185, 195], label: "雾" },
-  chime: { pos: [0, 1, -1], color: [195, 175, 155], label: "风铃" },
-  drift: { pos: [-1, 0, -1], color: [155, 180, 195], label: "漂流者" },
-  still: { pos: [0, -1, -1], color: [155, 165, 185], label: "静观者" },
-  rainbow: { pos: [0, 0, 1], color: [185, 165, 195], label: "虹" },
-  salt: { pos: [0.7, 0.7, 0], color: [195, 190, 175], label: "盐" },
-  negative: { pos: [-0.7, -0.7, 0.5], color: [170, 170, 185], label: "底片" },
-  tide: { pos: [-0.7, 0.7, -0.3], color: [160, 185, 180], label: "潮汐" },
-  silhouette: { pos: [0.7, -0.7, 0.5], color: [175, 165, 170], label: "剪影" },
-};
-
+export const ARCHETYPE_VECTORS = {};
 export const VECTOR_AXES = [
   { key: "x", label: "", color: [180, 185, 195] },
   { key: "y", label: "", color: [195, 175, 155] },
   { key: "z", label: "", color: [155, 180, 195] },
 ];
 
-export function mapTo3D(scores) {
-  const to01 = (v) => Math.max(0, Math.min(1, ((v ?? 0.5) - 0.25) / 0.75));
+/**
+ * 根据 archetypeProfiles 自动生成 3D 空间坐标
+ * 新增人格时此处无需手动维护
+ */
+function initArchetypeVectors() {
+  for (const [key, profile] of Object.entries(ARCHETYPE_PROFILES)) {
+    const pos = projectTo3D(profile.vector);
+    ARCHETYPE_VECTORS[key] = {
+      pos,
+      color: profile.color,
+      label: profile.title,
+    };
+  }
+}
+initArchetypeVectors();
 
-  let x = 0, y = 0, z = 0, totalWeight = 0;
-  for (const [key, arch] of Object.entries(ARCHETYPE_VECTORS)) {
-    const s = to01(scores?.[key]?.score);
-    const w = s * s;
-    x += arch.pos[0] * w;
-    y += arch.pos[1] * w;
-    z += arch.pos[2] * w;
-    totalWeight += w;
-  }
-  if (totalWeight > 0) {
-    x /= totalWeight;
-    y /= totalWeight;
-    z /= totalWeight;
-  }
-  return [x, y, z];
+export function mapTo3D(userVector) {
+  return projectTo3D(userVector);
 }
 
-function seededRandom(seed) {
-  const x = Math.sin(seed) * 10000;
-  return x - Math.floor(x);
+function cosineSimilarity(a, b) {
+  let dot = 0;
+  let normA = 0;
+  let normB = 0;
+  for (const key of DIMENSION_KEYS) {
+    const av = a[key] || 0;
+    const bv = b[key] || 0;
+    dot += av * bv;
+    normA += av * av;
+    normB += bv * bv;
+  }
+  const denom = Math.sqrt(normA) * Math.sqrt(normB);
+  if (denom < 0.0001) return 0;
+  return dot / denom;
 }
 
-function getTagInfo(trait) {
-  const info = tagPool[trait];
+/**
+ * 从原始答案中解析出用户维度的累加值
+ */
+function accumulateDimensions(answers, questions) {
+  const questionMap = new Map(questions.map((q) => [q.id, q]));
+  const dims = {};
+
+  for (const answer of answers) {
+    if (!answer) continue;
+    const q = questionMap.get(answer.questionId);
+    if (!q) continue;
+
+    if (answer.type === "rank" && Array.isArray(answer.rankOrder)) {
+      const weights = [1.0, 0.6, 0.3, 0.1];
+      answer.rankOrder.forEach((optionIndex, rank) => {
+        const option = q.options?.[optionIndex];
+        if (option?.dimensions) {
+          const w = weights[rank] ?? 0;
+          for (const [dk, dv] of Object.entries(option.dimensions)) {
+            dims[dk] = (dims[dk] || 0) + dv * w;
+          }
+        }
+      });
+    } else if (answer.type === "scale" && typeof answer.value === "number") {
+      const scaleWeights = [0, 0.4, 0.7, 1.0, 1.3, 1.6];
+      const weight = scaleWeights[answer.value] ?? 1.0;
+      if (q.dimensions) {
+        for (const [dk, dv] of Object.entries(q.dimensions)) {
+          dims[dk] = (dims[dk] || 0) + dv * weight;
+        }
+      }
+    } else if (answer.optionId && q.options) {
+      const option = q.options.find((o) => o.id === answer.optionId);
+      if (option?.dimensions) {
+        for (const [dk, dv] of Object.entries(option.dimensions)) {
+          dims[dk] = (dims[dk] || 0) + dv;
+        }
+      }
+    }
+  }
+
+  return dims;
+}
+
+/**
+ * 标准化维度到 [-1, 1]
+ */
+function normalizeDimensions(dims) {
+  const absValues = Object.values(dims).map((v) => Math.abs(v));
+  const max = Math.max(...absValues, 0.01);
+  const normalized = {};
+  for (const key of DIMENSION_KEYS) {
+    normalized[key] = Math.max(-1, Math.min(1, (dims[key] || 0) / max));
+  }
+  return normalized;
+}
+
+/**
+ * 计算维度分数，用于 UI 展示（范围 [0, 1]）
+ */
+function computeDimensionScores(userVector) {
+  const rawValues = DIMENSION_KEYS.map((k) => Math.abs(userVector[k] || 0));
+  const maxRaw = Math.max(...rawValues, 0.01);
+
+  const scores = {};
+  for (const key of DIMENSION_KEYS) {
+    const raw = userVector[key] || 0;
+    const normalized = Math.abs(raw) / maxRaw;
+    const display = 0.25 + normalized * 0.75;
+    scores[key] = {
+      name: DIMENSIONS[key].name,
+      score: display,
+      raw,
+      direction: raw > 0 ? "positive" : raw < 0 ? "negative" : "neutral",
+      negativeLabel: DIMENSIONS[key].negative,
+      positiveLabel: DIMENSIONS[key].positive,
+    };
+  }
+  return scores;
+}
+
+function determineArchetype(userVector) {
+  const similarities = [];
+  for (const [key, profile] of Object.entries(ARCHETYPE_PROFILES)) {
+    const sim = cosineSimilarity(userVector, profile.vector);
+    similarities.push({ key, sim, profile });
+  }
+  similarities.sort((a, b) => b.sim - a.sim);
+
+  const best = similarities[0];
+  const second = similarities[1];
+
   return {
-    weight: info ? info.weight : 1,
-    text: info ? info.text : trait,
-    detail: info ? info.detail : "",
+    key: best.key,
+    archetype: best.profile,
+    secondaryArchetype: second
+      ? {
+          key: second.key,
+          title: second.profile.title,
+          symbol: second.profile.symbol,
+        }
+      : null,
+    similarities,
   };
 }
 
-export function generateResult(answers) {
-  const traitCounts = {};
+function determineSuppressedTraits(archetypeKey, userVector) {
+  const profile = ARCHETYPE_PROFILES[archetypeKey];
+  if (!profile) return [];
 
-  answers.forEach((answer) => {
-    if (answer.rankOrder) {
-      // 排序题：根据排名给不同权重
-      const weights = [1.0, 0.6, 0.3, 0.1];
-      answer.rankOrder.forEach((optionIndex, rank) => {
-        const option = answer.options[optionIndex];
-        if (option && option.traits) {
-          option.traits.forEach((trait) => {
-            traitCounts[trait] = (traitCounts[trait] || 0) + weights[rank];
-          });
-        }
-      });
-    } else if (answer.type === "scale" && answer.traits) {
-      // 量表题：1-5分映射到权重
-      const scaleWeights = [0, 0.4, 0.7, 1.0, 1.3, 1.6];
-      const weight = scaleWeights[answer.value] ?? 1.0;
-      answer.traits.forEach((trait) => {
-        traitCounts[trait] = (traitCounts[trait] || 0) + weight;
-      });
-    } else if (answer.traits) {
-      // 普通四选一
-      answer.traits.forEach((trait) => {
-        traitCounts[trait] = (traitCounts[trait] || 0) + 1;
-      });
-    }
-  });
+  const suppressed = profile.suppressedDimensions || [];
+  return suppressed
+    .map((dimKey) => {
+      const score = userVector[dimKey] || 0;
+      const info = DIMENSIONS[dimKey];
+      return {
+        trait: dimKey,
+        text: info.name,
+        detail: score > 0 ? info.positive : score < 0 ? info.negative : "",
+        score,
+        direction: score > 0 ? "positive" : score < 0 ? "negative" : "neutral",
+      };
+    })
+    .sort((a, b) => Math.abs(a.score) - Math.abs(b.score));
+}
 
-  const answerHash = answers.reduce((h, a) => {
-    if (a.rankOrder) {
-      return h + a.rankOrder.reduce((s, i) => s + i, 0);
-    }
-    if (a.type === "scale") {
-      return h + (a.value || 0);
-    }
-    return h + (a.optionId ? a.optionId.charCodeAt(0) : 0);
-  }, 0);
+export function generateResult(answers, questions) {
+  const rawDims = accumulateDimensions(answers, questions);
+  const userVector = normalizeDimensions(rawDims);
 
-  const scoredTraits = Object.entries(traitCounts).map(([trait, count]) => {
-    const info = getTagInfo(trait);
-    const noise = (seededRandom(trait.length + answerHash) - 0.5) * 0.15;
-    return {
-      trait,
-      score: count * info.weight + noise,
-      text: info.text,
-      detail: info.detail,
-    };
-  });
+  const dimensionScores = computeDimensionScores(userVector);
 
-  scoredTraits.sort((a, b) => b.score - a.score);
+  const { key: archetypeKey, archetype, secondaryArchetype, similarities } =
+    determineArchetype(userVector);
+
+  const suppressedTraits = determineSuppressedTraits(archetypeKey, userVector);
+
+  // Top 维度（展示用）
+  const scoredDims = DIMENSION_KEYS.map((k) => ({
+    trait: k,
+    text: DIMENSIONS[k].name,
+    detail:
+      userVector[k] > 0
+        ? DIMENSIONS[k].positive
+        : userVector[k] < 0
+          ? DIMENSIONS[k].negative
+          : "",
+    score: Math.abs(userVector[k] || 0),
+    raw: userVector[k] || 0,
+    direction: userVector[k] > 0 ? "positive" : userVector[k] < 0 ? "negative" : "neutral",
+  })).sort((a, b) => b.score - a.score);
 
   const numTags = 5;
-  const selectedTagDetails = scoredTraits.slice(0, numTags).map((t) => ({
-    trait: t.trait,
-    text: t.text,
-    detail: t.detail,
-    score: t.score,
+  const tagDetails = scoredDims.slice(0, numTags).map((d) => ({
+    trait: d.trait,
+    text: d.text,
+    detail: d.detail,
+    score: d.score,
+    raw: d.raw,
+    direction: d.direction,
   }));
-
-  const dimensionScores = computeDimensionScores(traitCounts);
-
-  const { key: archetypeKey, archetype, secondaryArchetype } =
-    determineArchetype(dimensionScores);
-
-  const suppressedTraits = determineSuppressedTraits(archetypeKey, scoredTraits);
 
   return {
     archetype,
     archetypeKey,
     secondaryArchetype,
-    tagDetails: selectedTagDetails,
+    tagDetails,
     suppressedTraits,
-    scoredTraits: scoredTraits.slice(0, 10),
+    scoredTraits: scoredDims.slice(0, 10),
     dimensionScores,
+    userVector,
+    similarities,
+    rawAnswers: answers,
+    specialNarratives: [],
   };
 }
-
-function computeDimensionScores(traitCounts) {
-  const rawScores = {};
-
-  Object.entries(DIMENSIONS).forEach(([dimKey, dim]) => {
-    let total = 0;
-    dim.traits.forEach((trait) => {
-      const info = getTagInfo(trait);
-      if (traitCounts[trait]) {
-        total += traitCounts[trait] * info.weight;
-      }
-    });
-    rawScores[dimKey] = {
-      name: dim.name,
-      raw: total,
-    };
-  });
-
-  const rawValues = Object.values(rawScores).map((d) => d.raw);
-  const maxRaw = Math.max(...rawValues, 0.01);
-
-  const scores = {};
-  Object.entries(rawScores).forEach(([dimKey, dim]) => {
-    const normalized = dim.raw / maxRaw;
-    const display = 0.25 + normalized * 0.75;
-    scores[dimKey] = {
-      name: dim.name,
-      score: display,
-      raw: dim.raw,
-    };
-  });
-
-  return scores;
-}
-
-function determineArchetype(dimensionScores) {
-  const sorted = Object.entries(dimensionScores).sort(
-    (a, b) => b[1].raw - a[1].raw
-  );
-  const bestKey = sorted[0][0];
-  const secondKey = sorted[1] && sorted[1][1].raw > 0 ? sorted[1][0] : null;
-
-  if (sorted[0][1].raw === 0) {
-    const keys = Object.keys(archetypeDescriptions);
-    const hash = Object.entries(dimensionScores).reduce(
-      (h, [k]) => h + k.charCodeAt(0),
-      0
-    );
-    return {
-      key: keys[hash % keys.length],
-      archetype: archetypeDescriptions[keys[hash % keys.length]],
-      secondaryArchetype: null,
-    };
-  }
-
-  return {
-    key: bestKey,
-    archetype: archetypeDescriptions[bestKey],
-    secondaryArchetype: secondKey
-      ? {
-          key: secondKey,
-          title: archetypeDescriptions[secondKey].title,
-          symbol: archetypeDescriptions[secondKey].symbol,
-        }
-      : null,
-  };
-}
-
-function determineSuppressedTraits(archetypeKey, scoredTraits) {
-  const suppressedList = ARCHETYPE_SUPPRESSED[archetypeKey] || [];
-  const traitScoreMap = Object.fromEntries(
-    scoredTraits.map((t) => [t.trait, t.score])
-  );
-
-  return suppressedList
-    .map((trait) => {
-      const info = getTagInfo(trait);
-      const score = traitScoreMap[trait] || 0;
-      return {
-        trait,
-        text: info.text,
-        detail: info.detail,
-        score,
-      };
-    })
-    .sort((a, b) => a.score - b.score); // 分数越低，越被压抑
-}
-

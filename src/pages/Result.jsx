@@ -75,7 +75,7 @@ export default function Result({ result, onRestart }) {
   const [expandedTag, setExpandedTag] = useState(null);
   const [hoveredArchetype, setHoveredArchetype] = useState(null);
 
-  const { archetype, archetypeKey, secondaryArchetype, tagDetails, scoredTraits, dimensionScores, suppressedTraits } = result;
+  const { archetype, archetypeKey, secondaryArchetype, tagDetails, scoredTraits, dimensionScores, suppressedTraits, userVector, similarities } = result;
   const narrative = archetype.narrative;
 
   const vectorSize = typeof window !== "undefined" && window.innerWidth >= 768 ? 420 : 320;
@@ -97,9 +97,8 @@ export default function Result({ result, onRestart }) {
             transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
           >
             <VectorSpace3D
-              dimensionScores={dimensionScores}
+              userVector={userVector}
               archetypeKey={archetypeKey}
-              scoredTraits={scoredTraits}
               width={vectorSize}
               height={vectorSize}
               onHoverArchetype={setHoveredArchetype}
@@ -123,9 +122,9 @@ export default function Result({ result, onRestart }) {
           className="hidden md:block w-full glass rounded-2xl p-4"
         >
           <p className="text-[10px] text-blur-text-light tracking-[0.2em] uppercase mb-3 text-center">
-            维度强度
+            人格匹配度
           </p>
-          <DimensionMeters dimensionScores={dimensionScores} activeKey={hoveredArchetype} />
+          <DimensionMeters similarities={similarities} activeKey={hoveredArchetype} />
         </motion.div>
       </div>
 
@@ -186,9 +185,9 @@ export default function Result({ result, onRestart }) {
           className="md:hidden w-full glass rounded-2xl p-4 mt-5"
         >
           <p className="text-[10px] text-blur-text-light tracking-[0.2em] uppercase mb-3 text-center">
-            维度强度
+            人格匹配度
           </p>
-          <DimensionMeters dimensionScores={dimensionScores} activeKey={hoveredArchetype} />
+          <DimensionMeters similarities={similarities} activeKey={hoveredArchetype} />
         </motion.div>
 
         <motion.div

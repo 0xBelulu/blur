@@ -1,21 +1,5 @@
 import { useRef, useEffect, useCallback } from "react";
 import { ARCHETYPE_VECTORS, VECTOR_AXES, mapTo3D } from "../utils/blurEngine";
-import { DIMENSIONS } from "../data/questions";
-
-const TRAIT_DIM_MAP = {};
-for (const [dimKey, dim] of Object.entries(DIMENSIONS)) {
-  for (const trait of dim.traits) {
-    TRAIT_DIM_MAP[trait] = dimKey;
-  }
-}
-
-function stableHash(str) {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) {
-    h = ((h << 5) - h + str.charCodeAt(i)) | 0;
-  }
-  return ((h >>> 0) % 10000) / 10000;
-}
 
 function rgba(rgb, a) {
   return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`;
@@ -138,7 +122,7 @@ function drawAxes(ctx, toScreen) {
   });
 }
 
-function drawArchetypeVector(ctx, origin, end, color, _label, isClosest, isHovered, t) {
+function drawArchetypeVector(ctx, origin, end, color, label, isClosest, isHovered, t, index, total) {
   const lineAlpha = isClosest ? 0.75 : isHovered ? 0.6 : 0.35;
   const dotAlpha = isClosest ? 1 : isHovered ? 0.9 : 0.65;
   const dotSize = isClosest ? 6 : isHovered ? 5 : 3.5;
@@ -186,42 +170,34 @@ function drawArchetypeVector(ctx, origin, end, color, _label, isClosest, isHover
   ctx.strokeStyle = rgba(color, dotAlpha * 0.5);
   ctx.lineWidth = 0.8;
   ctx.stroke();
-}
 
-function drawTraitDot(ctx, screen, color, size, opacity, label, isTop, t) {
-  const pulse = 0.7 + Math.sin(t * 0.02 + size * 10) * 0.3;
-  const r = Math.max(1.2, size * screen.s);
+  // 轮播高亮标签：每隔 150 帧（约 2.5 秒 @ 60fps）切换一次
+  const cycleIndex = Math.floor(t / 150) % total;
+  const isLit = isClosest || isHovered || cycleIndex === index;
 
-  if (isTop) {
-    const glow = ctx.createRadialGradient(screen.x, screen.y, 0, screen.x, screen.y, r * 5);
-    glow.addColorStop(0, rgba(color, opacity * 0.3 * pulse));
-    glow.addColorStop(1, rgba(color, 0));
-    ctx.beginPath();
-    ctx.arc(screen.x, screen.y, r * 5, 0, Math.PI * 2);
-    ctx.fillStyle = glow;
-    ctx.fill();
+  const labelAlpha = isLit ? 0.95 : 0.35;
+  const fontSize = isLit ? 11 : 9;
+
+  // 标签放在末端点偏上方，根据 index 做轻微 x 偏移避免全部垂直堆叠
+  const staggerX = ((index % 3) - 1) * 10; // -10, 0, 10 循环
+
+  ctx.save();
+  ctx.font = `${isLit ? "bold " : ""}${fontSize}px system-ui,-apple-system,sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "bottom";
+
+  const textY = end.y - dotSize - 6;
+
+  // 高亮时给一个淡淡的背景发光
+  if (isLit) {
+    ctx.shadowColor = rgba(color, 0.6);
+    ctx.shadowBlur = 8;
   }
 
-  ctx.beginPath();
-  ctx.arc(screen.x, screen.y, r, 0, Math.PI * 2);
-  ctx.fillStyle = rgba(color, opacity * pulse);
-  ctx.fill();
+  ctx.fillStyle = rgba(color, labelAlpha);
+  ctx.fillText(label, end.x + staggerX, textY);
 
-  ctx.strokeStyle = rgba([255, 255, 255], 0.5);
-  ctx.lineWidth = 0.8;
-  ctx.stroke();
-
-  if (isTop) {
-    ctx.fillStyle = rgba(color, 0.9);
-    ctx.font = "bold 9px system-ui,-apple-system,sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "bottom";
-
-    ctx.shadowColor = rgba([245, 243, 240], 0.85);
-    ctx.shadowBlur = 4;
-    ctx.fillText(label, screen.x, screen.y - r - 5);
-    ctx.shadowBlur = 0;
-  }
+  ctx.restore();
 }
 
 function drawTestSubject(ctx, screen, origin, t) {
@@ -270,9 +246,8 @@ function drawTestSubject(ctx, screen, origin, t) {
 }
 
 export default function VectorSpace3D({
-  dimensionScores,
+  userVector,
   archetypeKey,
-  scoredTraits,
   width = 280,
   height = 280,
   onHoverArchetype,
@@ -284,56 +259,14 @@ export default function VectorSpace3D({
   const dragRef = useRef({ active: false, x: 0, y: 0 });
   const autoRef = useRef(true);
   const autoTimerRef = useRef(null);
-  const traitDotsRef = useRef([]);
   const progressRef = useRef(0);
   const dataRef = useRef({});
   const hoveredRef = useRef(null);
 
   useEffect(() => {
-    dataRef.current.scores = dimensionScores;
+    dataRef.current.userVector = userVector;
     dataRef.current.archetypeKey = archetypeKey;
-    dataRef.current.scoredTraits = scoredTraits;
-  }, [dimensionScores, archetypeKey, scoredTraits]);
-
-  useEffect(() => {
-    if (!scoredTraits || scoredTraits.length === 0) {
-      traitDotsRef.current = [];
-      return;
-    }
-    const maxScore = scoredTraits[0].score;
-    traitDotsRef.current = scoredTraits.map((st, i) => {
-      const dimKey = TRAIT_DIM_MAP[st.trait];
-      const protoPos = dimKey ? ARCHETYPE_VECTORS[dimKey].pos : [0, 0, 0];
-      const color = dimKey ? ARCHETYPE_VECTORS[dimKey].color : [180, 180, 180];
-      const normScore = maxScore > 0 ? st.score / maxScore : 0;
-      const scale = 0.12 + normScore * 0.88;
-
-      const hash = stableHash(st.trait);
-      const spreadAngle = 0.12;
-      const angleOffset = (hash - 0.5) * spreadAngle;
-
-      const [px, py, pz] = protoPos;
-      const angle = Math.atan2(pz, px);
-      const radius = Math.sqrt(px * px + pz * pz);
-      const newAngle = angle + angleOffset;
-      let pos;
-      if (radius > 0.01) {
-        const newX = radius * Math.cos(newAngle);
-        const newZ = radius * Math.sin(newAngle);
-        pos = [newX * scale, py * scale, newZ * scale];
-      } else {
-        pos = [protoPos[0] * scale, protoPos[1] * scale, protoPos[2] * scale];
-      }
-      return {
-        pos,
-        color,
-        size: 1.8 + normScore * 2.8,
-        opacity: 0.5 + normScore * 0.4,
-        label: st.text,
-        isTop: i < 3,
-      };
-    });
-  }, [scoredTraits]);
+  }, [userVector, archetypeKey]);
 
   const handlePointerMove = useCallback(
     (e) => {
@@ -430,9 +363,9 @@ export default function VectorSpace3D({
 
       const toScreen = (pos) => makeToScreen(width, height, rotRef, easedProgress)(pos);
 
-      const scores = dataRef.current.scores;
+      const uVec = dataRef.current.userVector;
       const aKey = dataRef.current.archetypeKey;
-      const testPos = mapTo3D(scores);
+      const testPos = uVec ? mapTo3D(uVec) : [0, 0, 0];
 
       ctx.clearRect(0, 0, width, height);
 
@@ -453,7 +386,8 @@ export default function VectorSpace3D({
       const drawItems = [];
 
       const currentHovered = hoveredRef.current;
-      Object.entries(ARCHETYPE_VECTORS).forEach(([key, arch]) => {
+      const totalArchetypes = Object.keys(ARCHETYPE_VECTORS).length;
+      Object.entries(ARCHETYPE_VECTORS).forEach(([key, arch], index) => {
         const end = toScreen(arch.pos);
         const isClosest = key === aKey;
         const isHovered = currentHovered?.key === key;
@@ -466,24 +400,10 @@ export default function VectorSpace3D({
           label: arch.label,
           isClosest,
           isHovered,
+          index,
+          total: totalArchetypes,
         });
       });
-
-      if (traitDotsRef.current) {
-        traitDotsRef.current.forEach((dot) => {
-          const screen = toScreen(dot.pos);
-          drawItems.push({
-            type: "trait",
-            z: screen.z,
-            screen,
-            color: dot.color,
-            size: dot.size,
-            opacity: dot.opacity,
-            label: dot.label,
-            isTop: dot.isTop,
-          });
-        });
-      }
 
       const testScreen = toScreen(testPos);
       drawItems.push({
@@ -496,15 +416,11 @@ export default function VectorSpace3D({
 
       drawItems.forEach((item) => {
         if (item.type === "arch") {
-          drawArchetypeVector(ctx, origin, item.end, item.color, item.label, false, item.isHovered, t);
-        } else if (item.type === "trait") {
-          drawTraitDot(ctx, item.screen, item.color, item.size, item.opacity, item.label, item.isTop, t);
+          drawArchetypeVector(ctx, origin, item.end, item.color, item.label, false, item.isHovered, t, item.index, item.total);
         } else if (item.type === "test") {
           drawTestSubject(ctx, item.screen, origin, t);
         }
       });
-
-
 
       ctx.fillStyle = "rgba(140,132,122,0.65)";
       ctx.font = "10px system-ui,-apple-system,sans-serif";

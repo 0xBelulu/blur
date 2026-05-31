@@ -5,6 +5,7 @@ import Test from "./pages/Test";
 import Loading from "./pages/Loading";
 import Result from "./pages/Result";
 import { generateResult } from "./utils/blurEngine";
+import { questions } from "./data/questions";
 
 const screenOrder = ["landing", "test", "loading", "result"];
 const LOADING_DURATION = 3500;
@@ -54,7 +55,7 @@ export default function App() {
     if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
     loadingTimerRef.current = setTimeout(() => {
       try {
-        const generatedResult = generateResult(finalAnswers);
+        const generatedResult = generateResult(finalAnswers, questions);
         setResult(generatedResult);
         navigate("result");
       } catch {
