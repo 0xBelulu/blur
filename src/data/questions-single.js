@@ -199,6 +199,7 @@ export const singleQuestions = [
       boundaryClarity: 1.4,
       expressivity: -0.6,
       sensorySensitivity: -0.8,
+      changeAffinity: -0.8,
     } },
       { id: "b", text: "去人群中，但戴上耳机隔绝声音", dimensions: {
       sensorySensitivity: 1.9,
@@ -352,6 +353,7 @@ export const singleQuestions = [
       processingDepth: 0.5,
       expressivity: -0.7,
       energySource: -0.9,
+      changeAffinity: -0.8,
     } },
     ],
   },
@@ -400,6 +402,7 @@ export const singleQuestions = [
       { id: "c", text: "每到一个地方都像是本地人", dimensions: {
       changeAffinity: 1.8,
       boundaryClarity: -0.7,
+      processingDepth: -0.6,
     } },
       { id: "d", text: "同时看到一件事的所有可能版本", dimensions: {
       cognitiveRange: 2,
@@ -552,6 +555,7 @@ export const singleQuestions = [
       boundaryClarity: 0.5,
       energySource: -0.4,
       expressivity: -1.8,
+      changeAffinity: -0.6,
     } },
       { id: "b", text: "主动制造变化，哪怕方向不清", dimensions: {
       changeAffinity: 1.5,
@@ -674,6 +678,7 @@ export const singleQuestions = [
       changeAffinity: 0.6,
       emotionalLatency: 0.4,
       temporalDepth: -0.5,
+      energySource: 0.5,
     } },
       { id: "c", text: "同时刷好几个平台，但说不出看了什么", dimensions: {
       changeAffinity: 1,
@@ -702,6 +707,7 @@ export const singleQuestions = [
       { id: "b", text: "几乎注意不到，适应性很强", dimensions: {
       changeAffinity: 1.8,
       boundaryClarity: -0.7,
+      processingDepth: -0.6,
     } },
       { id: "c", text: "先忍耐，然后突然崩溃", dimensions: {
       temporalDepth: 0.9,
@@ -730,6 +736,7 @@ export const singleQuestions = [
       { id: "b", text: "当下爆发，说完就后悔", dimensions: {
       expressivity: 1.4,
       sensorySensitivity: 1,
+      energySource: 0.4,
     } },
       { id: "c", text: "转移话题，等气氛好了再绕回来", dimensions: {
       changeAffinity: 1.8,
@@ -756,6 +763,7 @@ export const singleQuestions = [
       { id: "b", text: "像突然亮起的闪电，来得快去得也快", dimensions: {
       sensorySensitivity: 1.6,
       expressivity: 1.2,
+      processingDepth: -0.5,
     } },
       { id: "c", text: "像慢慢生长的藤蔓，不知不觉就成型了", dimensions: {
       temporalDepth: 1.8,
@@ -786,6 +794,7 @@ export const singleQuestions = [
       { id: "c", text: "挑最刺激的点进去，然后不断跳转", dimensions: {
       changeAffinity: 1.9,
       boundaryClarity: -0.7,
+      processingDepth: -0.5,
     } },
       { id: "d", text: "打开一个就深入看完，不管其他的", dimensions: {
       processingDepth: 0.9,
@@ -818,6 +827,7 @@ export const singleQuestions = [
       boundaryClarity: 1,
       energySource: -0.4,
       expressivity: -1.5,
+      changeAffinity: -0.5,
     } },
     ],
   },
@@ -837,6 +847,7 @@ export const singleQuestions = [
       temporalDepth: 0.4,
       expressivity: -0.7,
       energySource: -0.9,
+      changeAffinity: -0.5,
     } },
       { id: "c", text: "看似混乱，但你知道东西都在哪", dimensions: {
       cognitiveRange: 1,
