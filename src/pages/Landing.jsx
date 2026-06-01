@@ -18,6 +18,18 @@ const TIPS = [
   "走神是人类最高效的并行计算。",
 ];
 
+const ARCHETYPE_SYMBOLS = [
+  { symbol: "🌫️", x: "12%", y: "18%", delay: 0 },
+  { symbol: "🎐", x: "82%", y: "14%", delay: 1.2 },
+  { symbol: "🍃", x: "88%", y: "42%", delay: 2.4 },
+  { symbol: "💎", x: "8%", y: "55%", delay: 0.8 },
+  { symbol: "🌈", x: "75%", y: "68%", delay: 1.8 },
+  { symbol: "🧂", x: "18%", y: "78%", delay: 3.0 },
+  { symbol: "🎞️", x: "68%", y: "85%", delay: 0.4 },
+  { symbol: "🌊", x: "35%", y: "88%", delay: 2.0 },
+  { symbol: "🌑", x: "55%", y: "12%", delay: 1.5 },
+];
+
 function useRotatingTip(interval = 4000) {
   const [index, setIndex] = useState(0);
   useEffect(() => {
@@ -34,28 +46,87 @@ export default function Landing({ onStart, onExplore }) {
 
   return (
     <div className="flex-1 flex flex-col md:flex-row items-center md:justify-center px-6 md:px-16 lg:px-24 pt-20 pb-12 md:py-16 min-h-[100svh] relative overflow-hidden max-w-6xl mx-auto w-full">
-      {/* Background ambience */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+      {/* ── Living gradient mesh background ── */}
+      <div className="fixed inset-0 pointer-events-none" aria-hidden="true">
         <div
-          className="absolute top-[12%] left-[10%] w-36 h-36 rounded-full bg-blur-accent/8 blur-3xl"
-          style={{ animation: "orb-scale-1 10s ease-in-out infinite" }}
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 80% 60% at 50% 45%, rgba(155,142,199,0.12) 0%, transparent 70%), radial-gradient(ellipse 60% 50% at 25% 60%, rgba(143,181,196,0.08) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at 75% 30%, rgba(196,165,137,0.07) 0%, transparent 55%), radial-gradient(ellipse 40% 35% at 60% 75%, rgba(196,155,165,0.06) 0%, transparent 50%)",
+          }}
         />
         <div
-          className="absolute bottom-[18%] right-[12%] w-44 h-44 rounded-full bg-blur-accent-cool/8 blur-3xl"
-          style={{ animation: "orb-scale-2 12s ease-in-out infinite" }}
+          className="absolute rounded-full"
+          style={{
+            width: "50vmax",
+            height: "50vmax",
+            top: "15%",
+            left: "20%",
+            background: "radial-gradient(circle, rgba(155,142,199,0.10) 0%, transparent 70%)",
+            animation: "orb-morph-1 14s ease-in-out infinite",
+          }}
         />
         <div
-          className="absolute top-[48%] right-[28%] w-24 h-24 rounded-full bg-blur-accent-warm/8 blur-2xl"
-          style={{ animation: "orb-drift 8s ease-in-out infinite" }}
+          className="absolute rounded-full"
+          style={{
+            width: "40vmax",
+            height: "40vmax",
+            bottom: "10%",
+            right: "15%",
+            background: "radial-gradient(circle, rgba(143,181,196,0.09) 0%, transparent 65%)",
+            animation: "orb-morph-2 18s ease-in-out infinite",
+          }}
         />
         <div
-          className="absolute bottom-[38%] left-[14%] w-20 h-20 rounded-full bg-blur-accent-rose/6 blur-2xl"
-          style={{ animation: "orb-scale-3 9s ease-in-out 2s infinite" }}
+          className="absolute rounded-full"
+          style={{
+            width: "30vmax",
+            height: "30vmax",
+            top: "50%",
+            left: "55%",
+            background: "radial-gradient(circle, rgba(196,165,137,0.07) 0%, transparent 60%)",
+            animation: "orb-morph-3 12s ease-in-out infinite",
+          }}
         />
         <div
-          className="hidden md:block absolute bottom-[8%] left-[-6%] w-72 h-72 rounded-full bg-blur-accent/5 blur-3xl"
-          style={{ animation: "orb-scale-4 11s ease-in-out infinite" }}
+          className="absolute rounded-full"
+          style={{
+            width: "20vmax",
+            height: "20vmax",
+            bottom: "30%",
+            left: "10%",
+            background: "radial-gradient(circle, rgba(196,155,165,0.06) 0%, transparent 55%)",
+            animation: "orb-morph-4 16s ease-in-out 3s infinite",
+          }}
         />
+        <div
+          className="absolute inset-0 opacity-[0.025]"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+            backgroundRepeat: "repeat",
+            backgroundSize: "128px 128px",
+          }}
+        />
+      </div>
+
+      {/* ── Floating archetype symbols ── */}
+      <div className="fixed inset-0 pointer-events-none" aria-hidden="true">
+        {ARCHETYPE_SYMBOLS.map((item, i) => (
+          <motion.span
+            key={i}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.12 }}
+            transition={{ delay: item.delay + 1.5, duration: 2 }}
+            className="absolute text-2xl md:text-3xl select-none"
+            style={{
+              left: item.x,
+              top: item.y,
+              animation: `archetype-float-${i % 3} ${6 + i * 0.7}s ease-in-out ${item.delay}s infinite`,
+            }}
+          >
+            {item.symbol}
+          </motion.span>
+        ))}
       </div>
 
       {/* Left — Brand */}
@@ -115,7 +186,6 @@ export default function Landing({ onStart, onExplore }) {
           </p>
         </motion.div>
 
-        {/* Desktop decorative whisper */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -129,7 +199,6 @@ export default function Landing({ onStart, onExplore }) {
 
       {/* Right — Interaction */}
       <div className="relative z-10 w-full md:w-1/2 max-w-sm mx-auto md:mx-0 flex flex-col items-center md:items-start justify-start md:justify-center">
-        {/* Description — no card, just whispered text */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -147,7 +216,6 @@ export default function Landing({ onStart, onExplore }) {
           </div>
         </motion.div>
 
-        {/* Rotating tips */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -168,7 +236,6 @@ export default function Landing({ onStart, onExplore }) {
           </AnimatePresence>
         </motion.div>
 
-        {/* Divider */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -182,7 +249,6 @@ export default function Landing({ onStart, onExplore }) {
           <span className="w-8 h-px bg-blur-border/60" />
         </motion.div>
 
-        {/* CTA */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -190,7 +256,7 @@ export default function Landing({ onStart, onExplore }) {
           className="flex justify-center md:justify-start w-full"
         >
           <GlassButton
-            variant="secondary"
+            variant="primary"
             onClick={onStart}
             className="text-base px-10 md:px-12 py-4"
           >
@@ -205,7 +271,7 @@ export default function Landing({ onStart, onExplore }) {
           className="flex justify-center md:justify-start w-full mt-3"
         >
           <GlassButton
-            variant="secondary"
+            variant="primary"
             onClick={onExplore}
             className="text-sm flex items-center gap-1.5"
           >
@@ -214,7 +280,6 @@ export default function Landing({ onStart, onExplore }) {
           </GlassButton>
         </motion.div>
 
-        {/* Footer note */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
