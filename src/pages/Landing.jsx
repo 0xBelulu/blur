@@ -196,7 +196,7 @@ export default function Landing({ onStart }) {
             onClick={onStart}
             className="text-base px-10 md:px-12 py-4"
           >
-            开始失焦
+            开始测试
           </GlassButton>
         </motion.div>
 

@@ -355,7 +355,7 @@ export default function Result({ result, onRestart }) {
             <GlassButton variant="ghost" onClick={onRestart}>
               <span className="flex items-center gap-2">
                 <RotateCcw size={14} />
-                再测一次
+                返回主页
               </span>
             </GlassButton>
           </div>
@@ -468,7 +468,7 @@ function RecipeSection({ tagDetails }) {
                   onMouseLeave={() => setHovered(null)}
                   onTouchStart={() => setHovered(i)}
                   onTouchEnd={() => setHovered(null)}
-                  className="w-full origin-bottom border-b border-white/10 last:border-b-0 cursor-pointer"
+                  className="w-full origin-bottom cursor-pointer"
                   style={{
                     flexGrow,
                     background: `linear-gradient(180deg, rgba(${color.r + 18},${color.g + 16},${Math.min(color.b + 16, 255)},${color.a + 0.08}) 0%, rgba(${color.r},${color.g},${color.b},${color.a}) 40%, rgba(${color.r},${color.g},${color.b},${color.a}) 100%)`,
