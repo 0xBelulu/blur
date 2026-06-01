@@ -4,10 +4,11 @@ import Landing from "./pages/Landing";
 import Test from "./pages/Test";
 import Loading from "./pages/Loading";
 import Result from "./pages/Result";
+import About from "./pages/About";
 import { generateResult } from "./utils/blurEngine";
 import { questions } from "./data/questions";
 
-const screenOrder = ["landing", "test", "loading", "result"];
+const screenOrder = ["landing", "about", "test", "loading", "result"];
 const LOADING_DURATION = 3500;
 
 const pageVariants = {
@@ -49,6 +50,10 @@ export default function App() {
     setResult(null);
   }, [navigate]);
 
+  const handleOpenAbout = useCallback(() => {
+    navigate("about");
+  }, [navigate]);
+
   const handleComplete = useCallback((finalAnswers) => {
     navigate("loading");
 
@@ -84,7 +89,22 @@ export default function App() {
             transition={pageTransition}
             style={{ willChange: "filter, transform, opacity", contain: "layout style paint" }}
           >
-            <Landing onStart={handleStart} />
+            <Landing onStart={handleStart} onExplore={handleOpenAbout} />
+          </motion.div>
+        )}
+
+        {screen === "about" && (
+          <motion.div
+            key="about"
+            custom={direction}
+            variants={pageVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={pageTransition}
+            style={{ willChange: "filter, transform, opacity", contain: "layout style paint" }}
+          >
+            <About onBack={handleRestart} />
           </motion.div>
         )}
 
