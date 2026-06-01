@@ -379,6 +379,8 @@ function recipeColor(t) {
 }
 
 function RecipeSection({ tagDetails }) {
+  const [hovered, setHovered] = useState(null);
+
   if (!tagDetails || tagDetails.length === 0) return null;
 
   const maxScore = tagDetails[0]?.score || 1;
@@ -405,17 +407,24 @@ function RecipeSection({ tagDetails }) {
             const portion = (tag.score / maxScore) * 2;
             const displayPortion = portion === 2 ? "2.0" : portion.toFixed(1);
             const color = recipeColor((n - 1 - i) / Math.max(n - 1, 1));
+            const isActive = hovered === null || hovered === i;
             return (
               <motion.div
                 key={tag.trait}
                 initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 + i * 0.08, duration: 0.4 }}
+                animate={{
+                  opacity: isActive ? 1 : 0.35,
+                  x: 0,
+                }}
+                transition={{ duration: 0.3 }}
                 className="flex items-center gap-2"
               >
                 <span
                   className="w-2 h-2 rounded-full shrink-0"
-                  style={{ background: `rgba(${color.r},${color.g},${color.b},${color.a})` }}
+                  style={{
+                    background: `rgba(${color.r},${color.g},${color.b},${isActive ? color.a : color.a * 0.4})`,
+                    transition: "background 0.3s ease",
+                  }}
                 />
                 <span className="text-sm font-medium text-blur-accent tabular-nums w-8 shrink-0 text-right">
                   {displayPortion}
@@ -437,18 +446,29 @@ function RecipeSection({ tagDetails }) {
         </div>
 
         {/* Right: cocktail bottle */}
-        <div className="w-10 shrink-0 flex flex-col items-center py-1">
-          <div className="w-full flex-1 rounded-xl overflow-hidden border border-blur-border/40 flex flex-col">
+        <div className="w-10 shrink-0 flex flex-col">
+          <div className="w-full flex-1 min-h-0 rounded-xl overflow-hidden border border-blur-border/40 flex flex-col">
             {reversed.map((tag, i) => {
               const color = recipeColor((n - 1 - i) / Math.max(n - 1, 1));
               const flexGrow = tag.score;
+              const isActive = hovered === null || hovered === i;
               return (
                 <motion.div
                   key={tag.trait}
                   initial={{ scaleY: 0 }}
-                  animate={{ scaleY: 1 }}
-                  transition={{ delay: 0.3 + i * 0.1, duration: 0.6, ease: "easeOut" }}
-                  className="w-full origin-bottom border-b border-white/10 last:border-b-0"
+                  animate={{
+                    scaleY: 1,
+                    opacity: isActive ? 1 : 0.35,
+                  }}
+                  transition={{
+                    scaleY: { delay: 0.3 + i * 0.1, duration: 0.6, ease: "easeOut" },
+                    opacity: { duration: 0.3 },
+                  }}
+                  onMouseEnter={() => setHovered(i)}
+                  onMouseLeave={() => setHovered(null)}
+                  onTouchStart={() => setHovered(i)}
+                  onTouchEnd={() => setHovered(null)}
+                  className="w-full origin-bottom border-b border-white/10 last:border-b-0 cursor-pointer"
                   style={{
                     flexGrow,
                     background: `linear-gradient(180deg, rgba(${color.r + 18},${color.g + 16},${Math.min(color.b + 16, 255)},${color.a + 0.08}) 0%, rgba(${color.r},${color.g},${color.b},${color.a}) 40%, rgba(${color.r},${color.g},${color.b},${color.a}) 100%)`,
