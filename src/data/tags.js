@@ -145,7 +145,7 @@ export const archetypeDescriptions = {
   still: {
     title: "静观者",
     subtitle: "你不急于浮出水面",
-    symbol: "🌑",
+    symbol: "💎",
     description: "你不急于浮出水面。你相信有些东西只有沉下去才能看见。",
     narrative: {
       innerWorld: "你的内心像一口深井，表面平静，底部有暗流。你不是没有感受，只是你的感受都沉下去了，需要时间才能捞上来。你不习惯快速反应，不是因为迟钝，而是因为你的真相在深处，而深处需要耐心。",

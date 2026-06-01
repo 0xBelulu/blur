@@ -90,7 +90,7 @@ export const ARCHETYPE_PROFILES = {
   still: {
     title: "静观者",
     subtitle: "你不急于浮出水面",
-    symbol: "🌑",
+    symbol: "💎",
     description: "你不急于浮出水面。你相信有些东西只有沉下去才能看见。",
     color: [155, 165, 185],
     vector: {
