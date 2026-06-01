@@ -1,5 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
+
+function clamp(val, min, max) {
+  return Math.max(min, Math.min(max, val));
+}
 
 export default function DraggableTabs({
   tabs,
@@ -10,10 +14,10 @@ export default function DraggableTabs({
   renderLabel,
 }) {
   const containerRef = useRef(null);
+  const sliderRef = useRef(null);
   const [tabRects, setTabRects] = useState([]);
   const [dragOffset, setDragOffset] = useState(0);
   const dragStartX = useRef(null);
-  const currentOffset = useRef(0);
   const isDragging = useRef(false);
   const wasDragging = useRef(false);
 
@@ -33,32 +37,44 @@ export default function DraggableTabs({
     return () => ro.disconnect();
   }, [tabs.length]);
 
-  const activeRect = tabRects[activeIndex];
-  const dragging = dragOffset !== 0;
+  const getClampedOffset = useCallback(
+    (offset) => {
+      if (!tabRects.length) return offset;
+      const rect = tabRects[activeIndex];
+      if (!rect) return offset;
+      const minLeft = tabRects[0].left;
+      const last = tabRects[tabRects.length - 1];
+      const maxLeft = last.left + last.width - rect.width;
+      const rawLeft = rect.left + offset;
+      const clampedLeft = clamp(rawLeft, minLeft, maxLeft);
+      return clampedLeft - rect.left;
+    },
+    [tabRects, activeIndex],
+  );
 
-  const handlePointerDown = (e) => {
+  const handleSliderPointerDown = (e) => {
+    e.stopPropagation();
     wasDragging.current = false;
     dragStartX.current = e.clientX;
-    currentOffset.current = 0;
     isDragging.current = false;
+    sliderRef.current?.setPointerCapture(e.pointerId);
   };
 
-  const handlePointerMove = (e) => {
+  const handleSliderPointerMove = (e) => {
     if (dragStartX.current === null) return;
     const dx = e.clientX - dragStartX.current;
     if (Math.abs(dx) > 3) {
       isDragging.current = true;
-      currentOffset.current = dx;
-      setDragOffset(dx);
+      setDragOffset(getClampedOffset(dx));
     }
   };
 
-  const handlePointerUp = () => {
+  const handleSliderPointerUp = (e) => {
     if (isDragging.current && tabRects.length) {
       wasDragging.current = true;
       const rect = tabRects[activeIndex];
-      const currentCenter =
-        (rect?.left || 0) + (rect?.width || 0) / 2 + currentOffset.current;
+      const clamped = getClampedOffset(e.clientX - dragStartX.current);
+      const currentCenter = rect.left + rect.width / 2 + clamped;
 
       let nearestIndex = activeIndex;
       let nearestDist = Infinity;
@@ -102,16 +118,13 @@ export default function DraggableTabs({
   );
 
   const labelRenderer = renderLabel || defaultRenderLabel;
+  const activeRect = tabRects[activeIndex];
+  const dragging = dragOffset !== 0;
 
   return (
     <div
       ref={containerRef}
       className={`relative flex rounded-2xl glass p-1 select-none ${className}`}
-      style={{ touchAction: "none" }}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
     >
       {tabs.map((tab, i) => (
         <button
@@ -126,7 +139,9 @@ export default function DraggableTabs({
 
       {activeRect && (
         <motion.div
-          className="absolute top-1 bottom-1 rounded-xl bg-blur-surface shadow-sm pointer-events-none"
+          ref={sliderRef}
+          className="absolute top-1 bottom-1 rounded-xl bg-blur-surface shadow-sm cursor-grab active:cursor-grabbing"
+          style={{ touchAction: "none", zIndex: 5 }}
           animate={{
             left: activeRect.left + dragOffset,
             width: activeRect.width,
@@ -137,6 +152,10 @@ export default function DraggableTabs({
               ? { duration: 0 }
               : { type: "spring", stiffness: 380, damping: 30 }
           }
+          onPointerDown={handleSliderPointerDown}
+          onPointerMove={handleSliderPointerMove}
+          onPointerUp={handleSliderPointerUp}
+          onPointerCancel={handleSliderPointerUp}
         />
       )}
     </div>

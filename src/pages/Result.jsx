@@ -158,6 +158,7 @@ export default function Result({ result, onRestart }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
+          className="mt-6 w-full"
         >
           <DraggableTabs
             tabs={TABS}
