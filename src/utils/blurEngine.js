@@ -131,6 +131,8 @@ function computeDimensionScores(userVector) {
       direction: raw > 0 ? "positive" : raw < 0 ? "negative" : "neutral",
       negativeLabel: DIMENSIONS[key].negative,
       positiveLabel: DIMENSIONS[key].positive,
+      negativeDesc: DIMENSIONS[key].negativeDesc,
+      positiveDesc: DIMENSIONS[key].positiveDesc,
     };
   }
   return scores;
@@ -251,6 +253,12 @@ export function generateResult(answers, questions) {
         : userVector[k] < 0
           ? DIMENSIONS[k].negative
           : "",
+    longDesc:
+      userVector[k] > 0
+        ? DIMENSIONS[k].positiveDesc
+        : userVector[k] < 0
+          ? DIMENSIONS[k].negativeDesc
+          : "",
     score: Math.abs(userVector[k] || 0),
     raw: userVector[k] || 0,
     direction: userVector[k] > 0 ? "positive" : userVector[k] < 0 ? "negative" : "neutral",
@@ -261,6 +269,7 @@ export function generateResult(answers, questions) {
     trait: d.trait,
     text: d.text,
     detail: d.detail,
+    longDesc: d.longDesc,
     score: d.score,
     raw: d.raw,
     direction: d.direction,

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RotateCcw, ChevronDown, Zap } from "lucide-react";
+import { RotateCcw, Zap } from "lucide-react";
 import TraitSpace2D from "../components/TraitSpace2D";
 import GlassButton from "../components/GlassButton";
 import { DIMENSION_PAIRS } from "../utils/blurEngine";
@@ -14,57 +14,6 @@ const TABS = [
   { key: "narrative", label: "叙事" },
 ];
 
-function TagCard({ tag, i, maxScore, expandedTag, onToggle }) {
-  const pct = Math.max(5, (tag.score / maxScore) * 100);
-  const isExpanded = expandedTag === i;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.15 + i * 0.06 }}
-      onClick={() => onToggle(isExpanded ? null : i)}
-      className={`glass rounded-xl p-3.5 cursor-pointer transition-colors duration-200 ${
-        isExpanded ? "bg-blur-surface-hover" : "hover:bg-blur-surface-hover"
-      }`}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <span className={`text-xs font-medium ${isExpanded ? "text-blur-accent" : "text-blur-text"}`}>
-          {tag.text}
-        </span>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-blur-text-light tabular-nums">
-            {Math.round((tag.score / maxScore) * 100)}%
-          </span>
-          <motion.span
-            animate={{ rotate: isExpanded ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-            className="inline-flex"
-          >
-            <ChevronDown size={12} className="text-blur-text-light" />
-          </motion.span>
-        </div>
-      </div>
-      <ProgressBar pct={pct} delay={i * 0.06} />
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: "easeInOut" }}
-            className="overflow-hidden"
-          >
-            <p className="text-xs text-blur-text-muted leading-relaxed mt-2 pt-2 border-t border-blur-border/50">
-              {tag.detail}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-}
-
 const tabContentVariants = {
   enter: { opacity: 0, y: 8 },
   center: { opacity: 1, y: 0 },
@@ -74,7 +23,7 @@ const tabContentVariants = {
 export default function Result({ result, onRestart }) {
   const [activeTab, setActiveTab] = useState("cloud");
   const [activePairIndex, setActivePairIndex] = useState(0);
-  const [expandedTag, setExpandedTag] = useState(null);
+
   const [hoveredArchetype, setHoveredArchetype] = useState(null);
 
   const { archetype, secondaryArchetype, tagDetails, scoredTraits, dimensionScores, suppressedTraits, userVector, similarities } = result;
@@ -234,7 +183,6 @@ export default function Result({ result, onRestart }) {
               key={tab.key}
               onClick={() => {
                 setActiveTab(tab.key);
-                setExpandedTag(null);
               }}
               className="flex-1 relative z-10 px-4 py-2 text-xs cursor-pointer"
             >
@@ -285,37 +233,7 @@ export default function Result({ result, onRestart }) {
                   className="w-12 h-px bg-gradient-to-r from-transparent via-blur-border to-transparent mx-auto md:mx-0 mb-5"
                 />
 
-                {(() => {
-                  const maxScore = tagDetails[0]?.score || 1;
-                  return (
-                    <div className="flex flex-col md:flex-row gap-3 mb-5">
-                      <div className="flex-1 flex flex-col gap-3">
-                        {tagDetails.slice(0, 3).map((tag, i) => (
-                          <TagCard
-                            key={tag.trait}
-                            tag={tag}
-                            i={i}
-                            maxScore={maxScore}
-                            expandedTag={expandedTag}
-                            onToggle={setExpandedTag}
-                          />
-                        ))}
-                      </div>
-                      <div className="flex-1 flex flex-col gap-3">
-                        {tagDetails.slice(3).map((tag, i) => (
-                          <TagCard
-                            key={tag.trait}
-                            tag={tag}
-                            i={i + 3}
-                            maxScore={maxScore}
-                            expandedTag={expandedTag}
-                            onToggle={setExpandedTag}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })()}
+                <RecipeSection tagDetails={tagDetails} />
 
                 {suppressedTraits && suppressedTraits.length > 0 && (
                   <motion.div
@@ -444,6 +362,123 @@ export default function Result({ result, onRestart }) {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+function lerpChannel(a, b, t) {
+  return Math.round(a + (b - a) * t);
+}
+
+function recipeColor(t) {
+  // 紫 → 青蓝
+  const r = lerpChannel(155, 143, t);
+  const g = lerpChannel(142, 181, t);
+  const b = lerpChannel(199, 196, t);
+  const a = lerpChannel(52, 28, t) / 100; // 0.52 → 0.28
+  return { r, g, b, a };
+}
+
+function RecipeSection({ tagDetails }) {
+  if (!tagDetails || tagDetails.length === 0) return null;
+
+  const maxScore = tagDetails[0]?.score || 1;
+  const n = tagDetails.length;
+
+  // Heavy / thick at the bottom
+  const reversed = [...tagDetails].reverse();
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.15, duration: 0.5 }}
+      className="mb-5"
+    >
+      <p className="text-[11px] text-blur-text-light tracking-[0.15em] uppercase text-center md:text-left mb-4">
+        你的核心配方
+      </p>
+
+      <div className="glass rounded-2xl p-4 flex gap-3 items-stretch">
+        {/* Left: textual recipe */}
+        <div className="flex-1 space-y-2.5 self-center min-w-0">
+          {reversed.map((tag, i) => {
+            const portion = (tag.score / maxScore) * 2;
+            const displayPortion = portion === 2 ? "2.0" : portion.toFixed(1);
+            const color = recipeColor((n - 1 - i) / Math.max(n - 1, 1));
+            return (
+              <motion.div
+                key={tag.trait}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 + i * 0.08, duration: 0.4 }}
+                className="flex items-center gap-2"
+              >
+                <span
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ background: `rgba(${color.r},${color.g},${color.b},${color.a})` }}
+                />
+                <span className="text-sm font-medium text-blur-accent tabular-nums w-8 shrink-0 text-right">
+                  {displayPortion}
+                </span>
+                <span className="text-[10px] text-blur-text-light/60 w-4 shrink-0 text-center">
+                  份
+                </span>
+                <span className="text-sm text-blur-text font-medium shrink-0">
+                  {tag.text}
+                </span>
+                {tag.longDesc && (
+                  <span className="text-xs text-blur-text-muted truncate pl-2 flex-1 min-w-0">
+                    {tag.longDesc}
+                  </span>
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Right: cocktail bottle */}
+        <div className="w-10 shrink-0 flex flex-col items-center py-1">
+          <div className="w-full flex-1 rounded-xl overflow-hidden border border-blur-border/40 flex flex-col">
+            {reversed.map((tag, i) => {
+              const color = recipeColor((n - 1 - i) / Math.max(n - 1, 1));
+              const flexGrow = tag.score;
+              return (
+                <motion.div
+                  key={tag.trait}
+                  initial={{ scaleY: 0 }}
+                  animate={{ scaleY: 1 }}
+                  transition={{ delay: 0.3 + i * 0.1, duration: 0.6, ease: "easeOut" }}
+                  className="w-full origin-bottom border-b border-white/10 last:border-b-0"
+                  style={{
+                    flexGrow,
+                    background: `linear-gradient(180deg, rgba(${color.r + 18},${color.g + 16},${Math.min(color.b + 16, 255)},${color.a + 0.08}) 0%, rgba(${color.r},${color.g},${color.b},${color.a}) 40%, rgba(${color.r},${color.g},${color.b},${color.a}) 100%)`,
+                  }}
+                />
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.9, duration: 0.6 }}
+        className="text-xs text-blur-text-light italic mt-4 text-center md:text-left leading-relaxed"
+      >
+        {(() => {
+          const names = tagDetails.map((t) => t.text);
+          const main = names[0];
+          const rest = names.slice(1);
+          if (rest.length === 0) return `这是一份纯粹的${main}人格。`;
+          const restText =
+            rest.length > 1
+              ? rest.slice(0, -1).join("、") + "与" + rest.at(-1)
+              : rest[0];
+          return `这是一份以${main}为底、${restText}为引的人格配方。`;
+        })()}
+      </motion.p>
+    </motion.div>
   );
 }
 
