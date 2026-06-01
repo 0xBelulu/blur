@@ -74,8 +74,8 @@ export default function Result({ result, onRestart }) {
           tabs={DIMENSION_PAIRS.map((p) => ({ key: p.key, label: p.label }))}
           activeIndex={activePairIndex}
           onChange={setActivePairIndex}
-          className="mb-4 w-full"
-          tabClassName="px-1 py-1.5 text-[10px]"
+          className="mb-4 w-full max-w-md mx-auto md:mx-0"
+          tabClassName="px-2 sm:px-3 py-1.5 text-[10px]"
         />
 
         {/* Dimension Meters - desktop sticky side panel */}

@@ -141,7 +141,7 @@ export default function DraggableTabs({
         <motion.div
           ref={sliderRef}
           className="absolute top-1 bottom-1 rounded-xl bg-blur-surface shadow-sm cursor-grab active:cursor-grabbing"
-          style={{ touchAction: "none", zIndex: 5 }}
+          style={{ touchAction: "none", zIndex: 20 }}
           animate={{
             left: activeRect.left + dragOffset,
             width: activeRect.width,
