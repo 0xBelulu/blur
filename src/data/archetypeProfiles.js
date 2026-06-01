@@ -220,7 +220,7 @@ export const ARCHETYPE_PROFILES = {
   silhouette: {
     title: "剪影",
     subtitle: "逆光时你的轮廓才最清晰",
-    symbol: "🖤",
+    symbol: "📷",
     description: "你像逆光中的剪影——正面看是模糊的，但从背后照来的光把你的轮廓刻得很深。你不是没有形状，你只是需要特定的角度才能被看见。",
     color: [175, 165, 170],
     vector: {
