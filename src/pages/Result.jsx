@@ -7,6 +7,7 @@ import { DIMENSION_PAIRS } from "../utils/blurEngine";
 import TraitRadar from "../components/TraitRadar";
 import DimensionMeters from "../components/DimensionMeters";
 import ProgressBar from "../components/ProgressBar";
+import DraggableTabs from "../components/DraggableTabs";
 
 const TABS = [
   { key: "cloud", label: "画像" },
@@ -69,32 +70,13 @@ export default function Result({ result, onRestart }) {
         </motion.div>
 
         {/* Pair selector */}
-        <motion.div className="relative flex rounded-2xl glass p-1 mb-4 w-full">
-          {DIMENSION_PAIRS.map((pair, i) => (
-            <button
-              key={pair.key}
-              onClick={() => setActivePairIndex(i)}
-              className="flex-1 relative z-10 px-1 py-1.5 text-[10px] cursor-pointer"
-            >
-              {activePairIndex === i && (
-                <motion.div
-                  layoutId="activePairTab"
-                  className="absolute inset-0 rounded-xl bg-blur-surface shadow-sm"
-                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                />
-              )}
-              <span
-                className={`relative z-10 transition-colors duration-300 ${
-                  activePairIndex === i
-                    ? "text-blur-text font-medium"
-                    : "text-blur-text-muted hover:text-blur-text"
-                }`}
-              >
-                {pair.label}
-              </span>
-            </button>
-          ))}
-        </motion.div>
+        <DraggableTabs
+          tabs={DIMENSION_PAIRS.map((p) => ({ key: p.key, label: p.label }))}
+          activeIndex={activePairIndex}
+          onChange={setActivePairIndex}
+          className="mb-4 w-full"
+          tabClassName="px-1 py-1.5 text-[10px]"
+        />
 
         {/* Dimension Meters - desktop sticky side panel */}
         <motion.div
@@ -176,34 +158,14 @@ export default function Result({ result, onRestart }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
-          className="relative flex rounded-2xl glass p-1 mt-6 mb-5 w-full"
         >
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => {
-                setActiveTab(tab.key);
-              }}
-              className="flex-1 relative z-10 px-4 py-2 text-xs cursor-pointer"
-            >
-              {activeTab === tab.key && (
-                <motion.div
-                  layoutId="activeTab"
-                  className="absolute inset-0 rounded-xl bg-blur-surface shadow-sm"
-                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                />
-              )}
-              <span
-                className={`relative z-10 transition-colors duration-300 ${
-                  activeTab === tab.key
-                    ? "text-blur-text font-medium"
-                    : "text-blur-text-muted hover:text-blur-text"
-                }`}
-              >
-                {tab.label}
-              </span>
-            </button>
-          ))}
+          <DraggableTabs
+            tabs={TABS}
+            activeIndex={TABS.findIndex((t) => t.key === activeTab)}
+            onChange={(i) => setActiveTab(TABS[i].key)}
+            className="mb-5 w-full"
+            tabClassName="px-4 py-2 text-xs"
+          />
         </motion.div>
 
         <div className="w-full">

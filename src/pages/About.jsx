@@ -1,7 +1,4 @@
-import { useState } from "react";
-import { AnimatePresence } from "framer-motion";
 import { ArrowLeft, List, ChevronRight, Sparkles, Hash } from "lucide-react";
-import QuestionBank from "../components/QuestionBank";
 
 /* ─── text-embedded link, no button ─── */
 function InlineLink({ icon: Icon, label, onClick }) {
@@ -26,8 +23,7 @@ function ParaBreak() {
   );
 }
 
-export default function About({ onBack, onOpenArchetypes, onOpenTraits }) {
-  const [showQuestionBank, setShowQuestionBank] = useState(false);
+export default function About({ onBack, onOpenArchetypes, onOpenTraits, onOpenQuestions }) {
 
   return (
     <div className="flex-1 flex flex-col min-h-[100svh] relative overflow-hidden">
@@ -107,7 +103,7 @@ export default function About({ onBack, onOpenArchetypes, onOpenTraits }) {
                 <InlineLink
                   icon={List}
                   label="浏览全部题目"
-                  onClick={() => setShowQuestionBank(true)}
+                  onClick={onOpenQuestions}
                 />
                 ，在测试开始前先看一眼。
               </p>
@@ -165,12 +161,6 @@ export default function About({ onBack, onOpenArchetypes, onOpenTraits }) {
         </main>
       </div>
 
-      {/* QuestionBank modal */}
-      <AnimatePresence>
-        {showQuestionBank && (
-          <QuestionBank onClose={() => setShowQuestionBank(false)} />
-        )}
-      </AnimatePresence>
     </div>
   );
 }

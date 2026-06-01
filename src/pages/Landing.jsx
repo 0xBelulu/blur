@@ -249,36 +249,26 @@ export default function Landing({ onStart, onExplore }) {
           <span className="w-8 h-px bg-blur-border/60" />
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9, duration: 0.6 }}
-          className="flex justify-center md:justify-start w-full"
-        >
+        <div className="flex justify-center md:justify-start w-full">
           <GlassButton
             variant="primary"
             onClick={onStart}
-            className="text-base px-10 md:px-12 py-4"
+            className="text-base px-10 md:px-12 py-4 animate-fade-in-up delay-900"
           >
             开始测试
           </GlassButton>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.1, duration: 0.6 }}
-          className="flex justify-center md:justify-start w-full mt-3"
-        >
+        <div className="flex justify-center md:justify-start w-full mt-3">
           <GlassButton
             variant="primary"
             onClick={onExplore}
-            className="text-sm flex items-center gap-1.5"
+            className="text-sm flex items-center gap-1.5 animate-fade-in-up delay-1100"
           >
             <Sparkles size={14} />
             探索blur
           </GlassButton>
-        </motion.div>
+        </div>
 
         <motion.p
           initial={{ opacity: 0 }}

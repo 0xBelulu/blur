@@ -7,10 +7,11 @@ import Result from "./pages/Result";
 import About from "./pages/About";
 import Archetypes from "./pages/Archetypes";
 import Traits from "./pages/Traits";
+import Questions from "./pages/Questions";
 import { generateResult } from "./utils/blurEngine";
 import { questions } from "./data/questions";
 
-const screenOrder = ["landing", "about", "archetypes", "traits", "test", "loading", "result"];
+const screenOrder = ["landing", "about", "archetypes", "traits", "questions", "test", "loading", "result"];
 const LOADING_DURATION = 3500;
 
 const pageVariants = {
@@ -62,6 +63,10 @@ export default function App() {
 
   const handleOpenTraits = useCallback(() => {
     navigate("traits");
+  }, [navigate]);
+
+  const handleOpenQuestions = useCallback(() => {
+    navigate("questions");
   }, [navigate]);
 
   const handleBackToAbout = useCallback(() => {
@@ -118,7 +123,7 @@ export default function App() {
             transition={pageTransition}
             style={{ willChange: "filter, transform, opacity", contain: "layout style paint" }}
           >
-            <About onBack={handleRestart} onOpenArchetypes={handleOpenArchetypes} onOpenTraits={handleOpenTraits} />
+            <About onBack={handleRestart} onOpenArchetypes={handleOpenArchetypes} onOpenTraits={handleOpenTraits} onOpenQuestions={handleOpenQuestions} />
           </motion.div>
         )}
 
@@ -149,6 +154,21 @@ export default function App() {
             style={{ willChange: "filter, transform, opacity", contain: "layout style paint" }}
           >
             <Traits onBack={handleBackToAbout} />
+          </motion.div>
+        )}
+
+        {screen === "questions" && (
+          <motion.div
+            key="questions"
+            custom={direction}
+            variants={pageVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={pageTransition}
+            style={{ willChange: "filter, transform, opacity", contain: "layout style paint" }}
+          >
+            <Questions onBack={handleBackToAbout} />
           </motion.div>
         )}
 
