@@ -14,7 +14,6 @@ export default function DraggableTabs({
   renderLabel,
 }) {
   const containerRef = useRef(null);
-  const sliderRef = useRef(null);
   const [tabRects, setTabRects] = useState([]);
   const [dragOffset, setDragOffset] = useState(0);
   const dragStartX = useRef(null);
@@ -52,15 +51,13 @@ export default function DraggableTabs({
     [tabRects, activeIndex],
   );
 
-  const handleSliderPointerDown = (e) => {
-    e.stopPropagation();
+  const handlePointerDown = (e) => {
     wasDragging.current = false;
     dragStartX.current = e.clientX;
     isDragging.current = false;
-    sliderRef.current?.setPointerCapture(e.pointerId);
   };
 
-  const handleSliderPointerMove = (e) => {
+  const handlePointerMove = (e) => {
     if (dragStartX.current === null) return;
     const dx = e.clientX - dragStartX.current;
     if (Math.abs(dx) > 3) {
@@ -69,7 +66,7 @@ export default function DraggableTabs({
     }
   };
 
-  const handleSliderPointerUp = (e) => {
+  const handlePointerUp = (e) => {
     if (isDragging.current && tabRects.length) {
       wasDragging.current = true;
       const rect = tabRects[activeIndex];
@@ -125,6 +122,11 @@ export default function DraggableTabs({
     <div
       ref={containerRef}
       className={`relative flex rounded-2xl glass p-1 select-none ${className}`}
+      style={{ touchAction: "none" }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
     >
       {tabs.map((tab, i) => (
         <button
@@ -139,9 +141,8 @@ export default function DraggableTabs({
 
       {activeRect && (
         <motion.div
-          ref={sliderRef}
-          className="absolute top-1 bottom-1 rounded-xl bg-blur-surface shadow-sm cursor-grab active:cursor-grabbing"
-          style={{ touchAction: "none", zIndex: 20 }}
+          className="absolute top-1 bottom-1 rounded-xl bg-blur-surface shadow-sm pointer-events-none"
+          style={{ zIndex: 5 }}
           animate={{
             left: activeRect.left + dragOffset,
             width: activeRect.width,
@@ -152,10 +153,6 @@ export default function DraggableTabs({
               ? { duration: 0 }
               : { type: "spring", stiffness: 380, damping: 30 }
           }
-          onPointerDown={handleSliderPointerDown}
-          onPointerMove={handleSliderPointerMove}
-          onPointerUp={handleSliderPointerUp}
-          onPointerCancel={handleSliderPointerUp}
         />
       )}
     </div>
