@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, List, ChevronRight, ChevronDown, Sparkles, Hash } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
+import { ArrowLeft, List, ChevronRight, Sparkles, Hash } from "lucide-react";
 import QuestionBank from "../components/QuestionBank";
-import { archetypeDescriptions, DIMENSIONS, tagPool } from "../data/tags";
 
 /* ─── text-embedded link, no button ─── */
-function InlineLink({ icon: Icon, label, onClick, isOpen }) {
+function InlineLink({ icon: Icon, label, onClick }) {
   return (
     <button
       onClick={onClick}
@@ -13,11 +12,7 @@ function InlineLink({ icon: Icon, label, onClick, isOpen }) {
     >
       <Icon size={12} className="opacity-40 group-hover:opacity-70 transition-opacity" />
       <span>{label}</span>
-      {isOpen ? (
-        <ChevronDown size={10} className="opacity-40" />
-      ) : (
-        <ChevronRight size={10} className="opacity-40 group-hover:translate-x-0.5 transition-transform" />
-      )}
+      <ChevronRight size={10} className="opacity-40 group-hover:translate-x-0.5 transition-transform" />
     </button>
   );
 }
@@ -31,62 +26,8 @@ function ParaBreak() {
   );
 }
 
-/* ─── archetype mini card with inline accordion ─── */
-function ArchetypeMini({ data, isOpen, onClick }) {
-  return (
-    <div className="rounded-lg border border-blur-border/20 bg-blur-surface/10 overflow-hidden">
-      <button
-        onClick={onClick}
-        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-blur-surface-hover/20 transition-colors cursor-pointer"
-      >
-        <div className="flex items-center gap-3">
-          <span className="text-base select-none">{data.symbol}</span>
-          <div>
-            <div className="text-sm font-medium text-blur-text">{data.title}</div>
-            <div className="text-xs text-blur-text-muted">{data.subtitle}</div>
-          </div>
-        </div>
-        <ChevronDown
-          size={14}
-          className={`text-blur-text-muted transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-        />
-      </button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.25 }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 pb-4 space-y-3 text-sm text-blur-text-muted leading-relaxed">
-              <p>{data.description}</p>
-              <div className="space-y-2 pt-2 border-t border-blur-border/10">
-                <p>
-                  <span className="text-blur-text/70 font-medium text-xs">内心世界</span> — {data.narrative.innerWorld}
-                </p>
-                <p>
-                  <span className="text-blur-text/70 font-medium text-xs">关系之中</span> — {data.narrative.inRelation}
-                </p>
-                <p>
-                  <span className="text-blur-text/70 font-medium text-xs">隐藏侧面</span> — {data.narrative.hiddenSide}
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-export default function About({ onBack }) {
+export default function About({ onBack, onOpenArchetypes, onOpenTraits }) {
   const [showQuestionBank, setShowQuestionBank] = useState(false);
-  const [showArchetypes, setShowArchetypes] = useState(false);
-  const [openArchetype, setOpenArchetype] = useState(null);
-  const [showTraits, setShowTraits] = useState(false);
-  const [openTraitGroup, setOpenTraitGroup] = useState(null);
 
   return (
     <div className="flex-1 flex flex-col min-h-[100svh] relative overflow-hidden">
@@ -189,37 +130,10 @@ export default function About({ onBack }) {
                 雾、风铃、漂流者、静观者、虹、盐、底片、潮汐、剪影——每一种都有自己的内心世界、关系模式和隐藏侧面。
                 <InlineLink
                   icon={Sparkles}
-                  label="展开查看"
-                  onClick={() => {
-                    setShowArchetypes(!showArchetypes);
-                    setOpenArchetype(null);
-                  }}
-                  isOpen={showArchetypes}
+                  label="查看全部"
+                  onClick={onOpenArchetypes}
                 />
               </p>
-
-              <AnimatePresence>
-                {showArchetypes && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    transition={{ duration: 0.3 }}
-                    className="mt-5 space-y-2"
-                  >
-                    {Object.entries(archetypeDescriptions).map(([key, data]) => (
-                      <ArchetypeMini
-                        key={key}
-                        data={data}
-                        isOpen={openArchetype === key}
-                        onClick={() =>
-                          setOpenArchetype(openArchetype === key ? null : key)
-                        }
-                      />
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </section>
 
             {/* ─── Section 3: Traits ─── */}
@@ -239,75 +153,10 @@ export default function About({ onBack }) {
                 你的结果里会出现最贴合你的几枚标签，而其余标签则是你可能从未注意到的侧面。
                 <InlineLink
                   icon={Hash}
-                  label="展开查看"
-                  onClick={() => {
-                    setShowTraits(!showTraits);
-                    setOpenTraitGroup(null);
-                  }}
-                  isOpen={showTraits}
+                  label="查看全部"
+                  onClick={onOpenTraits}
                 />
               </p>
-
-              <AnimatePresence>
-                {showTraits && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    transition={{ duration: 0.3 }}
-                    className="mt-5 space-y-3"
-                  >
-                    {Object.entries(DIMENSIONS).map(([key, dim]) => (
-                      <div
-                        key={key}
-                        className="rounded-lg border border-blur-border/20 bg-blur-surface/10 overflow-hidden"
-                      >
-                        <button
-                          onClick={() =>
-                            setOpenTraitGroup(openTraitGroup === key ? null : key)
-                          }
-                          className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-blur-surface-hover/20 transition-colors cursor-pointer"
-                        >
-                          <span className="text-sm font-medium text-blur-text">
-                            {dim.name}
-                          </span>
-                          <ChevronDown
-                            size={14}
-                            className={`text-blur-text-muted transition-transform duration-200 ${openTraitGroup === key ? "rotate-180" : ""}`}
-                          />
-                        </button>
-                        <AnimatePresence>
-                          {openTraitGroup === key && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: "auto" }}
-                              exit={{ opacity: 0, height: 0 }}
-                              transition={{ duration: 0.25 }}
-                              className="overflow-hidden"
-                            >
-                              <div className="px-4 pb-4 flex flex-wrap gap-2">
-                                {dim.traits.map((traitKey) => {
-                                  const trait = tagPool[traitKey];
-                                  if (!trait) return null;
-                                  return (
-                                    <span
-                                      key={traitKey}
-                                      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs border border-blur-border/30 bg-blur-surface/20 text-blur-text-muted"
-                                      title={trait.detail}
-                                    >
-                                      {trait.text}
-                                    </span>
-                                  );
-                                })}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </section>
 
             {/* Bottom margin for notebook feel */}

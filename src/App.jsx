@@ -5,10 +5,12 @@ import Test from "./pages/Test";
 import Loading from "./pages/Loading";
 import Result from "./pages/Result";
 import About from "./pages/About";
+import Archetypes from "./pages/Archetypes";
+import Traits from "./pages/Traits";
 import { generateResult } from "./utils/blurEngine";
 import { questions } from "./data/questions";
 
-const screenOrder = ["landing", "about", "test", "loading", "result"];
+const screenOrder = ["landing", "about", "archetypes", "traits", "test", "loading", "result"];
 const LOADING_DURATION = 3500;
 
 const pageVariants = {
@@ -51,6 +53,18 @@ export default function App() {
   }, [navigate]);
 
   const handleOpenAbout = useCallback(() => {
+    navigate("about");
+  }, [navigate]);
+
+  const handleOpenArchetypes = useCallback(() => {
+    navigate("archetypes");
+  }, [navigate]);
+
+  const handleOpenTraits = useCallback(() => {
+    navigate("traits");
+  }, [navigate]);
+
+  const handleBackToAbout = useCallback(() => {
     navigate("about");
   }, [navigate]);
 
@@ -104,7 +118,37 @@ export default function App() {
             transition={pageTransition}
             style={{ willChange: "filter, transform, opacity", contain: "layout style paint" }}
           >
-            <About onBack={handleRestart} />
+            <About onBack={handleRestart} onOpenArchetypes={handleOpenArchetypes} onOpenTraits={handleOpenTraits} />
+          </motion.div>
+        )}
+
+        {screen === "archetypes" && (
+          <motion.div
+            key="archetypes"
+            custom={direction}
+            variants={pageVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={pageTransition}
+            style={{ willChange: "filter, transform, opacity", contain: "layout style paint" }}
+          >
+            <Archetypes onBack={handleBackToAbout} />
+          </motion.div>
+        )}
+
+        {screen === "traits" && (
+          <motion.div
+            key="traits"
+            custom={direction}
+            variants={pageVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={pageTransition}
+            style={{ willChange: "filter, transform, opacity", contain: "layout style paint" }}
+          >
+            <Traits onBack={handleBackToAbout} />
           </motion.div>
         )}
 
