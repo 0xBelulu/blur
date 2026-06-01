@@ -27,7 +27,7 @@ const ARCHETYPE_SYMBOLS = [
   { symbol: "🧂", x: "18%", y: "78%", delay: 3.0 },
   { symbol: "🎞️", x: "68%", y: "85%", delay: 0.4 },
   { symbol: "🌊", x: "35%", y: "88%", delay: 2.0 },
-  { symbol: "🌑", x: "55%", y: "12%", delay: 1.5 },
+  { symbol: "📷", x: "55%", y: "12%", delay: 1.5 },
 ];
 
 function useRotatingTip(interval = 4000) {
