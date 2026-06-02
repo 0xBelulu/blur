@@ -99,14 +99,15 @@ export default function About({ onBack, onOpenArchetypes, onOpenTraits, onOpenQu
               </p>
               <ParaBreak />
               <p className="text-[15px] text-blur-text-muted leading-[1.85]">
-                如果你愿意，可以
+                如果你愿意，可以在测试开始前先看一眼。
+              </p>
+              <div className="mt-3">
                 <InlineLink
                   icon={List}
                   label="浏览全部题目"
                   onClick={onOpenQuestions}
                 />
-                ，在测试开始前先看一眼。
-              </p>
+              </div>
             </section>
 
             {/* ─── Section 2: Archetypes ─── */}
@@ -124,12 +125,14 @@ export default function About({ onBack, onOpenArchetypes, onOpenTraits, onOpenQu
               <ParaBreak />
               <p className="text-[15px] text-blur-text-muted leading-[1.85]">
                 雾、风铃、漂流者、静观者、虹、盐、底片、潮汐、剪影——每一种都有自己的内心世界、关系模式和隐藏侧面。
+              </p>
+              <div className="mt-3">
                 <InlineLink
                   icon={Sparkles}
                   label="查看全部"
                   onClick={onOpenArchetypes}
                 />
-              </p>
+              </div>
             </section>
 
             {/* ─── Section 3: Traits ─── */}
@@ -147,12 +150,14 @@ export default function About({ onBack, onOpenArchetypes, onOpenTraits, onOpenQu
               <ParaBreak />
               <p className="text-[15px] text-blur-text-muted leading-[1.85]">
                 你的结果里会出现最贴合你的几枚标签，而其余标签则是你可能从未注意到的侧面。
+              </p>
+              <div className="mt-3">
                 <InlineLink
                   icon={Hash}
                   label="查看全部"
                   onClick={onOpenTraits}
                 />
-              </p>
+              </div>
             </section>
 
             {/* Bottom margin for notebook feel */}
