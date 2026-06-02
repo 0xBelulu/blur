@@ -67,7 +67,7 @@ export default function Questions({ onBack }) {
         />
       </div>
 
-      <div className="relative z-10 w-full max-w-xl mx-auto flex flex-col min-h-[100svh]">
+      <div className="relative z-10 w-full max-w-2xl mx-auto flex flex-col min-h-[100svh]">
         <header className="flex-shrink-0 flex items-center justify-between px-6 md:px-10 py-5 border-b border-blur-border/20">
           <button
             onClick={onBack}

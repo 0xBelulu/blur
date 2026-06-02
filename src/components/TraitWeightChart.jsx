@@ -21,7 +21,7 @@ export default function TraitWeightChart({ traits, color }) {
       transition={{ delay: 0.05, duration: 0.35 }}
       className="pt-3 mt-1 border-t border-blur-border/10"
     >
-      <p className="text-[10px] text-blur-text-light/50 tracking-[0.1em] uppercase mb-2">
+      <p className="text-[10px] text-blur-text-light/50 tracking-[0.1em] uppercase mb-2.5">
         特质权重
       </p>
       <div className="space-y-1.5">
@@ -32,11 +32,11 @@ export default function TraitWeightChart({ traits, color }) {
           return (
             <div
               key={trait.key}
-              className="flex items-center gap-2 group cursor-default"
+              className="flex items-center gap-2 sm:gap-3 group cursor-default"
               onMouseEnter={() => setHoveredTrait(trait.key)}
               onMouseLeave={() => setHoveredTrait(null)}
             >
-              <span className={`w-[56px] text-[10px] shrink-0 text-right truncate transition-colors ${isHovered ? "text-blur-accent" : "text-blur-text-muted"}`}>
+              <span className={`min-w-[48px] sm:w-[68px] text-[10px] shrink-0 text-right truncate transition-colors ${isHovered ? "text-blur-accent" : "text-blur-text-muted"}`}>
                 {trait.text}
               </span>
               <div className="flex-1 h-1.5 rounded-full bg-blur-surface overflow-hidden">
@@ -63,7 +63,7 @@ export default function TraitWeightChart({ traits, color }) {
         <motion.p
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
-          className="text-[10px] text-blur-text-light/50 mt-2 italic"
+          className="text-[11px] text-blur-text-light/55 mt-2.5 px-1 leading-relaxed"
         >
           {sorted.find((t) => t.key === hoveredTrait)?.detail}
         </motion.p>

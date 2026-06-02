@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { archetypeDescriptions } from "../data/tags";
@@ -62,7 +62,24 @@ function ArchetypeCard({ data, profile, isOpen, onClick, cardRef }) {
 
 export default function Archetypes({ onBack }) {
   const [openArchetype, setOpenArchetype] = useState(null);
+  const [spaceSize, setSpaceSize] = useState(280);
+  const spaceRef = useRef(null);
   const cardRefs = useRef({});
+
+  useEffect(() => {
+    const el = spaceRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const w = el.clientWidth;
+      setSpaceSize(Math.max(200, Math.min(w, 380)));
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const handleSpaceClick = useCallback((key) => {
     setOpenArchetype(key);
@@ -72,7 +89,6 @@ export default function Archetypes({ onBack }) {
   }, []);
 
   const zeroVector = {};
-  const spaceSize = typeof window !== "undefined" && window.innerWidth >= 640 ? 320 : 280;
   const defaultPair = DIMENSION_PAIRS[0];
 
   return (
@@ -88,7 +104,7 @@ export default function Archetypes({ onBack }) {
         />
       </div>
 
-      <div className="relative z-10 w-full max-w-xl mx-auto flex flex-col min-h-[100svh]">
+      <div className="relative z-10 w-full max-w-2xl mx-auto flex flex-col min-h-[100svh]">
         <header className="flex-shrink-0 flex items-center justify-between px-6 md:px-10 py-5 border-b border-blur-border/20">
           <button
             onClick={onBack}
@@ -130,17 +146,19 @@ export default function Archetypes({ onBack }) {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15, duration: 0.5 }}
-                className="glass rounded-2xl p-3"
+                className="glass rounded-2xl p-2 sm:p-3 w-full"
               >
-                <TraitSpace2D
-                  userVector={zeroVector}
-                  xKey={defaultPair.xKey}
-                  yKey={defaultPair.yKey}
-                  width={spaceSize}
-                  height={spaceSize}
-                  showUser={false}
-                  onClickArchetype={handleSpaceClick}
-                />
+                <div ref={spaceRef} className="w-full flex justify-center">
+                  <TraitSpace2D
+                    userVector={zeroVector}
+                    xKey={defaultPair.xKey}
+                    yKey={defaultPair.yKey}
+                    width={spaceSize}
+                    height={spaceSize}
+                    showUser={false}
+                    onClickArchetype={handleSpaceClick}
+                  />
+                </div>
               </motion.div>
               <p className="text-[10px] text-blur-text-light/40 mt-2 tracking-wide">
                 点击坐标查看原型详情

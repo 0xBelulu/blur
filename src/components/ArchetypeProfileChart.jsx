@@ -34,16 +34,18 @@ function DivergingBar({ name, value, negative, positive, color, suppressed, onHo
 
   return (
     <div
-      className="flex items-center gap-1.5 group cursor-default"
+      className="flex items-center gap-1 sm:gap-1.5 group cursor-default"
       onMouseEnter={() => onHover?.(name)}
       onMouseLeave={() => onLeave?.()}
     >
-      <span className="w-[64px] text-[10px] text-blur-text shrink-0 text-right">
+      <span className="w-[52px] sm:w-[72px] text-[10px] text-blur-text shrink-0 text-right select-none">
         {name}
       </span>
-      <span className="w-[44px] text-[9px] text-blur-text-light/60 shrink-0 text-right leading-tight">
+
+      <span className="hidden sm:inline w-[44px] text-[9px] text-blur-text-light/60 shrink-0 text-right leading-tight select-none">
         {negative}
       </span>
+
       <div className="flex-1 relative h-2 flex rounded-full overflow-hidden">
         <div className="w-1/2 flex justify-end items-center">
           {!isPositive && (
@@ -69,14 +71,17 @@ function DivergingBar({ name, value, negative, positive, color, suppressed, onHo
           )}
         </div>
       </div>
-      <span className="w-[44px] text-[9px] text-blur-text-light/60 shrink-0 text-left leading-tight">
+
+      <span className="hidden sm:inline w-[44px] text-[9px] text-blur-text-light/60 shrink-0 text-left leading-tight select-none">
         {positive}
       </span>
-      <span className={`w-8 text-[10px] tabular-nums shrink-0 text-right ${isPositive ? "text-blur-accent" : "text-blur-text-light/70"}`}>
+
+      <span className={`w-8 text-[10px] tabular-nums shrink-0 text-right select-none ${isPositive ? "text-blur-accent" : "text-blur-text-light/70"}`}>
         {isPositive ? "+" : ""}{value.toFixed(1)}
       </span>
+
       {suppressed && (
-        <span className="text-[9px] text-blur-text-light/30 shrink-0" title="抑制维度">
+        <span className="hidden sm:inline text-[9px] text-blur-text-light/30 shrink-0" title="抑制维度">
           ·
         </span>
       )}
@@ -94,7 +99,7 @@ function CompactRadar({ profile, dimensions, dimKeys, color }) {
   const dataPolygon = dataPoints.map((p) => `${p.x},${p.y}`).join(" ");
 
   return (
-    <svg viewBox="0 0 160 160" className="w-[140px] h-[140px] shrink-0" style={{ overflow: "visible" }}>
+    <svg viewBox="0 0 160 160" className="w-[150px] h-[150px] sm:w-[170px] sm:h-[170px] shrink-0" style={{ overflow: "visible" }}>
       {GRID_LEVELS.map((level, li) => (
         <polygon
           key={li}
@@ -178,14 +183,14 @@ export default function ArchetypeProfileChart({ profile, dimensions }) {
           典型维度分布
         </p>
         {hoveredDim && (
-          <span className="text-[10px] text-blur-accent/80 flex items-center gap-1">
+          <span className="hidden sm:flex text-[10px] text-blur-accent/80 items-center gap-1">
             <Info size={10} />
             {hoveredDim}
           </span>
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-5">
         <div className="flex-1 w-full space-y-1.5">
           {dimKeys.map((key) => {
             const dim = dimensions[key];
@@ -206,7 +211,7 @@ export default function ArchetypeProfileChart({ profile, dimensions }) {
           })}
         </div>
 
-        <div className="mx-auto sm:mx-0">
+        <div className="mx-auto sm:mx-0 sm:mt-1">
           <CompactRadar
             profile={profile}
             dimensions={dimensions}
