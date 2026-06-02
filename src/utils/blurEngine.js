@@ -1,5 +1,6 @@
 import { DIMENSIONS, DIMENSION_KEYS } from "../data/dimensions.js";
 import { ARCHETYPE_PROFILES } from "../data/archetypeProfiles.js";
+import { getRankWeight, getScaleWeight } from "../config/weightConfig.js";
 
 /**
  * 纯随机回答下每个原型的余弦相似度分布参数（20000 次 Monte Carlo）
@@ -68,19 +69,17 @@ function accumulateDimensions(answers, questions) {
     if (!q) continue;
 
     if (answer.type === "rank" && Array.isArray(answer.rankOrder)) {
-      const weights = [1.0, 0.6, 0.3, 0.1];
       answer.rankOrder.forEach((optionIndex, rank) => {
         const option = q.options?.[optionIndex];
         if (option?.dimensions) {
-          const w = weights[rank] ?? 0;
+          const w = getRankWeight(rank);
           for (const [dk, dv] of Object.entries(option.dimensions)) {
             dims[dk] = (dims[dk] || 0) + dv * w;
           }
         }
       });
     } else if (answer.type === "scale" && typeof answer.value === "number") {
-      const scaleWeights = [0, 0.4, 0.7, 1.0, 1.3, 1.6];
-      const weight = scaleWeights[answer.value] ?? 1.0;
+      const weight = getScaleWeight(answer.value);
       if (q.dimensions) {
         for (const [dk, dv] of Object.entries(q.dimensions)) {
           dims[dk] = (dims[dk] || 0) + dv * weight;
