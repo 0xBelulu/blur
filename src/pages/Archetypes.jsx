@@ -1,11 +1,16 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { archetypeDescriptions } from "../data/tags";
+import { ARCHETYPE_PROFILES } from "../data/archetypeProfiles";
+import { DIMENSIONS as DIM_CONFIG } from "../data/dimensions";
+import { DIMENSION_PAIRS } from "../utils/blurEngine";
+import TraitSpace2D from "../components/TraitSpace2D";
+import ArchetypeProfileChart from "../components/ArchetypeProfileChart";
 
-function ArchetypeCard({ data, isOpen, onClick }) {
+function ArchetypeCard({ data, profile, isOpen, onClick, cardRef }) {
   return (
-    <div className="rounded-lg border border-blur-border/20 bg-blur-surface/10 overflow-hidden">
+    <div ref={cardRef} className="rounded-lg border border-blur-border/20 bg-blur-surface/10 overflow-hidden">
       <button
         onClick={onClick}
         className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-blur-surface-hover/20 transition-colors cursor-pointer"
@@ -44,6 +49,9 @@ function ArchetypeCard({ data, isOpen, onClick }) {
                   <span className="text-blur-text/70 font-medium text-xs">隐藏侧面</span> — {data.narrative.hiddenSide}
                 </p>
               </div>
+              {profile && (
+                <ArchetypeProfileChart profile={profile} dimensions={DIM_CONFIG} />
+              )}
             </div>
           </motion.div>
         )}
@@ -54,6 +62,18 @@ function ArchetypeCard({ data, isOpen, onClick }) {
 
 export default function Archetypes({ onBack }) {
   const [openArchetype, setOpenArchetype] = useState(null);
+  const cardRefs = useRef({});
+
+  const handleSpaceClick = useCallback((key) => {
+    setOpenArchetype(key);
+    setTimeout(() => {
+      cardRefs.current[key]?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+  }, []);
+
+  const zeroVector = {};
+  const spaceSize = typeof window !== "undefined" && window.innerWidth >= 640 ? 320 : 280;
+  const defaultPair = DIMENSION_PAIRS[0];
 
   return (
     <div className="flex-1 flex flex-col min-h-[100svh] relative overflow-hidden">
@@ -105,15 +125,39 @@ export default function Archetypes({ onBack }) {
               Blur 将人格划分为九种原型。它们不是分类，而是透镜——透过不同的模糊方式，你看到的是不同的自己。
             </p>
 
+            <div className="flex flex-col items-center mb-8">
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15, duration: 0.5 }}
+                className="glass rounded-2xl p-3"
+              >
+                <TraitSpace2D
+                  userVector={zeroVector}
+                  xKey={defaultPair.xKey}
+                  yKey={defaultPair.yKey}
+                  width={spaceSize}
+                  height={spaceSize}
+                  showUser={false}
+                  onClickArchetype={handleSpaceClick}
+                />
+              </motion.div>
+              <p className="text-[10px] text-blur-text-light/40 mt-2 tracking-wide">
+                点击坐标查看原型详情
+              </p>
+            </div>
+
             <div className="space-y-2">
               {Object.entries(archetypeDescriptions).map(([key, data]) => (
                 <ArchetypeCard
                   key={key}
                   data={data}
+                  profile={ARCHETYPE_PROFILES[key]}
                   isOpen={openArchetype === key}
                   onClick={() =>
                     setOpenArchetype(openArchetype === key ? null : key)
                   }
+                  cardRef={(el) => { cardRefs.current[key] = el; }}
                 />
               ))}
             </div>

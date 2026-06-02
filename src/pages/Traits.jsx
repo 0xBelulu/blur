@@ -2,6 +2,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { DIMENSIONS, tagPool } from "../data/tags";
+import { ARCHETYPE_PROFILES } from "../data/archetypeProfiles";
+import TraitWeightChart from "../components/TraitWeightChart";
 
 export default function Traits({ onBack }) {
   const [openTraitGroup, setOpenTraitGroup] = useState(null);
@@ -57,54 +59,70 @@ export default function Traits({ onBack }) {
             </p>
 
             <div className="space-y-3">
-              {Object.entries(DIMENSIONS).map(([key, dim]) => (
-                <div
-                  key={key}
-                  className="rounded-lg border border-blur-border/20 bg-blur-surface/10 overflow-hidden"
-                >
-                  <button
-                    onClick={() =>
-                      setOpenTraitGroup(openTraitGroup === key ? null : key)
-                    }
-                    className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-blur-surface-hover/20 transition-colors cursor-pointer"
+              {Object.entries(DIMENSIONS).map(([key, dim]) => {
+                const traitObjects = dim.traits
+                  .map((traitKey) => {
+                    const trait = tagPool[traitKey];
+                    if (!trait) return null;
+                    return {
+                      key: traitKey,
+                      text: trait.text,
+                      weight: trait.weight,
+                      detail: trait.detail,
+                    };
+                  })
+                  .filter(Boolean);
+
+                const profileColor = ARCHETYPE_PROFILES[key]?.color;
+
+                return (
+                  <div
+                    key={key}
+                    className="rounded-lg border border-blur-border/20 bg-blur-surface/10 overflow-hidden"
                   >
-                    <span className="text-sm font-medium text-blur-text">
-                      {dim.name}
-                    </span>
-                    <ChevronDown
-                      size={14}
-                      className={`text-blur-text-muted transition-transform duration-200 ${openTraitGroup === key ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                  <AnimatePresence>
-                    {openTraitGroup === key && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.25 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="px-4 pb-4 flex flex-wrap gap-2">
-                          {dim.traits.map((traitKey) => {
-                            const trait = tagPool[traitKey];
-                            if (!trait) return null;
-                            return (
-                              <span
-                                key={traitKey}
-                                className="inline-flex items-center px-2.5 py-1 rounded-full text-xs border border-blur-border/30 bg-blur-surface/20 text-blur-text-muted"
-                                title={trait.detail}
-                              >
-                                {trait.text}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ))}
+                    <button
+                      onClick={() =>
+                        setOpenTraitGroup(openTraitGroup === key ? null : key)
+                      }
+                      className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-blur-surface-hover/20 transition-colors cursor-pointer"
+                    >
+                      <span className="text-sm font-medium text-blur-text">
+                        {dim.name}
+                      </span>
+                      <ChevronDown
+                        size={14}
+                        className={`text-blur-text-muted transition-transform duration-200 ${openTraitGroup === key ? "rotate-180" : ""}`}
+                      />
+                    </button>
+                    <AnimatePresence>
+                      {openTraitGroup === key && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.25 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="px-4 pb-4">
+                            <div className="flex flex-wrap gap-2">
+                              {traitObjects.map((trait) => (
+                                <span
+                                  key={trait.key}
+                                  className="inline-flex items-center px-2.5 py-1 rounded-full text-xs border border-blur-border/30 bg-blur-surface/20 text-blur-text-muted"
+                                  title={trait.detail}
+                                >
+                                  {trait.text}
+                                </span>
+                              ))}
+                            </div>
+                            <TraitWeightChart traits={traitObjects} color={profileColor} />
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
             </div>
 
             <div className="h-16" />

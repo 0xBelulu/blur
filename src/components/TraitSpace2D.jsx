@@ -15,19 +15,31 @@ export default function TraitSpace2D({
   width = 360,
   height = 360,
   onHoverArchetype,
+  showUser = true,
+  onClickArchetype,
 }) {
   const canvasRef = useRef(null);
   const animRef = useRef(null);
   const startRef = useRef(0);
   const hoveredRef = useRef(null);
   const onHoverRef = useRef(onHoverArchetype);
+  const onClickRef = useRef(onClickArchetype);
   const userVectorRef = useRef(userVector);
+  const showUserRef = useRef(showUser);
   const frameCountRef = useRef(0);
   const idleRef = useRef(false);
 
   useEffect(() => {
     onHoverRef.current = onHoverArchetype;
   });
+
+  useEffect(() => {
+    onClickRef.current = onClickArchetype;
+  });
+
+  useEffect(() => {
+    showUserRef.current = showUser;
+  }, [showUser]);
 
   useEffect(() => {
     userVectorRef.current = userVector;
@@ -103,8 +115,30 @@ export default function TraitSpace2D({
       if (onHoverRef.current) onHoverRef.current(null);
     };
 
+    const handleClick = (e) => {
+      if (!onClickRef.current) return;
+      const rect = canvas.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) * (width / rect.width);
+      const my = (e.clientY - rect.top) * (height / rect.height);
+
+      let closest = null;
+      let closestDist = Infinity;
+
+      archetypes.forEach((arch) => {
+        const pos = toScreen(arch.x, arch.y, 1);
+        const dist = Math.hypot(pos.x - mx, pos.y - my);
+        if (dist < 22 && dist < closestDist) {
+          closestDist = dist;
+          closest = arch.key;
+        }
+      });
+
+      if (closest) onClickRef.current(closest);
+    };
+
     canvas.addEventListener("pointermove", handlePointerMove);
     canvas.addEventListener("pointerleave", handlePointerLeave);
+    canvas.addEventListener("click", handleClick);
 
     const draw = (timestamp) => {
       const elapsed = timestamp - startRef.current;
@@ -243,35 +277,38 @@ export default function TraitSpace2D({
       });
 
       const upos = toScreen(ux, uy, eased);
-      const pulse = 0.75 + Math.sin(elapsed * 0.0018) * 0.25;
 
-      const glow = ctx.createRadialGradient(upos.x, upos.y, 0, upos.x, upos.y, 24);
-      glow.addColorStop(0, `rgba(74,69,64,${0.25 * pulse})`);
-      glow.addColorStop(0.4, `rgba(155,142,199,${0.18 * pulse})`);
-      glow.addColorStop(1, "rgba(155,142,199,0)");
-      ctx.beginPath();
-      ctx.arc(upos.x, upos.y, 24, 0, Math.PI * 2);
-      ctx.fillStyle = glow;
-      ctx.fill();
+      if (showUserRef.current) {
+        const pulse = 0.75 + Math.sin(elapsed * 0.0018) * 0.25;
 
-      const ds = 6.5 * pulse;
-      ctx.beginPath();
-      ctx.moveTo(upos.x, upos.y - ds);
-      ctx.lineTo(upos.x + ds, upos.y);
-      ctx.lineTo(upos.x, upos.y + ds);
-      ctx.lineTo(upos.x - ds, upos.y);
-      ctx.closePath();
-      ctx.fillStyle = `rgba(74,69,64,${0.85})`;
-      ctx.fill();
-      ctx.strokeStyle = "rgba(155,142,199,0.8)";
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
+        const glow = ctx.createRadialGradient(upos.x, upos.y, 0, upos.x, upos.y, 24);
+        glow.addColorStop(0, `rgba(74,69,64,${0.25 * pulse})`);
+        glow.addColorStop(0.4, `rgba(155,142,199,${0.18 * pulse})`);
+        glow.addColorStop(1, "rgba(155,142,199,0)");
+        ctx.beginPath();
+        ctx.arc(upos.x, upos.y, 24, 0, Math.PI * 2);
+        ctx.fillStyle = glow;
+        ctx.fill();
 
-      ctx.fillStyle = `rgba(74,69,64,${0.95 * pulse})`;
-      ctx.font = "bold 12px system-ui,-apple-system,sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "bottom";
-      ctx.fillText("你", upos.x, upos.y - ds - 6);
+        const ds = 6.5 * pulse;
+        ctx.beginPath();
+        ctx.moveTo(upos.x, upos.y - ds);
+        ctx.lineTo(upos.x + ds, upos.y);
+        ctx.lineTo(upos.x, upos.y + ds);
+        ctx.lineTo(upos.x - ds, upos.y);
+        ctx.closePath();
+        ctx.fillStyle = `rgba(74,69,64,${0.85})`;
+        ctx.fill();
+        ctx.strokeStyle = "rgba(155,142,199,0.8)";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.fillStyle = `rgba(74,69,64,${0.95 * pulse})`;
+        ctx.font = "bold 12px system-ui,-apple-system,sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillText("你", upos.x, upos.y - ds - 6);
+      }
 
       animRef.current = requestAnimationFrame(draw);
     };
@@ -282,6 +319,7 @@ export default function TraitSpace2D({
       if (animRef.current) cancelAnimationFrame(animRef.current);
       canvas.removeEventListener("pointermove", handlePointerMove);
       canvas.removeEventListener("pointerleave", handlePointerLeave);
+      canvas.removeEventListener("click", handleClick);
     };
   }, [width, height, xKey, yKey]);
 
