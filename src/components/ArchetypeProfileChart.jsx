@@ -6,9 +6,10 @@ function rgba(rgb, a) {
   return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`;
 }
 
-const CX = 80;
-const CY = 80;
+const CX = 100;
+const CY = 100;
 const MAX_R = 55;
+const LABEL_R = 67;
 const GRID_LEVELS = [0.2, 0.4, 0.6, 0.8, 1.0];
 
 function getRadarPoint(index, radius, num) {
@@ -99,7 +100,7 @@ function CompactRadar({ profile, dimensions, dimKeys, color }) {
   const dataPolygon = dataPoints.map((p) => `${p.x},${p.y}`).join(" ");
 
   return (
-    <svg viewBox="0 0 160 160" className="w-[150px] h-[150px] sm:w-[170px] sm:h-[170px] shrink-0" style={{ overflow: "visible" }}>
+    <svg viewBox="0 0 200 200" className="w-[150px] h-[150px] sm:w-[170px] sm:h-[170px] shrink-0">
       {GRID_LEVELS.map((level, li) => (
         <polygon
           key={li}
@@ -146,7 +147,7 @@ function CompactRadar({ profile, dimensions, dimKeys, color }) {
       ))}
       {dimKeys.map((key, i) => {
         const dim = dimensions[key];
-        const lp = getRadarPoint(i, MAX_R + 18, num);
+        const lp = getRadarPoint(i, LABEL_R, num);
         const anchor = lp.x < CX ? "end" : lp.x > CX ? "start" : "middle";
         return (
           <text
