@@ -8,10 +8,12 @@ import About from "./pages/About";
 import Archetypes from "./pages/Archetypes";
 import Traits from "./pages/Traits";
 import Questions from "./pages/Questions";
+import History from "./pages/History";
 import { generateResult } from "./utils/blurEngine";
 import { questions } from "./data/questions";
+import { deleteHistoryRecord, getHistoryRecords, saveHistoryRecord, clearHistoryRecords } from "./utils/historyStorage";
 
-const screenOrder = ["landing", "about", "archetypes", "traits", "questions", "test", "loading", "result"];
+const screenOrder = ["landing", "about", "archetypes", "traits", "questions", "history", "test", "loading", "result"];
 const LOADING_DURATION = 3500;
 
 const pageVariants = {
@@ -41,6 +43,7 @@ export default function App() {
   const [screen, setScreen] = useState("landing");
   const [result, setResult] = useState(null);
   const [direction, setDirection] = useState(1);
+  const [historyRecords, setHistoryRecords] = useState(() => getHistoryRecords());
   const loadingTimerRef = useRef(null);
 
   const navigate = useCallback((nextScreen) => {
@@ -69,6 +72,11 @@ export default function App() {
     navigate("questions");
   }, [navigate]);
 
+  const handleOpenHistory = useCallback(() => {
+    setHistoryRecords(getHistoryRecords());
+    navigate("history");
+  }, [navigate]);
+
   const handleBackToAbout = useCallback(() => {
     navigate("about");
   }, [navigate]);
@@ -81,12 +89,29 @@ export default function App() {
       try {
         const generatedResult = generateResult(finalAnswers, questions);
         setResult(generatedResult);
+        const savedRecord = saveHistoryRecord(finalAnswers, generatedResult);
+        if (savedRecord) setHistoryRecords(getHistoryRecords());
         navigate("result");
       } catch {
         navigate("landing");
       }
     }, LOADING_DURATION);
   }, [navigate]);
+
+  const handleOpenHistoryRecord = useCallback((record) => {
+    setResult(record.result);
+    navigate("result");
+  }, [navigate]);
+
+  const handleDeleteHistoryRecord = useCallback((id) => {
+    deleteHistoryRecord(id);
+    setHistoryRecords(getHistoryRecords());
+  }, []);
+
+  const handleClearHistory = useCallback(() => {
+    clearHistoryRecords();
+    setHistoryRecords([]);
+  }, []);
 
   const handleRestart = useCallback(() => {
     if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
@@ -108,7 +133,7 @@ export default function App() {
             transition={pageTransition}
             style={{ willChange: "filter, transform, opacity", contain: "layout style paint" }}
           >
-            <Landing onStart={handleStart} onExplore={handleOpenAbout} />
+            <Landing onStart={handleStart} onExplore={handleOpenAbout} onOpenHistory={handleOpenHistory} />
           </motion.div>
         )}
 
@@ -169,6 +194,27 @@ export default function App() {
             style={{ willChange: "filter, transform, opacity", contain: "layout style paint" }}
           >
             <Questions onBack={handleBackToAbout} />
+          </motion.div>
+        )}
+
+        {screen === "history" && (
+          <motion.div
+            key="history"
+            custom={direction}
+            variants={pageVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={pageTransition}
+            style={{ willChange: "filter, transform, opacity", contain: "layout style paint" }}
+          >
+            <History
+              records={historyRecords}
+              onBack={handleRestart}
+              onOpen={handleOpenHistoryRecord}
+              onDelete={handleDeleteHistoryRecord}
+              onClear={handleClearHistory}
+            />
           </motion.div>
         )}
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { Archive, Sparkles } from "lucide-react";
 import GlassButton from "../components/GlassButton";
 
 const TIPS = [
@@ -30,6 +30,8 @@ const ARCHETYPE_SYMBOLS = [
   { symbol: "📷", x: "55%", y: "12%", delay: 1.5 },
 ];
 
+const ACTION_CLASS = "min-h-13 flex items-center justify-center";
+
 function useRotatingTip(interval = 4000) {
   const [index, setIndex] = useState(0);
   useEffect(() => {
@@ -41,8 +43,32 @@ function useRotatingTip(interval = 4000) {
   return TIPS[index];
 }
 
-export default function Landing({ onStart, onExplore }) {
+export default function Landing({ onStart, onExplore, onOpenHistory }) {
   const tip = useRotatingTip(4200);
+
+  const actions = [
+    {
+      label: "开始测试",
+      icon: null,
+      variant: "primary",
+      onClick: onStart,
+      className: "text-base px-10 md:px-12 animate-fade-in-up delay-900",
+    },
+    {
+      label: "探索blur",
+      icon: Sparkles,
+      variant: "primary",
+      onClick: onExplore,
+      className: "text-sm gap-1.5 animate-fade-in-up delay-1100",
+    },
+    {
+      label: "查看历史画像",
+      icon: Archive,
+      variant: "primary",
+      onClick: onOpenHistory,
+      className: "text-sm gap-1.5 animate-fade-in-up delay-1300",
+    },
+  ];
 
   return (
     <div className="flex-1 flex flex-col md:flex-row items-center md:justify-center px-6 md:px-16 lg:px-24 pt-20 pb-12 md:py-16 min-h-[100svh] relative overflow-hidden max-w-6xl mx-auto w-full">
@@ -249,25 +275,18 @@ export default function Landing({ onStart, onExplore }) {
           <span className="w-8 h-px bg-blur-border/60" />
         </motion.div>
 
-        <div className="flex justify-center md:justify-start w-full">
-          <GlassButton
-            variant="primary"
-            onClick={onStart}
-            className="text-base px-10 md:px-12 py-4 animate-fade-in-up delay-900"
-          >
-            开始测试
-          </GlassButton>
-        </div>
-
-        <div className="flex justify-center md:justify-start w-full mt-3">
-          <GlassButton
-            variant="primary"
-            onClick={onExplore}
-            className="text-sm flex items-center gap-1.5 animate-fade-in-up delay-1100"
-          >
-            <Sparkles size={14} />
-            探索blur
-          </GlassButton>
+        <div className="flex flex-col items-center md:items-start gap-3 w-full">
+          {actions.map(({ label, icon: Icon, variant, onClick, className }) => (
+            <GlassButton
+              key={label}
+              variant={variant}
+              onClick={onClick}
+              className={`${ACTION_CLASS} ${className}`}
+            >
+              {Icon && <Icon size={14} />}
+              {label}
+            </GlassButton>
+          ))}
         </div>
 
         <motion.p

@@ -272,6 +272,10 @@ input[type="range"].blur-slider::-moz-range-thumb {
   animation-delay: 1.1s;
 }
 
+.delay-1300 {
+  animation-delay: 1.3s;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
 }
