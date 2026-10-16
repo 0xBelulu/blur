@@ -19,26 +19,28 @@ const UNDER_REP_THRESHOLD = 0.05;
 
 /* ── Calibrated softmax matching (mirrors blurEngine) ──── */
 const RANDOM_BASELINES = {
-  rainbow: 0.6848,
-  drift: 0.5362,
-  tide: 0.4824,
-  negative: 0.4755,
-  still: 0.4131,
-  mist: 0.3271,
-  salt: 0.3145,
-  silhouette: 0.1885,
-  chime: 0.1268,
+  rainbow: 0.5993,
+  tide: 0.5010,
+  negative: 0.4039,
+  warmCurrent: 0.2885,
+  mist: 0.2806,
+  salt: 0.2754,
+  kite: 0.2260,
+  chime: 0.1807,
+  silhouette: 0.1657,
+  crystal: -0.2159,
 };
 const RANDOM_STDS = {
-  mist: 0.0949,
-  chime: 0.0950,
-  drift: 0.0718,
-  still: 0.0860,
-  rainbow: 0.0432,
-  salt: 0.0836,
-  negative: 0.0746,
-  tide: 0.0846,
-  silhouette: 0.0967,
+  silhouette: 0.1050,
+  mist: 0.1041,
+  chime: 0.1035,
+  salt: 0.0908,
+  tide: 0.0908,
+  negative: 0.0839,
+  crystal: 0.0797,
+  warmCurrent: 0.0786,
+  kite: 0.0764,
+  rainbow: 0.0492,
 };
 const SOFTMAX_TEMPERATURE = 2.0;
 

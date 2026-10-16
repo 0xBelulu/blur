@@ -21,13 +21,14 @@ const TIPS = [
 const ARCHETYPE_SYMBOLS = [
   { symbol: "🌫️", x: "12%", y: "18%", delay: 0 },
   { symbol: "🎐", x: "82%", y: "14%", delay: 1.2 },
-  { symbol: "🍃", x: "88%", y: "42%", delay: 2.4 },
+  { symbol: "🪁", x: "88%", y: "42%", delay: 2.4 },
   { symbol: "💎", x: "8%", y: "55%", delay: 0.8 },
   { symbol: "🌈", x: "75%", y: "68%", delay: 1.8 },
   { symbol: "🧂", x: "18%", y: "78%", delay: 3.0 },
   { symbol: "🎞️", x: "68%", y: "85%", delay: 0.4 },
   { symbol: "🌊", x: "35%", y: "88%", delay: 2.0 },
   { symbol: "📷", x: "55%", y: "12%", delay: 1.5 },
+  { symbol: "♨️", x: "45%", y: "45%", delay: 2.8 },
 ];
 
 const ACTION_CLASS = "min-h-13 flex items-center justify-center";

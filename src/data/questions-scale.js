@@ -2,11 +2,10 @@ export const scaleQuestions = [
   {
     id: 28,
     type: "scale",
-    text: "当别人问我「你在想什么」时，我经常真的不知道该怎么回答。",
+    text: "与人交谈时，我更习惯直接表达真实的想法，而不是把话藏在潜台词里。",
     dimensions: {
-      closureTolerance: 1.7,
-      emotionalLatency: 0.6,
-      cognitiveRange: 0.5,
+      expressivity: 1.4,
+      emotionalLatency: -0.8,
     },
   },
   {
@@ -86,21 +85,19 @@ export const scaleQuestions = [
   {
     id: 49,
     type: "scale",
-    text: "在拥挤的公共场所（地铁/电梯），我会刻意缩小自己的存在感，尽量减少身体接触。",
+    text: "在一个陌生的环境里，我通常能很快找到让自己自在安顿的节奏。",
     dimensions: {
-      boundaryClarity: 1,
-      energySource: -0.4,
-      expressivity: -1.5,
+      boundaryClarity: 1.2,
+      energySource: 0.6,
     },
   },
   {
     id: 50,
     type: "scale",
-    text: "当别人要求我给出一个明确的「是或否」答案时，我会感到不舒服。",
+    text: "相比模棱两可的试探，我更欣赏彼此干脆清晰的交代。",
     dimensions: {
-      cognitiveRange: 1.5,
-      closureTolerance: 0.9,
-      sensorySensitivity: 0.4,
+      closureTolerance: -1.4,
+      expressivity: 0.8,
     },
   },
   {
@@ -125,19 +122,19 @@ export const scaleQuestions = [
   {
     id: 67,
     type: "scale",
-    text: "我经常分不清某个感受是自己的还是别人传递过来的。",
+    text: "我习惯把事情和关系分得很清楚，就事论事，很少让情绪互相纠缠。",
     dimensions: {
-      sensorySensitivity: 0.3,
-      cognitiveRange: 0.3,
-      boundaryClarity: -1.8,
+      boundaryClarity: 1.8,
+      emotionalLatency: -0.6,
     },
   },
   {
     id: 68,
     type: "scale",
-    text: "我真正的情绪反应通常在事情过去很久之后才会浮现。",
+    text: "面对悬而未决的选择，比起反复权衡，我更习惯干脆做个决定先往前走。",
     dimensions: {
-      emotionalLatency: 1.8,
+      closureTolerance: -1.5,
+      processingDepth: -0.8,
     },
   },
   {

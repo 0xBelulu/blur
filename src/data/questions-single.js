@@ -920,7 +920,7 @@ export const singleQuestions = [
     type: "single",
     text: "看一张旧照片里的自己，你通常？",
     options: [
-      { id: "a", text: "觉得那个人很熟悉，但好像颜色是反的", dimensions: {
+      { id: "a", text: "觉得那个人很熟悉，但心境已经有了微妙的疏离", dimensions: {
       emotionalLatency: 0.7,
       cognitiveRange: 0.6,
       expressivity: -1.1,
@@ -935,7 +935,7 @@ export const singleQuestions = [
       emotionalLatency: 0.4,
       energySource: -0.7,
     } },
-      { id: "d", text: "只能看见轮廓，里面是暗的", dimensions: {
+      { id: "d", text: "能看清清晰的轮廓，但细节已经慢慢退入阴影", dimensions: {
       boundaryClarity: 0.9,
       cognitiveRange: 0.3,
       expressivity: -1.4,
@@ -961,9 +961,10 @@ export const singleQuestions = [
       expressivity: 0.7,
       sensorySensitivity: 0.6,
     } },
-      { id: "d", text: "烛光映在墙上的影子", dimensions: {
-      cognitiveRange: 0.7,
-      expressivity: -1.4,
+      { id: "d", text: "风吹过屋檐下微微颤响的风铃", dimensions: {
+      sensorySensitivity: 0.9,
+      expressivity: 0.7,
+      energySource: -0.2,
     } },
     ],
   },

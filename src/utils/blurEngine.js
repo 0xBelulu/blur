@@ -8,27 +8,29 @@ import { getRankWeight, getScaleWeight } from "../config/weightConfig.js";
  * z-score 标准化后所有原型在随机输入下均值为 0、方差为 1，消除基线偏差
  */
 const RANDOM_BASELINES = {
-  rainbow: 0.6844,
-  drift: 0.5356,
-  tide: 0.4817,
-  negative: 0.4766,
-  still: 0.4139,
-  mist: 0.3284,
-  salt: 0.3130,
-  silhouette: 0.1898,
-  chime: 0.1254,
+  rainbow: 0.5993,
+  tide: 0.5010,
+  negative: 0.4039,
+  warmCurrent: 0.2885,
+  mist: 0.2806,
+  salt: 0.2754,
+  kite: 0.2260,
+  chime: 0.1807,
+  silhouette: 0.1657,
+  crystal: -0.2159,
 };
 
 const RANDOM_STDS = {
-  silhouette: 0.0966,
-  mist: 0.0947,
-  chime: 0.0946,
-  still: 0.0861,
-  tide: 0.0850,
-  salt: 0.0836,
-  negative: 0.0745,
-  drift: 0.0722,
-  rainbow: 0.0433,
+  silhouette: 0.1050,
+  mist: 0.1041,
+  chime: 0.1035,
+  salt: 0.0908,
+  tide: 0.0908,
+  negative: 0.0839,
+  crystal: 0.0797,
+  warmCurrent: 0.0786,
+  kite: 0.0764,
+  rainbow: 0.0492,
 };
 
 /** Softmax 温度，控制概率分布的锐度。T 越大分布越均匀 */

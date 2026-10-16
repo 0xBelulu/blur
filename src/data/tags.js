@@ -75,37 +75,40 @@ export const tagPool = {
 const ARCHETYPE_TRAITS = {
   mist: ["shielded", "softedge", "filtered", "vague", "misty", "guarded", "faded"],
   chime: ["saturated", "acute", "reverberant", "overwhelming", "thunder", "loud"],
-  drift: ["adrift", "fleeing", "unmoored", "shifting", "tidal", "fluid"],
-  still: ["patient", "sunken", "abyssal", "sedimentary", "stilled", "deepwatch"],
+  warmCurrent: ["permeable", "fluid", "tidal", "absorbing", "swelling", "blended"],
+  crystal: ["acute", "outlined", "shielded", "filtered", "stilled", "edgeonly"],
   rainbow: ["manifold", "equivocal", "prismatic", "refracted", "suspended"],
   salt: ["dissolving", "permeable", "osmotic", "blended", "absorbing", "seeping"],
   negative: ["latent", "delayed", "inverse", "undeveloped", "darkroom", "belated"],
   tide: ["oscillating", "rhythmic", "ebbing", "swelling", "cyclical", "pulsing"],
   silhouette: ["outlined", "backlit", "partial", "angled", "shadowed", "edgeonly"],
+  kite: ["prismatic", "reverberant", "manifold", "pulsing", "acute", "shifting"],
 };
 
 export const ARCHETYPE_SUPPRESSED = {
   mist: ["acute", "tidal", "swelling"],
   chime: ["patient", "stilled", "latent"],
-  drift: ["shielded", "sedimentary", "outlined"],
-  still: ["fleeing", "manifold", "oscillating"],
+  warmCurrent: ["shielded", "sedimentary", "outlined"],
+  crystal: ["fleeing", "manifold", "oscillating"],
   rainbow: ["guarded", "sunken", "partial"],
   salt: ["outlined", "filtered"],
   negative: ["acute", "swelling"],
   tide: ["shielded", "sedimentary"],
   silhouette: ["dissolving", "saturated"],
+  kite: ["sunken", "stilled", "latent"],
 };
 
 export const DIMENSIONS = {
   mist: { name: "遮蔽性", traits: ARCHETYPE_TRAITS.mist },
   chime: { name: "敏感度", traits: ARCHETYPE_TRAITS.chime },
-  drift: { name: "流动性", traits: ARCHETYPE_TRAITS.drift },
-  still: { name: "沉淀性", traits: ARCHETYPE_TRAITS.still },
+  warmCurrent: { name: "温热性", traits: ARCHETYPE_TRAITS.warmCurrent },
+  crystal: { name: "秩序性", traits: ARCHETYPE_TRAITS.crystal },
   rainbow: { name: "多面性", traits: ARCHETYPE_TRAITS.rainbow },
   salt: { name: "渗透性", traits: ARCHETYPE_TRAITS.salt },
   negative: { name: "延迟性", traits: ARCHETYPE_TRAITS.negative },
   tide: { name: "节律性", traits: ARCHETYPE_TRAITS.tide },
   silhouette: { name: "轮廓性", traits: ARCHETYPE_TRAITS.silhouette },
+  kite: { name: "高扬性", traits: ARCHETYPE_TRAITS.kite },
 };
 
 export const archetypeDescriptions = {
@@ -131,26 +134,26 @@ export const archetypeDescriptions = {
       hiddenSide: "你看起来此起彼伏，但其实你最渴望的是真正的无风——不是用更大的声响盖住，而是所有风都停了之后的那种空。你最大的恐惧是：如果没有风，你还响吗？",
     },
   },
-  drift: {
-    title: "漂流者",
-    subtitle: "你不是在漂流，你是在拒绝靠岸",
-    symbol: "🍃",
-    description: "你不是没有方向，你只是有太多的方向。固定让你窒息，流动让你活着。",
+  warmCurrent: {
+    title: "暖流",
+    subtitle: "潜行在深海之下，所经之处悄悄解冻",
+    symbol: "♨️",
+    description: "你不是烈火，你是深海里永不停歇的恒温带。你走过的地方，冰封的海岸都在被你悄悄解冻。你从不刻意炫耀温度，但靠近你的人，都在被你慢慢捂热。",
     narrative: {
-      innerWorld: "你的内心没有地图，也没有终点。你不是在逃避什么，你只是在拒绝被定义。今天的你和昨天的你可能是两个人，但这不意味着哪个更真。你像潮水一样，涨的时候淹没一切，退的时候什么都不留下。",
-      inRelation: "你在关系中需要巨大的呼吸空间。你不是不爱，而是你的爱不能被困在一个形状里。你可能会突然消失，也可能会突然靠近——这不是反复无常，这是你的自然节律。你最好的关系是：两个人各自流动，偶尔交汇。",
-      hiddenSide: "你看起来随性自由，但你比任何人都渴望一个可以回去的岸。只是你害怕，一旦靠岸，潮汐就不再是潮汐了。你最大的矛盾是：你用流动来保护那个想要停泊的自己。",
+      innerWorld: "你的内心深处有一处不断涌出热量的泉眼。你很少陷入漫长的消沉，因为你知道流动本身就是最好的治愈。你习惯把温暖分给周围的人，不是为了讨好，而是因为你的能量满溢到需要流淌。",
+      inRelation: "你在关系中是一股深海暖流。和你在一起，别人会不自觉地卸下防备，因为你身上有一种不带侵略性的包容。你善于倾听，也敢于给予热量，但你最珍视的是那种能接住你温度的灵魂。",
+      hiddenSide: "你看起来总是充满元气、在照亮别人，但你偶尔也会感到透支。你最大的秘密是：持续送出热量的暖流，有时也渴望被另一股温度紧紧包裹。",
     },
   },
-  still: {
-    title: "静观者",
-    subtitle: "你不急于浮出水面",
+  crystal: {
+    title: "晶体",
+    subtitle: "在流动的世界里，你独自生长出清晰的棱角",
     symbol: "💎",
-    description: "你不急于浮出水面。你相信有些东西只有沉下去才能看见。",
+    description: "在所有人都在溶解、模糊的世界里，你独自生长出清晰的棱角。你不是冷漠，你只是尊重真相的几何形状。光穿过你，被分成了清脆规整的切面。",
     narrative: {
-      innerWorld: "你的内心像一口深井，表面平静，底部有暗流。你不是没有感受，只是你的感受都沉下去了，需要时间才能捞上来。你不习惯快速反应，不是因为迟钝，而是因为你的真相在深处，而深处需要耐心。",
-      inRelation: "你在关系中是一个慢热的人，但一旦热了就很难冷却。你的关心不是即时的，是沉淀过的——你可能在三个月后突然想起对方说的一句话，然后才理解那意味着什么。你的爱像地层，一层一层，越深越古老。",
-      hiddenSide: "你看起来冷静深沉，但你内心深处也渴望一次不问后果的冲动。你最大的遗憾是：有时候事情已经结束了，你的感受才刚刚浮上来。你用时间换取清晰，但代价是总是慢半拍。",
+      innerWorld: "你的内心是一座秩序井然的晶格空间。你讨厌混乱、暧昧和无休止的悬而未决。你追求确定与真相，对你来说，黑白分明的清澈，远胜过含混不清的温柔。",
+      inRelation: "你在关系中界限清晰、有言在先。别人可能会觉得你略带锋芒或不够圆滑，但只要深入交往，就会发现你是最可靠、最值得托付的锚点。你从不说谎，你的承诺像岩晶一样坚定。",
+      hiddenSide: "你看起来无坚不摧、刀枪不入，但晶体最怕的是超出阈值的重击。你最大的脆弱在于：一旦某种深信不疑的秩序碎裂，你需要比常人花费更多的时间重新结晶。",
     },
   },
   rainbow: {
@@ -206,6 +209,17 @@ export const archetypeDescriptions = {
       innerWorld: "你的内心像一个只在逆光时才清晰的存在。正面打光的时候，你是一片混沌；但背光的时候，你的轮廓反而锐利得惊人。你不是没有自我，只是你的自我是方向性的——它取决于光从哪里来。你习惯只展示自己的边缘，因为边缘是你最确定的部分。",
       inRelation: "你在关系中是那个「只露轮廓」的人。别人觉得你神秘，其实你只是选择性地呈现自己。你不会全盘托出，但你会精确地展示某个侧面——就像剪影，只给形状，不给细节。你最好的关系是：对方不需要看清你的全部，而是欣赏你选择呈现的那个轮廓。",
       hiddenSide: "你看起来克制神秘，但你内心深处渴望一次被正面照亮——不需要逆光，不需要角度，就是赤裸裸地被看见。你最大的恐惧是：如果光从正面来，你是不是就消失了？你用轮廓保护自己，但有时候也想知道：被填满是什么感觉。",
+    },
+  },
+  kite: {
+    title: "纸鸢",
+    subtitle: "逆风飞向天际，但心底永远系着清醒的线",
+    symbol: "🪁",
+    description: "你渴望飞向视野更广阔的高空，风越大，你上升的意志越坚决。你不是盲目的流浪者，不管飞得多高多远，你的心底始终攥着一根清醒的引线。",
+    narrative: {
+      innerWorld: "你的内心是一片渴望起飞的原野。你厌倦地面的平庸与束缚，总是把目光投向天际线。你懂得借力风的呼啸，在不确定中寻找向上的升力，但你绝非任凭摆布的落叶，你拥有属于自己的骨架。",
+      inRelation: "你在关系中需要辽阔的视野和志同道合的同行者。你欣赏那些能陪你一起俯瞰风景、或者能安稳握住那根引线的人。你的热情是高远的，只要对方给予信任，你便能带对方去看更壮丽的云海。",
+      hiddenSide: "你总是在高空翱翔，习惯了展示轻盈与高远，但高空的风最冷。你最大的秘密是：你比任何人都害怕那根牵引着你与地面的细线突然崩断。",
     },
   },
 };
