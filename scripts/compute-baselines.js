@@ -10,6 +10,7 @@
 
 import { ARCHETYPE_PROFILES } from "../src/data/archetypeProfiles.js";
 import { questions } from "../src/data/questions.js";
+import { scaleWeights, rankWeights } from "../src/utils/blurEngine.js";
 import fs from "fs";
 import path from "path";
 
@@ -58,20 +59,33 @@ function accumulateDimensions(answers) {
     const q = questionMap.get(answer.questionId);
     if (!q) continue;
     if (answer.type === "rank" && Array.isArray(answer.rankOrder)) {
-      const weights = [1.0, 0.6, 0.3, 0.1];
       answer.rankOrder.forEach((optionIndex, rank) => {
-        const option = q.options?.[optionIndex];
+        const option =
+          typeof optionIndex === "number"
+            ? (q.options?.[optionIndex] ?? q.options?.find((o) => o.id === optionIndex))
+            : (q.options?.find((o) => o.id === optionIndex) ??
+               (Number.isInteger(Number(optionIndex)) ? q.options?.[Number(optionIndex)] : null));
         if (option?.dimensions) {
-          const w = weights[rank] ?? 0;
+          const w = rankWeights[rank] ?? 0;
           for (const [dk, dv] of Object.entries(option.dimensions)) {
             dims[dk] = (dims[dk] || 0) + dv * w;
           }
         }
       });
     } else if (answer.type === "scale" && typeof answer.value === "number") {
-      const scaleWeights = [0, 0.4, 0.7, 1.0, 1.3, 1.6];
-      const weight = scaleWeights[answer.value] ?? 1.0;
-      if (q.dimensions) {
+      const weight = scaleWeights[answer.value] ?? 0;
+      if (q.targetDimension) {
+        const polarity = typeof q.polarity === "number" ? q.polarity : 1;
+        const effectiveWeight = weight * polarity;
+        dims[q.targetDimension] = (dims[q.targetDimension] || 0) + effectiveWeight;
+        if (q.dimensions) {
+          for (const [dk, dv] of Object.entries(q.dimensions)) {
+            if (dk !== q.targetDimension) {
+              dims[dk] = (dims[dk] || 0) + dv * weight;
+            }
+          }
+        }
+      } else if (q.dimensions) {
         for (const [dk, dv] of Object.entries(q.dimensions)) {
           dims[dk] = (dims[dk] || 0) + dv * weight;
         }
@@ -152,13 +166,13 @@ if (APPLY) {
   let code = fs.readFileSync(enginePath, "utf-8");
 
   const baselineLines = sortedKeys.map(k => `  ${k}: ${baselines[k].toFixed(4)},`).join("\n");
-  const reBaselines = /const RANDOM_BASELINES = \{[\s\S]*?\};/;
-  code = code.replace(reBaselines, `const RANDOM_BASELINES = {\n${baselineLines}\n};`);
+  const reBaselines = /(?:export )?const RANDOM_BASELINES = \{[\s\S]*?\};/;
+  code = code.replace(reBaselines, `export const RANDOM_BASELINES = {\n${baselineLines}\n};`);
 
   const stdKeys = [...archetypeKeys].sort((a, b) => perArchStd[b] - perArchStd[a]);
   const stdLines = stdKeys.map(k => `  ${k}: ${perArchStd[k].toFixed(4)},`).join("\n");
-  const reStds = /const RANDOM_STDS = \{[\s\S]*?\};/;
-  code = code.replace(reStds, `const RANDOM_STDS = {\n${stdLines}\n};`);
+  const reStds = /(?:export )?const RANDOM_STDS = \{[\s\S]*?\};/;
+  code = code.replace(reStds, `export const RANDOM_STDS = {\n${stdLines}\n};`);
 
   fs.writeFileSync(enginePath, code, "utf-8");
   console.log("\n  ✅ Applied to src/utils/blurEngine.js");
@@ -166,12 +180,12 @@ if (APPLY) {
   console.log("\n  Run with --apply to auto-update blurEngine.js");
   console.log("  Or copy-paste the following:\n");
 
-  console.log("const RANDOM_BASELINES = {");
+  console.log("export const RANDOM_BASELINES = {");
   for (const k of sortedKeys) console.log(`  ${k}: ${baselines[k].toFixed(4)},`);
   console.log("};\n");
 
   const stdKeys = [...archetypeKeys].sort((a, b) => perArchStd[b] - perArchStd[a]);
-  console.log("const RANDOM_STDS = {");
+  console.log("export const RANDOM_STDS = {");
   for (const k of stdKeys) console.log(`  ${k}: ${perArchStd[k].toFixed(4)},`);
   console.log("};");
 }

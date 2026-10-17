@@ -1,37 +1,56 @@
 import { DIMENSIONS, DIMENSION_KEYS } from "../data/dimensions.js";
 import { ARCHETYPE_PROFILES } from "../data/archetypeProfiles.js";
-import { getRankWeight, getScaleWeight } from "../config/weightConfig.js";
+import { questions as defaultQuestions } from "../data/questions.js";
+
+/**
+ * 评分权重配置
+ * - scaleWeights: 以 3 (中立) 为基准的双向对称权重 (1=完全不同意 … 5=完全同意)
+ * - rankWeights: 排序题位次权重 (0=最像:+1.0, 1=第二:+0.4, 2=第三:0.0, 3=最不像:-0.6)
+ */
+export const scaleWeights = [0, -1.2, -0.6, 0.0, 0.6, 1.2];
+export const rankWeights = [1.0, 0.4, 0.0, -0.6];
+
+export function getRankWeight(rank) {
+  return rankWeights[rank] ?? 0;
+}
+
+export function getScaleWeight(scaleValue) {
+  return scaleWeights[scaleValue] ?? 0;
+}
 
 /**
  * 纯随机回答下每个原型的余弦相似度分布参数（20000 次 Monte Carlo）
  * 校准公式：z[k] = (cos_sim - μ[k]) / σ[k]
  * z-score 标准化后所有原型在随机输入下均值为 0、方差为 1，消除基线偏差
  */
-const RANDOM_BASELINES = {
-  rainbow: 0.5993,
-  tide: 0.5010,
-  negative: 0.4039,
-  warmCurrent: 0.2885,
-  mist: 0.2806,
-  salt: 0.2754,
-  kite: 0.2260,
-  chime: 0.1807,
-  silhouette: 0.1657,
-  crystal: -0.2159,
+export const RANDOM_BASELINES = {
+  salt: 0.2686,
+  warmCurrent: 0.2616,
+  rainbow: 0.2148,
+  tide: 0.0769,
+  chime: 0.0210,
+  negative: 0.0151,
+  kite: -0.0659,
+  mist: -0.1152,
+  silhouette: -0.1593,
+  crystal: -0.2452,
 };
 
-const RANDOM_STDS = {
-  silhouette: 0.1050,
-  mist: 0.1041,
-  chime: 0.1035,
-  salt: 0.0908,
-  tide: 0.0908,
-  negative: 0.0839,
-  crystal: 0.0797,
-  warmCurrent: 0.0786,
-  kite: 0.0764,
-  rainbow: 0.0492,
+export const RANDOM_STDS = {
+  crystal: 0.4133,
+  salt: 0.4023,
+  negative: 0.3967,
+  rainbow: 0.3953,
+  tide: 0.3806,
+  warmCurrent: 0.3439,
+  mist: 0.3403,
+  kite: 0.3301,
+  silhouette: 0.2926,
+  chime: 0.2779,
 };
+
+export const ARCHETYPE_BASELINES = RANDOM_BASELINES;
+export const ARCHETYPE_STDS = RANDOM_STDS;
 
 /** Softmax 温度，控制概率分布的锐度。T 越大分布越均匀 */
 const SOFTMAX_TEMPERATURE = 2.0;
@@ -53,26 +72,67 @@ function cosineSimilarity(a, b) {
 }
 
 /**
+ * 规范化不同格式的 answers 输入（数组或对象映射）
+ */
+function normalizeAnswers(answers) {
+  if (!answers) return [];
+  if (Array.isArray(answers)) return answers;
+  if (typeof answers === "object") {
+    return Object.entries(answers).map(([key, value]) => {
+      const qId = isNaN(Number(key)) ? key : Number(key);
+      if (value && typeof value === "object" && !Array.isArray(value)) {
+        return { questionId: value.questionId ?? qId, ...value };
+      }
+      if (typeof value === "number") {
+        return { questionId: qId, type: "scale", value };
+      }
+      if (typeof value === "string") {
+        return { questionId: qId, type: "single", optionId: value };
+      }
+      if (Array.isArray(value)) {
+        return { questionId: qId, type: "rank", rankOrder: value };
+      }
+      return { questionId: qId, value };
+    });
+  }
+  return [];
+}
+
+/**
  * 从原始答案中解析出用户维度的累加值
  */
 const questionMapCache = new WeakMap();
 
-function accumulateDimensions(answers, questions) {
-  let questionMap = questionMapCache.get(questions);
+function accumulateDimensions(answers, questions = defaultQuestions) {
+  const qList = questions || defaultQuestions;
+  let questionMap = questionMapCache.get(qList);
   if (!questionMap) {
-    questionMap = new Map(questions.map((q) => [q.id, q]));
-    questionMapCache.set(questions, questionMap);
+    questionMap = new Map(qList.map((q) => [q.id, q]));
+    questionMapCache.set(qList, questionMap);
   }
   const dims = {};
+  const answerList = normalizeAnswers(answers);
 
-  for (const answer of answers) {
+  for (const answer of answerList) {
     if (!answer) continue;
     const q = questionMap.get(answer.questionId);
     if (!q) continue;
 
-    if (answer.type === "rank" && Array.isArray(answer.rankOrder)) {
-      answer.rankOrder.forEach((optionIndex, rank) => {
-        const option = q.options?.[optionIndex];
+    const rankList =
+      answer.rankOrder ||
+      answer.ranking ||
+      answer.order ||
+      (answer.type === "rank" && Array.isArray(answer.value) ? answer.value : null);
+
+    if (answer.type === "rank" && Array.isArray(rankList)) {
+      rankList.forEach((optionTarget, rank) => {
+        const option =
+          typeof optionTarget === "number"
+            ? (q.options?.[optionTarget] ?? q.options?.find((o) => o.id === optionTarget))
+            : (q.options?.find((o) => o.id === optionTarget) ??
+               (Number.isInteger(Number(optionTarget)) ? q.options?.[Number(optionTarget)] : null) ??
+               (typeof optionTarget === "object" ? optionTarget : null));
+
         if (option?.dimensions) {
           const w = getRankWeight(rank);
           for (const [dk, dv] of Object.entries(option.dimensions)) {
@@ -80,15 +140,49 @@ function accumulateDimensions(answers, questions) {
           }
         }
       });
-    } else if (answer.type === "scale" && typeof answer.value === "number") {
-      const weight = getScaleWeight(answer.value);
-      if (q.dimensions) {
-        for (const [dk, dv] of Object.entries(q.dimensions)) {
-          dims[dk] = (dims[dk] || 0) + dv * weight;
+    } else if (
+      answer.type === "scale" ||
+      (q.type === "scale" && typeof (answer.value ?? answer) === "number")
+    ) {
+      const scaleValue =
+        typeof answer.value === "number"
+          ? answer.value
+          : typeof answer === "number"
+            ? answer
+            : null;
+
+      if (typeof scaleValue === "number") {
+        const weight = getScaleWeight(scaleValue);
+        if (q.targetDimension) {
+          const polarity = typeof q.polarity === "number" ? q.polarity : 1;
+          const effectiveWeight = weight * polarity;
+          dims[q.targetDimension] = (dims[q.targetDimension] || 0) + effectiveWeight;
+          if (q.dimensions) {
+            for (const [dk, dv] of Object.entries(q.dimensions)) {
+              if (dk !== q.targetDimension) {
+                dims[dk] = (dims[dk] || 0) + dv * weight;
+              }
+            }
+          }
+        } else if (q.dimensions) {
+          for (const [dk, dv] of Object.entries(q.dimensions)) {
+            dims[dk] = (dims[dk] || 0) + dv * weight;
+          }
         }
       }
-    } else if (answer.optionId && q.options) {
-      const option = q.options.find((o) => o.id === answer.optionId);
+    } else if (q.options) {
+      const optionId =
+        answer.optionId ??
+        answer.selectedOptionId ??
+        (typeof answer === "string" ? answer : null) ??
+        (typeof answer.value === "string" ? answer.value : null);
+
+      const option =
+        optionId != null
+          ? (q.options.find((o) => o.id === optionId) ??
+             (typeof optionId === "number" ? q.options[optionId] : null))
+          : (answer.option && typeof answer.option === "object" ? answer.option : null);
+
       if (option?.dimensions) {
         for (const [dk, dv] of Object.entries(option.dimensions)) {
           dims[dk] = (dims[dk] || 0) + dv;
@@ -161,13 +255,44 @@ function determineArchetype(userVector) {
   }
   similarities.sort((a, b) => b.sim - a.sim);
 
-  // Calibrate: z-score = (sim - μ) / σ, then softmax
+  // Calibrate: combine z-score with raw cosine similarity to preserve geometric truth
+  // Base z-score eliminates baseline noise; raw cosine similarity anchors authentic affinity.
   const calibratedScores = {};
   for (const { key, sim } of similarities) {
     const mu = RANDOM_BASELINES[key] || 0;
     const sigma = RANDOM_STDS[key] || 1;
-    calibratedScores[key] = (sim - mu) / sigma;
+    const z = (sim - mu) / sigma;
+    // Scale raw similarity boost when user shows positive alignment (preserves geometric dominance)
+    const simBoost = sim > 0 ? Math.pow(sim, 1.5) * 4.0 : 0;
+    calibratedScores[key] = z + simBoost;
   }
+
+  // Safeguard 1: High raw similarity (>= 0.55) must never be overtaken by low raw similarity (<= 0.25)
+  const highSimArchetypes = similarities.filter((s) => s.sim >= 0.55);
+  if (highSimArchetypes.length > 0) {
+    const minHighSimScore = Math.min(...highSimArchetypes.map((s) => calibratedScores[s.key]));
+    for (const { key, sim } of similarities) {
+      if (sim <= 0.25 && calibratedScores[key] >= minHighSimScore) {
+        calibratedScores[key] = minHighSimScore - 0.5;
+      }
+    }
+  }
+
+  // Safeguard 2: Ideal vector match (sim >= 0.95) must always win 1st place
+  for (const { key, sim } of similarities) {
+    if (sim >= 0.95) {
+      let maxOther = -Infinity;
+      for (const { key: otherKey } of similarities) {
+        if (otherKey !== key && calibratedScores[otherKey] > maxOther) {
+          maxOther = calibratedScores[otherKey];
+        }
+      }
+      if (calibratedScores[key] <= maxOther) {
+        calibratedScores[key] = maxOther + 1.0;
+      }
+    }
+  }
+
   const probs = softmax(calibratedScores, SOFTMAX_TEMPERATURE);
 
   const ranked = Object.entries(probs)
@@ -233,7 +358,7 @@ export const DIMENSION_PAIRS = [
   { key: "emotion-closure", xKey: "emotionalLatency", yKey: "closureTolerance", label: "反应·模糊" },
 ];
 
-export function generateResult(answers, questions) {
+export function generateResult(answers, questions = defaultQuestions) {
   const rawDims = accumulateDimensions(answers, questions);
   const userVector = normalizeDimensions(rawDims);
 
@@ -279,14 +404,17 @@ export function generateResult(answers, questions) {
   return {
     archetype,
     archetypeKey,
+    primaryArchetype: archetype,
     secondaryArchetype,
     tagDetails,
+    topTags: tagDetails,
     suppressedTraits,
     scoredTraits: scoredDims.slice(0, 10),
     dimensionScores,
     userVector,
     similarities,
     archetypeProbabilities,
+    archetypeScores: archetypeProbabilities,
     rawAnswers: answers,
     specialNarratives: [],
   };

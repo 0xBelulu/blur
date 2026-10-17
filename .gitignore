@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Agent & Teamwork artifacts
+.agents/
+PROJECT.md
+TEST_INFRA.md
+TEST_READY.md

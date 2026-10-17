@@ -1,5 +1,11 @@
 import { ARCHETYPE_PROFILES } from "../src/data/archetypeProfiles.js";
 import { questions } from "../src/data/questions.js";
+import {
+  scaleWeights,
+  rankWeights,
+  ARCHETYPE_BASELINES,
+  ARCHETYPE_STDS,
+} from "../src/utils/blurEngine.js";
 
 const DIMENSION_KEYS = [
   "energySource",
@@ -17,31 +23,7 @@ const DIMENSION_KEYS = [
 const OVER_REP_THRESHOLD = 0.20;
 const UNDER_REP_THRESHOLD = 0.05;
 
-/* ── Calibrated softmax matching (mirrors blurEngine) ──── */
-const RANDOM_BASELINES = {
-  rainbow: 0.5993,
-  tide: 0.5010,
-  negative: 0.4039,
-  warmCurrent: 0.2885,
-  mist: 0.2806,
-  salt: 0.2754,
-  kite: 0.2260,
-  chime: 0.1807,
-  silhouette: 0.1657,
-  crystal: -0.2159,
-};
-const RANDOM_STDS = {
-  silhouette: 0.1050,
-  mist: 0.1041,
-  chime: 0.1035,
-  salt: 0.0908,
-  tide: 0.0908,
-  negative: 0.0839,
-  crystal: 0.0797,
-  warmCurrent: 0.0786,
-  kite: 0.0764,
-  rainbow: 0.0492,
-};
+/* ── Calibrated softmax matching (dynamically imported from blurEngine) ──── */
 const SOFTMAX_TEMPERATURE = 2.0;
 
 function softmax(scores, temperature) {
@@ -125,20 +107,33 @@ function accumulateDimensions(answers) {
     if (!q) continue;
 
     if (answer.type === "rank" && Array.isArray(answer.rankOrder)) {
-      const weights = [1.0, 0.6, 0.3, 0.1];
       answer.rankOrder.forEach((optionIndex, rank) => {
-        const option = q.options?.[optionIndex];
+        const option =
+          typeof optionIndex === "number"
+            ? (q.options?.[optionIndex] ?? q.options?.find((o) => o.id === optionIndex))
+            : (q.options?.find((o) => o.id === optionIndex) ??
+               (Number.isInteger(Number(optionIndex)) ? q.options?.[Number(optionIndex)] : null));
         if (option?.dimensions) {
-          const w = weights[rank] ?? 0;
+          const w = rankWeights[rank] ?? 0;
           for (const [dk, dv] of Object.entries(option.dimensions)) {
             dims[dk] = (dims[dk] || 0) + dv * w;
           }
         }
       });
     } else if (answer.type === "scale" && typeof answer.value === "number") {
-      const scaleWeights = [0, 0.4, 0.7, 1.0, 1.3, 1.6];
-      const weight = scaleWeights[answer.value] ?? 1.0;
-      if (q.dimensions) {
+      const weight = scaleWeights[answer.value] ?? 0;
+      if (q.targetDimension) {
+        const polarity = typeof q.polarity === "number" ? q.polarity : 1;
+        const effectiveWeight = weight * polarity;
+        dims[q.targetDimension] = (dims[q.targetDimension] || 0) + effectiveWeight;
+        if (q.dimensions) {
+          for (const [dk, dv] of Object.entries(q.dimensions)) {
+            if (dk !== q.targetDimension) {
+              dims[dk] = (dims[dk] || 0) + dv * weight;
+            }
+          }
+        }
+      } else if (q.dimensions) {
         for (const [dk, dv] of Object.entries(q.dimensions)) {
           dims[dk] = (dims[dk] || 0) + dv * weight;
         }
@@ -194,8 +189,8 @@ function determineArchetype(userVector, profiles) {
   // Calibrated z-score + softmax (mirrors blurEngine)
   const calibrated = {};
   for (const { key, sim } of similarities) {
-    const mu = RANDOM_BASELINES[key] || 0;
-    const sigma = RANDOM_STDS[key] || 1;
+    const mu = ARCHETYPE_BASELINES[key] || 0;
+    const sigma = ARCHETYPE_STDS[key] || 1;
     calibrated[key] = (sim - mu) / sigma;
   }
   const probs = softmax(calibrated, SOFTMAX_TEMPERATURE);
