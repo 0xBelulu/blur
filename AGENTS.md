@@ -28,15 +28,15 @@ No test framework — zero test files.
 - **App.jsx** — state machine (`landing → test → loading → result`), all state lives here, pages receive callbacks via props. No routing library. Uses `AnimatePresence mode="wait"` with `custom=direction` for slide transitions. Loading has a hardcoded **3.5s `setTimeout`**.
 - **Test.jsx two-phase flow**: first ~10 questions required with progress bar, then "已获得基本画像" transition, then optional explore phase (~62 more questions) that can be ended anytime.
 - **Question bank**: ~72 questions across 3 data files re-exported from `src/data/questions.js`: `questions-single.js` (40, 4-choice), `questions-scale.js` (16, Likert 1-5), `questions-rank.js` (16, rank 4). ~60/20/20 split. All UI text is Chinese.
-- **src/data/tags.js** — ~70 trait tags in 9 archetype groups, 9 archetype descriptions (with narrative sub-sections `innerWorld`/`inRelation`/`hiddenSide`), 9 dimension configs.
-- **src/utils/blurEngine.js** — `generateResult(answers)` scores traits (weight × count + seed-based noise), picks top 5 tags, determines archetype + secondary archetype, computes suppressed traits, returns `dimensionScores`. Also exports `mapTo3D`, `ARCHETYPE_VECTORS`, `VECTOR_AXES`.
-- **Components** (7): `BlurCard`, `DimensionMeters`, `GlassButton` (3 variants), `ProgressBar`, `QuestionBank`, `TraitRadar` (SVG), `VectorSpace3D` (3D canvas). All default exports.
+- **src/data/tags.js** & **src/data/archetypeProfiles.js** — 54 trait tags in 10 archetype groups, 10 archetype profiles (with 10-D vectors and narrative sub-sections `innerWorld`/`inRelation`/`hiddenSide`), 10 dimension configs (`src/data/dimensions.js`).
+- **src/utils/blurEngine.js** — `generateResult(answers)` calculates 10-dimensional user vector from weighted responses, normalizes cosine similarities against 10 archetype profiles, picks top 5 tags, determines primary + secondary archetype, computes suppressed traits, and returns `dimensionScores`, `userVector`, `similarities`. Exports `DIMENSION_PAIRS`.
+- **Components** (11): `ArchetypeProfileChart`, `BlurCard`, `DimensionMeters`, `DraggableTabs`, `GlassButton`, `OpticalFocusSpace` (3D parallax atmosphere), `ProgressBar`, `QuestionBank`, `TraitRadar` (SVG), `TraitSpace2D` (interactive 2D canvas vector space), `TraitWeightChart`.
 - **src/index.css** — `@theme` custom color tokens (`--color-blur-*`), glass morphism classes (`.glass`, `.glass-strong`), gradient border (`.prism-shift`), animation utilities (`animate-float`, `animate-pulse-glow`, `animate-drift`, `animate-breathe*`), custom range input (`.blur-slider`), custom scrollbar.
 
 ## Conventions
 - Components: `export default function Component(...)` with destructured props; named exports for util functions/constants.
 - State: `useState`/`useCallback`/`useRef` (no custom hooks except inline `useRotatingTip` in Landing.jsx).
-- `VectorSpace3D` uses refs (`hoveredRef`, `rotRef`, `dataRef`) over state to avoid useEffect dependency rebuilds.
+- `TraitSpace2D` and `OpticalFocusSpace` use refs (`hoveredRef`, `rotRef`, `dataRef`, `animRef`) over state for smooth 60fps canvas/RAF loops.
 - `BlurCard` uses `navigator?.vibrate?.(10)` for optional haptic feedback.
 - ESLint v10: imports `defineConfig`/`globalIgnores` from `eslint/config` subpath (not root `eslint`); uses `reactHooks.configs.flat.recommended` and `reactRefresh.configs.vite`.
 - CSS theme colors referenced as Tailwind classes: `bg-blur-bg`, `text-blur-text`, `border-blur-border`, etc.

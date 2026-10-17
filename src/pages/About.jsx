@@ -115,16 +115,16 @@ export default function About({ onBack, onOpenArchetypes, onOpenTraits, onOpenQu
               <div className="flex items-baseline gap-3 mb-6">
                 <span className="text-3xl font-light text-blur-text-light/25 leading-none select-none">02</span>
                 <h2 className="text-base font-medium text-blur-text tracking-wide">
-                  九种模糊的原型
+                  十种模糊的原型
                 </h2>
               </div>
 
               <p className="text-[15px] text-blur-text-muted leading-[1.85]">
-                Blur 将人格划分为九种原型。它们不是分类，而是透镜——透过不同的模糊方式，你看到的是不同的自己。
+                Blur 将人格划分为十种原型。它们不是分类，而是透镜——透过不同的模糊方式，你看到的是不同的自己。
               </p>
               <ParaBreak />
               <p className="text-[15px] text-blur-text-muted leading-[1.85]">
-                雾、风铃、漂流者、静观者、虹、盐、底片、潮汐、剪影——每一种都有自己的内心世界、关系模式和隐藏侧面。
+                雾、风铃、暖流、晶体、虹、盐、底片、潮汐、剪影、纸鸢——每一种都有自己的内心世界、关系模式和隐藏侧面。
               </p>
               <div className="mt-3">
                 <InlineLink
@@ -140,7 +140,7 @@ export default function About({ onBack, onOpenArchetypes, onOpenTraits, onOpenQu
               <div className="flex items-baseline gap-3 mb-6">
                 <span className="text-3xl font-light text-blur-text-light/25 leading-none select-none">03</span>
                 <h2 className="text-base font-medium text-blur-text tracking-wide">
-                  七十余枚特质标签
+                  五十余枚特质标签
                 </h2>
               </div>
 

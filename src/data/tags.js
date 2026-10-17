@@ -16,7 +16,7 @@ export const tagPool = {
   thunder: { text: "轰鸣体质", weight: 1, detail: "你的内心很少真正安静过" },
   loud: { text: "高音量", weight: 0.8, detail: "即使是安静的时候，你的内心也在轰鸣" },
 
-  // 漂流者系 — 流动性模糊
+  // 流动特质 — 流动与变化
   adrift: { text: "无锚状态", weight: 1, detail: "你不觉得自己属于任何一个固定的地方" },
   fleeing: { text: "逃离冲动", weight: 0.9, detail: "你在感到被定义时会本能地想逃" },
   unmoored: { text: "解缆者", weight: 0.9, detail: "你主动或被动地切断了固定的连接" },
@@ -24,7 +24,7 @@ export const tagPool = {
   tidal: { text: "潮汐节律", weight: 1, detail: "你的情绪和状态有自然的涨落周期" },
   fluid: { text: "流动性", weight: 0.8, detail: "你从一种状态滑向另一种，没有明显边界" },
 
-  // 静观者系 — 时间性模糊
+  // 沉潜特质 — 深度与时间
   patient: { text: "慢时间", weight: 1, detail: "你愿意等，相信时间会让事情澄清" },
   sunken: { text: "沉降感", weight: 0.9, detail: "你的情绪和想法会自己慢慢沉到深处" },
   abyssal: { text: "深潜者", weight: 1, detail: "你不害怕深处，那里反而让你平静" },

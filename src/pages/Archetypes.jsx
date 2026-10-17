@@ -114,7 +114,7 @@ export default function Archetypes({ onBack }) {
             <ArrowLeft size={16} className="text-blur-text-muted" />
           </button>
           <h1 className="text-sm md:text-base font-medium tracking-widest text-blur-text">
-            九种模糊的原型
+            十种模糊的原型
           </h1>
           <div className="w-9 h-9" aria-hidden="true" />
         </header>
@@ -138,7 +138,7 @@ export default function Archetypes({ onBack }) {
 
           <div className="pl-10 md:pl-14 pr-6 md:pr-10 pt-10 md:pt-14 pb-16">
             <p className="text-[15px] text-blur-text-muted leading-[1.85] mb-6">
-              Blur 将人格划分为九种原型。它们不是分类，而是透镜——透过不同的模糊方式，你看到的是不同的自己。
+              Blur 将人格划分为十种原型。它们不是分类，而是透镜——透过不同的模糊方式，你看到的是不同的自己。
             </p>
 
             <div className="flex flex-col items-center mb-8">

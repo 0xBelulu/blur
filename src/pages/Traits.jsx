@@ -31,7 +31,7 @@ export default function Traits({ onBack }) {
             <ArrowLeft size={16} className="text-blur-text-muted" />
           </button>
           <h1 className="text-sm md:text-base font-medium tracking-widest text-blur-text">
-            七十余枚特质标签
+            五十余枚特质标签
           </h1>
           <div className="w-9 h-9" aria-hidden="true" />
         </header>

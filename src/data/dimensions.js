@@ -99,7 +99,7 @@ export const TRAIT_DIMENSION_MAP = {
   thunder: { expressivity: 0.8, sensorySensitivity: 0.6 },
   loud: { expressivity: 1.0 },
 
-  // 漂流者系 — 流动性模糊
+  // 流动特质 — 流动与变化
   adrift: { changeAffinity: 1.0, energySource: -0.7 },
   fleeing: { changeAffinity: 0.9, boundaryClarity: -0.4 },
   unmoored: { changeAffinity: 0.8, boundaryClarity: -0.6 },
@@ -107,7 +107,7 @@ export const TRAIT_DIMENSION_MAP = {
   tidal: { changeAffinity: 0.6, temporalDepth: -0.5, emotionalLatency: 0.4 },
   fluid: { changeAffinity: 0.8, boundaryClarity: -0.4 },
 
-  // 静观者系 — 时间性模糊
+  // 沉潜特质 — 深度与时间
   patient: { temporalDepth: 0.9, processingDepth: 0.5 },
   sunken: { processingDepth: 0.9, emotionalLatency: 0.5 },
   abyssal: { processingDepth: 1.0, temporalDepth: 0.4 },
