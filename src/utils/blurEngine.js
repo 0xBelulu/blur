@@ -1,6 +1,7 @@
 import { DIMENSIONS, DIMENSION_KEYS } from "../data/dimensions.js";
 import { ARCHETYPE_PROFILES } from "../data/archetypeProfiles.js";
 import { questions as defaultQuestions } from "../data/questions.js";
+import { getDualSynergy } from "../data/dualArchetypes.js";
 
 /**
  * 评分权重配置
@@ -315,6 +316,11 @@ function determineArchetype(userVector) {
           key: second.key,
           title: second.profile.title,
           symbol: second.profile.symbol,
+          roleBadge: second.profile.roleBadge,
+          roleSummary: second.profile.roleSummary,
+          prob: second.prob,
+          sim: second.sim,
+          profile: second.profile,
         }
       : null,
     similarities: ranked.map((r) => ({
@@ -330,7 +336,7 @@ function determineArchetype(userVector) {
   };
 }
 
-function determineSuppressedTraits(archetypeKey, userVector) {
+export function determineSuppressedTraits(archetypeKey, userVector) {
   const profile = ARCHETYPE_PROFILES[archetypeKey];
   if (!profile) return [];
 
@@ -339,12 +345,17 @@ function determineSuppressedTraits(archetypeKey, userVector) {
     .map((dimKey) => {
       const score = userVector[dimKey] || 0;
       const info = DIMENSIONS[dimKey];
+      const dir = score >= 0 ? "positive" : "negative";
+      const shadowData = info?.shadow?.[dir] || {};
       return {
         trait: dimKey,
         text: info.name,
-        detail: score > 0 ? info.positive : score < 0 ? info.negative : "",
+        detail: score > 0 ? info.positive : score < 0 ? info.negative : info.positive,
         score,
         direction: score > 0 ? "positive" : score < 0 ? "negative" : "neutral",
+        triggerScene: shadowData.triggerScene || "",
+        whyHidden: shadowData.whyHidden || "",
+        latentPower: shadowData.latentPower || "",
       };
     })
     .sort((a, b) => Math.abs(a.score) - Math.abs(b.score));
@@ -368,6 +379,15 @@ export function generateResult(answers, questions = defaultQuestions) {
     determineArchetype(userVector);
 
   const suppressedTraits = determineSuppressedTraits(archetypeKey, userVector);
+
+  const topSim1 = similarities[0];
+  const topSim2 = similarities[1];
+  const probDiff = topSim2 ? Math.abs(topSim1.prob - topSim2.prob) : 1;
+  const simDiff = topSim2 ? Math.abs(topSim1.sim - topSim2.sim) : 1;
+  const isDualResonance = Boolean(topSim2 && (probDiff <= 0.08 || simDiff <= 0.09));
+  const dualSynergy = isDualResonance
+    ? getDualSynergy(topSim1.key, topSim2.key, topSim1.profile, topSim2.profile)
+    : null;
 
   // Top 维度（展示用）
   const scoredDims = DIMENSION_KEYS.map((k) => ({
@@ -406,6 +426,8 @@ export function generateResult(answers, questions = defaultQuestions) {
     archetypeKey,
     primaryArchetype: archetype,
     secondaryArchetype,
+    isDualResonance,
+    dualSynergy,
     tagDetails,
     topTags: tagDetails,
     suppressedTraits,

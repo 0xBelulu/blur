@@ -4,14 +4,21 @@
  * 每个人格是一个 10 维理想向量（范围 [-1,1]），
  * 通过余弦相似度与用户实际向量匹配。
  *
- * 新增人格时，只需在此处新增一个 profile 条目，
- * 题目文件、计算引擎均无需改动。
+ * 包含：
+ * - 诗意命名与副标题
+ * - roleBadge: 直观大白话人格标签（例如：【温和防御型沉思者】）
+ * - roleSummary: 简明行为倾向与人际交往概括
+ * - companion: 同频共振伙伴（精神默契、相处自适）
+ * - complement: 互补平衡伙伴（视角互补、提供盲区依托）
+ * - narrative: 内在世界、关系中、隐藏面
  */
 
 export const ARCHETYPE_PROFILES = {
   mist: {
     title: "雾",
     subtitle: "朦胧是你的保护色",
+    roleBadge: "温和防御型沉思者",
+    roleSummary: "习惯用柔和与模糊感保护内心世界，在安全距离里感知外界，不轻易展露全部棱角。",
     symbol: "🌫️",
     description: "你不是看不清世界，而是选择让世界看不清你。模糊不是你的缺陷，是你精心调节的曝光度。",
     color: [180, 185, 195],
@@ -28,6 +35,22 @@ export const ARCHETYPE_PROFILES = {
       expressivity: -0.8,
     },
     suppressedDimensions: ["sensorySensitivity", "expressivity", "changeAffinity"],
+    companion: {
+      key: "negative",
+      title: "底片",
+      symbol: "🎞️",
+      roleBadge: "延迟显影型观察者",
+      relationType: "同频共振",
+      description: "你们都懂得为自己的感受保留足够的私密暗房，无需多言也能接纳彼此的安静与延迟。",
+    },
+    complement: {
+      key: "warmCurrent",
+      title: "暖流",
+      symbol: "♨️",
+      roleBadge: "恒温包容型支持者",
+      relationType: "互补包容",
+      description: "暖流不带压迫感的恒温能悄悄融化你的防备外壳，而你的细腻克制也能为暖流提供沉静的依托。",
+    },
     narrative: {
       innerWorld: "你的内心像一间拉着纱帘的房间——外面的人以为是昏暗，但只有你知道，这种柔和的光线刚刚好。你不害怕真实，只是真实有时候太刺眼了。你习惯把尖锐的棱角包上一层毛边，不是为了骗别人，是为了让自己能呼吸。",
       inRelation: "你在关系中是一道半透明的墙。别人觉得你若即若离，但你知道，这已经是最近的距离了。你不是不想靠近，而是靠近意味着要把保护层撤掉，而那需要很长时间。你最好的相处方式是：我在，但请别直视我。",
@@ -38,6 +61,8 @@ export const ARCHETYPE_PROFILES = {
   chime: {
     title: "风铃",
     subtitle: "微风即响，没有静音键",
+    roleBadge: "高敏共振型感受者",
+    roleSummary: "微风即响，感官极度敏锐，能够深刻捕捉环境与他人的情绪波澜，情绪来去鲜明。",
     symbol: "🎐",
     description: "你不是情绪化，只是被一点风就吹响了。世界对你来说总是太响、太亮、太多。",
     color: [195, 175, 155],
@@ -54,6 +79,22 @@ export const ARCHETYPE_PROFILES = {
       expressivity: 0.7,
     },
     suppressedDimensions: ["temporalDepth", "processingDepth", "closureTolerance"],
+    companion: {
+      key: "rainbow",
+      title: "虹",
+      symbol: "🌈",
+      roleBadge: "多重视角型共情者",
+      relationType: "同频共振",
+      description: "你们都对这个世界丰富的细微层次保持着好奇与共情，能够在一瞬间捕捉到对方眼里的光谱。",
+    },
+    complement: {
+      key: "crystal",
+      title: "晶体",
+      symbol: "💎",
+      roleBadge: "清澈秩序型理性者",
+      relationType: "互补平衡",
+      description: "晶体坚固清晰的秩序能为你提供抵御外界风暴的避风港，让你不必为每一阵微风剧烈颤动。",
+    },
     narrative: {
       innerWorld: "你的内心像一串挂在风口的风铃——别人以为你在唱歌，但每一响都是被风吹的。一个念头进来，会激起十次振动。你羡慕那些能一键静音的人，但你也知道，这种振动里藏着别人听不到的频率。你不是太敏感，你是敏感本身。",
       inRelation: "你在关系中常常是那个说得太多或完全沉默的人——没有中间状态。你的情绪来得快且猛，像一阵风突然吹响全部铃铛。但你需要的不是变安静，而是找到一个愿意听铃响的人。",
@@ -64,6 +105,8 @@ export const ARCHETYPE_PROFILES = {
   warmCurrent: {
     title: "暖流",
     subtitle: "潜行在深海之下，所经之处悄悄解冻",
+    roleBadge: "恒温包容型支持者",
+    roleSummary: "潜行流淌，用不带侵略性的善意默默温暖他人，在人际中提供稳定的情感托底与支撑。",
     symbol: "♨️",
     description: "你不是烈火，你是深海里永不停歇的恒温带。你走过的地方，冰封的海岸都在被你悄悄解冻。你从不刻意炫耀温度，但靠近你的人，都在被你慢慢捂热。",
     color: [210, 160, 140],
@@ -80,6 +123,22 @@ export const ARCHETYPE_PROFILES = {
       expressivity: 0.6,
     },
     suppressedDimensions: ["boundaryClarity", "emotionalLatency", "temporalDepth"],
+    companion: {
+      key: "salt",
+      title: "盐",
+      symbol: "🧂",
+      roleBadge: "无形渗透型共鸣者",
+      relationType: "同频共振",
+      description: "你们都拥有极其柔软包容的生命质感，一个负责溶解相合，一个负责恒温托底，温暖倍增。",
+    },
+    complement: {
+      key: "silhouette",
+      title: "剪影",
+      symbol: "📷",
+      roleBadge: "克制留白型守望者",
+      relationType: "互补平衡",
+      description: "剪影清晰坚定的边界能帮你学会停下无止境的热量输出，而你的暖意也能温和地照亮剪影的暗面。",
+    },
     narrative: {
       innerWorld: "你的内心深处有一处不断涌出热量的泉眼。你很少陷入漫长的消沉，因为你知道流动本身就是最好的治愈。你习惯把温暖分给周围的人，不是为了讨好，而是因为你的能量满溢到需要流淌。",
       inRelation: "你在关系中是一股深海暖流。和你在一起，别人会不自觉地卸下防备，因为你身上有一种不带侵略性的包容。你善于倾听，也敢于给予热量，但你最珍视的是那种能接住你温度的灵魂。",
@@ -90,6 +149,8 @@ export const ARCHETYPE_PROFILES = {
   crystal: {
     title: "晶体",
     subtitle: "在流动的世界里，你独自生长出清晰的棱角",
+    roleBadge: "清澈秩序型理性者",
+    roleSummary: "边界分明，恪守原则与内在秩序，追求客观真相与非黑即白的笃定，是最可靠的锚点。",
     symbol: "💎",
     description: "在所有人都在溶解、模糊的世界里，你独自生长出清晰的棱角。你不是冷漠，你只是尊重真相的几何形状。光穿过你，被分成了清脆规整的切面。",
     color: [145, 185, 215],
@@ -106,6 +167,22 @@ export const ARCHETYPE_PROFILES = {
       expressivity: -0.2,
     },
     suppressedDimensions: ["changeAffinity", "closureTolerance", "cognitiveRange"],
+    companion: {
+      key: "silhouette",
+      title: "剪影",
+      symbol: "📷",
+      roleBadge: "克制留白型守望者",
+      relationType: "同频共振",
+      description: "你们都深谙界限的艺术，尊重彼此独立的精神领地，交往清爽、克制且高度可靠。",
+    },
+    complement: {
+      key: "tide",
+      title: "潮汐",
+      symbol: "🌊",
+      roleBadge: "周期律动型探索者",
+      relationType: "互补平衡",
+      description: "潮汐永不停歇的律动能冲刷你偶尔紧绷的原则，而你稳固坚韧的基底则是潮汐最安心的海岸。",
+    },
     narrative: {
       innerWorld: "你的内心是一座秩序井然的晶格空间。你讨厌混乱、暧昧和无休止的悬而未决。你追求确定与真相，对你来说，黑白分明的清澈，远胜过含混不清的温柔。",
       inRelation: "你在关系中界限清晰、有言在先。别人可能会觉得你略带锋芒或不够圆滑，但只要深入交往，就会发现你是最可靠、最值得托付的锚点。你从不说谎，你的承诺像岩晶一样坚定。",
@@ -116,6 +193,8 @@ export const ARCHETYPE_PROFILES = {
   rainbow: {
     title: "虹",
     subtitle: "真相不止一种颜色",
+    roleBadge: "多重视角型共情者",
+    roleSummary: "能同时看见并理解多种立场的合理性，包容复杂矛盾，思维开阔而善于留白。",
     symbol: "🌈",
     description: "你不是犹豫不决，你只是同时看到了所有的可能。你的模糊来自于丰富的视角，而不是缺失。",
     color: [185, 165, 195],
@@ -132,6 +211,22 @@ export const ARCHETYPE_PROFILES = {
       expressivity: -0.2,
     },
     suppressedDimensions: ["boundaryClarity", "expressivity", "changeAffinity"],
+    companion: {
+      key: "kite",
+      title: "纸鸢",
+      symbol: "🪁",
+      roleBadge: "高远前行型追求者",
+      relationType: "同频共振",
+      description: "你们都不满足于单一狭隘的视角，向往高空与多元可能，交流时总能擦出意想不到的灵感火花。",
+    },
+    complement: {
+      key: "crystal",
+      title: "晶体",
+      symbol: "💎",
+      roleBadge: "清澈秩序型理性者",
+      relationType: "互补平衡",
+      description: "在你的思维发散到无边无际时，晶体的确定性与决断力能帮你收拢焦点、落到坚实的地面。",
+    },
     narrative: {
       innerWorld: "你的内心像一间装满镜子的房间，一束光进来，折射出无数个版本。你不是没有答案，而是你有太多答案，而且每个都是真的。你习惯在确定和不确定之间悬停，不是因为懦弱，是因为你诚实地看到了复杂性。",
       inRelation: "你在关系中常常是最理解对方的人，因为你能同时站在好几个角度。但这也让你疲惫——每次争执，你都能理解双方，所以你说不出坚定的立场。你最好的关系是：对方不需要你选边，而是和你一起看全景。",
@@ -142,6 +237,8 @@ export const ARCHETYPE_PROFILES = {
   salt: {
     title: "盐",
     subtitle: "你溶解在一切里，也改变了一切",
+    roleBadge: "无形渗透型共鸣者",
+    roleSummary: "边界极度柔软，能像水溶盐般自然融入任何环境，深刻同频他人的喜怒哀乐。",
     symbol: "🧂",
     description: "你像盐溶于水——进入任何关系都会改变它的味道，但你自己却不再有固定的形状。你的模糊不是缺失，而是一种渗透性的存在方式。",
     color: [195, 190, 175],
@@ -158,6 +255,22 @@ export const ARCHETYPE_PROFILES = {
       expressivity: 0.2,
     },
     suppressedDimensions: ["boundaryClarity", "processingDepth", "temporalDepth"],
+    companion: {
+      key: "warmCurrent",
+      title: "暖流",
+      symbol: "♨️",
+      roleBadge: "恒温包容型支持者",
+      relationType: "同频共振",
+      description: "你们都在用无声无息的方式托举他人，在一起时能够彻底放下顾虑，互相接纳与滋养。",
+    },
+    complement: {
+      key: "crystal",
+      title: "晶体",
+      symbol: "💎",
+      roleBadge: "清澈秩序型理性者",
+      relationType: "互补平衡",
+      description: "晶体清晰分明的棱角能作为一面坚固的镜子，提醒在人群中容易过度溶解的你：找回自己的形状。",
+    },
     narrative: {
       innerWorld: "你的内心没有外壳。别人以为你随和，其实你只是没有边界——不是不想有，而是你的边界天生就是半透膜。情绪、氛围、他人的状态，它们不是被你接收，而是直接渗进来，和你原有的感受混在一起，直到你分不清哪个是自己的。你不是共情，你是溶解。",
       inRelation: "你在关系中是那个「什么都行」的人——不是因为你真的无所谓，而是因为对方的偏好会自动变成你的偏好。你像一张湿宣纸，别人落笔，你就晕开。这让你很好相处，但也让你经常在关系结束后才发现：我到底想要什么？你最好的关系是：对方愿意帮你把晕开的边界重新画出来。",
@@ -168,6 +281,8 @@ export const ARCHETYPE_PROFILES = {
   negative: {
     title: "底片",
     subtitle: "你的真相还在暗房里等待显影",
+    roleBadge: "延迟显影型观察者",
+    roleSummary: "情绪与感受习惯在事后慢慢浮现，用时间换取理解的深度，真相永远比反应慢半拍。",
     symbol: "🎞️",
     description: "你像一张未冲洗的底片——所有画面都在，只是颜色是反的。别人看到的是你的反面，只有你知道，把光反过来照，才能看见真实的你。",
     color: [170, 170, 185],
@@ -184,6 +299,22 @@ export const ARCHETYPE_PROFILES = {
       expressivity: -0.8,
     },
     suppressedDimensions: ["sensorySensitivity", "expressivity", "changeAffinity"],
+    companion: {
+      key: "mist",
+      title: "雾",
+      symbol: "🌫️",
+      roleBadge: "温和防御型沉思者",
+      relationType: "同频共振",
+      description: "你们都是生活在时间差里的观察者，在轻雾与暗房之间，共同守护未被外界过度曝光的自我。",
+    },
+    complement: {
+      key: "chime",
+      title: "风铃",
+      symbol: "🎐",
+      roleBadge: "高敏共振型感受者",
+      relationType: "互补共鸣",
+      description: "风铃的即刻回响能唤醒你沉睡的灵感，而你的沉静厚重能让风铃剧烈的晃动平复下来。",
+    },
     narrative: {
       innerWorld: "你的内心像一间暗房——所有画面都已经曝光了，但还没有显影。你的感受不是没有，而是它们需要时间才能浮出表面。别人已经笑完了你才开始觉得好笑，别人已经哭完了你才开始觉得难过。你不是迟钝，你是延迟。你的真相永远比你的反应慢半拍。",
       inRelation: "你在关系中是那个「事后才反应过来」的人。吵架的时候你沉默，三天后突然写了一封长信。分别的时候你平静，一个月后在某个瞬间突然崩溃。你的爱不是即时的，是显影后的——需要暗房、需要时间、需要正确的药水。你最好的关系是：对方愿意等你的底片慢慢显影。",
@@ -194,6 +325,8 @@ export const ARCHETYPE_PROFILES = {
   tide: {
     title: "潮汐",
     subtitle: "你不是在来就是在去，从未真正停留",
+    roleBadge: "周期律动型探索者",
+    roleSummary: "内在能量有自然的涨落与节律，在亲密涌动与退潮独处之间寻找自适的生命呼吸。",
     symbol: "🌊",
     description: "你像潮汐——不是海，也不是岸，而是两者之间永恒的往返。你的状态有自然的涨落，这不是不稳定，这是你的呼吸方式。",
     color: [160, 185, 180],
@@ -210,6 +343,22 @@ export const ARCHETYPE_PROFILES = {
       expressivity: 0.4,
     },
     suppressedDimensions: ["boundaryClarity", "processingDepth", "temporalDepth"],
+    companion: {
+      key: "kite",
+      title: "纸鸢",
+      symbol: "🪁",
+      roleBadge: "高远前行型追求者",
+      relationType: "同频共振",
+      description: "你们都厌倦一成不变的静止，深谙借力与律动的智慧，在靠近与高飞之间默契配合。",
+    },
+    complement: {
+      key: "crystal",
+      title: "晶体",
+      symbol: "💎",
+      roleBadge: "清澈秩序型理性者",
+      relationType: "互补平衡",
+      description: "晶体如同一块沉静坚韧的礁石，无论你的情绪怎样涨落澎湃，它始终都在那里，给你不可动摇的安全感。",
+    },
     narrative: {
       innerWorld: "你的内心没有恒定态。你像月亮牵引下的海面——有时候涨满，淹没一切；有时候退尽，什么都不剩。这不是情绪化，这是你的自然节律。你试过稳定，但稳定让你窒息。你需要退潮的空间，也需要涨潮的涌动。你的模糊是那种「正在改变」的状态本身。",
       inRelation: "你在关系中是一股潮水——有时候把对方淹没在爱意里，有时候退得干干净净，留下一片湿漉漉的沙滩。对方以为你反复无常，但你知道这只是你的呼吸：吸的时候靠近，呼的时候退后。你最好的关系是：对方不怕退潮，因为知道涨潮一定会来。",
@@ -220,6 +369,8 @@ export const ARCHETYPE_PROFILES = {
   silhouette: {
     title: "剪影",
     subtitle: "逆光时你的轮廓才最清晰",
+    roleBadge: "克制留白型守望者",
+    roleSummary: "注重分寸与精神边界，习惯在逆光中展现清晰轮廓，把丰富细节留给自己。",
     symbol: "📷",
     description: "你像逆光中的剪影——正面看是模糊的，但从背后照来的光把你的轮廓刻得很深。你不是没有形状，你只是需要特定的角度才能被看见。",
     color: [175, 165, 170],
@@ -236,6 +387,22 @@ export const ARCHETYPE_PROFILES = {
       expressivity: -0.8,
     },
     suppressedDimensions: ["expressivity", "changeAffinity", "sensorySensitivity"],
+    companion: {
+      key: "mist",
+      title: "雾",
+      symbol: "🌫️",
+      roleBadge: "温和防御型沉思者",
+      relationType: "同频共振",
+      description: "你们都懂得保护内在世界的私密与尊严，不必非把所有东西掏出来，相处舒适自在。",
+    },
+    complement: {
+      key: "warmCurrent",
+      title: "暖流",
+      symbol: "♨️",
+      roleBadge: "恒温包容型支持者",
+      relationType: "互补平衡",
+      description: "暖流恒定包容的热度能慢慢消除你的戒备，让你愿意在逆光之外，展现温润真实的正面。",
+    },
     narrative: {
       innerWorld: "你的内心像一个只在逆光时才清晰的存在。正面打光的时候，你是一片混沌；但背光的时候，你的轮廓反而锐利得惊人。你不是没有自我，只是你的自我是方向性的——它取决于光从哪里来。你习惯只展示自己的边缘，因为边缘是你最确定的部分。",
       inRelation: "你在关系中是那个「只露轮廓」的人。别人觉得你神秘，其实你只是选择性地呈现自己。你不会全盘托出，但你会精确地展示某个侧面——就像剪影，只给形状，不给细节。你最好的关系是：对方不需要看清你的全部，而是欣赏你选择呈现的那个轮廓。",
@@ -246,6 +413,8 @@ export const ARCHETYPE_PROFILES = {
   kite: {
     title: "纸鸢",
     subtitle: "逆风飞向天际，但心底永远系着清醒的线",
+    roleBadge: "高远前行型追求者",
+    roleSummary: "渴望飞向更辽阔的视野与可能，在不确定中迎风上升，心底始终系着清醒的锚点。",
     symbol: "🪁",
     description: "你渴望飞向视野更广阔的高空，风越大，你上升的意志越坚决。你不是盲目的流浪者，不管飞得多高多远，你的心底始终攥着一根清醒的引线。",
     color: [185, 175, 210],
@@ -262,6 +431,22 @@ export const ARCHETYPE_PROFILES = {
       expressivity: 0.5,
     },
     suppressedDimensions: ["temporalDepth", "processingDepth", "sensorySensitivity"],
+    companion: {
+      key: "tide",
+      title: "潮汐",
+      symbol: "🌊",
+      roleBadge: "周期律动型探索者",
+      relationType: "同频共振",
+      description: "一个借风而上，一个随月而动，你们都具有不可遏制的生机与探索欲，彼此激发无限想象。",
+    },
+    complement: {
+      key: "negative",
+      title: "底片",
+      symbol: "🎞️",
+      roleBadge: "延迟显影型观察者",
+      relationType: "互补平衡",
+      description: "底片向内深挖的定力能让飞得太高、有时感到眩晕的你，重新在厚重的土地上沉淀思考。",
+    },
     narrative: {
       innerWorld: "你的内心是一片渴望起飞的原野。你厌倦地面的平庸与束缚，总是把目光投向天际线。你懂得借力风的呼啸，在不确定中寻找向上的升力，但你绝非任凭摆布的落叶，你拥有属于自己的骨架。",
       inRelation: "你在关系中需要辽阔的视野和志同道合的同行者。你欣赏那些能陪你一起俯瞰风景、或者能安稳握住那根引线的人。你的热情是高远的，只要对方给予信任，你便能带对方去看更壮丽的云海。",

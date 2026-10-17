@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RotateCcw, Zap } from "lucide-react";
+import { RotateCcw, Zap, HeartHandshake, ArrowRightLeft } from "lucide-react";
 import TraitSpace2D from "../components/TraitSpace2D";
 import GlassButton from "../components/GlassButton";
-import { DIMENSION_PAIRS } from "../utils/blurEngine";
+import { DIMENSION_PAIRS, determineSuppressedTraits } from "../utils/blurEngine";
+import { ARCHETYPE_PROFILES } from "../data/archetypeProfiles";
 import TraitRadar from "../components/TraitRadar";
 import DimensionMeters from "../components/DimensionMeters";
 import ProgressBar from "../components/ProgressBar";
@@ -11,8 +12,9 @@ import DraggableTabs from "../components/DraggableTabs";
 
 const TABS = [
   { key: "cloud", label: "画像" },
-  { key: "data", label: "数据" },
+  { key: "relation", label: "关系" },
   { key: "narrative", label: "叙事" },
+  { key: "data", label: "数据" },
 ];
 
 const tabContentVariants = {
@@ -24,14 +26,43 @@ const tabContentVariants = {
 export default function Result({ result, onRestart }) {
   const [activeTab, setActiveTab] = useState("cloud");
   const [activePairIndex, setActivePairIndex] = useState(0);
-
   const [hoveredArchetype, setHoveredArchetype] = useState(null);
 
-  const { archetype, secondaryArchetype, tagDetails, scoredTraits, dimensionScores, suppressedTraits, userVector, similarities } = result;
-  const narrative = archetype.narrative;
+  const {
+    archetypeKey,
+    archetype,
+    secondaryArchetype,
+    tagDetails,
+    scoredTraits,
+    dimensionScores,
+    userVector,
+    similarities,
+    isDualResonance,
+  } = result;
+
+  const [selectedKey, setSelectedKey] = useState(archetypeKey || "mist");
+  const activeArchetype = ARCHETYPE_PROFILES[selectedKey] || archetype;
+  const activeNarrative = activeArchetype.narrative;
+  const activeSuppressed = determineSuppressedTraits(selectedKey, userVector);
 
   const vectorSize = typeof window !== "undefined" && window.innerWidth >= 768 ? 420 : 320;
   const activePair = DIMENSION_PAIRS[activePairIndex];
+
+  // Soft scale for resonance percentage display
+  const minProb = Math.min(...similarities.map((s) => s.prob));
+  const maxProb = Math.max(...similarities.map((s) => s.prob), 0.01);
+  const softScale = (p) => {
+    const normalized = (p - minProb) / (maxProb - minProb);
+    const compressed = Math.pow(normalized, 0.7);
+    return Math.max(10, compressed * 100);
+  };
+
+  const top1 = similarities[0];
+  const top2 = similarities[1];
+  const pct1 = Math.round(softScale(top1.prob));
+  const pct2 = top2 ? Math.round(softScale(top2.prob)) : 0;
+  const isDual =
+    isDualResonance || (top2 && (Math.abs(top1.prob - top2.prob) <= 0.08 || Math.abs(pct1 - pct2) <= 8));
 
   return (
     <div className="flex-1 flex flex-col md:flex-row md:items-start md:justify-center gap-6 md:gap-10 px-6 py-8 md:py-12 max-w-5xl mx-auto w-full overflow-y-auto">
@@ -85,57 +116,156 @@ export default function Result({ result, onRestart }) {
           transition={{ delay: 0.5, duration: 0.5 }}
           className="hidden md:block w-full glass rounded-2xl p-4"
         >
-          <p className="text-[10px] text-blur-text-light tracking-[0.2em] uppercase mb-3 text-center">
-            人格匹配度
+          <p className="text-[10px] text-blur-text-light tracking-[0.2em] uppercase mb-2 text-center">
+            人格光谱共振
           </p>
-          <DimensionMeters similarities={similarities} activeKey={hoveredArchetype} />
+          <DimensionMeters
+            similarities={similarities}
+            activeKey={hoveredArchetype}
+            selectedKey={selectedKey}
+            onSelectArchetype={setSelectedKey}
+          />
         </motion.div>
       </div>
 
       {/* Right: Info Panel */}
       <div className="flex-1 flex flex-col items-center md:items-start min-w-0 max-w-md mx-auto md:mx-0 w-full">
+        {/* Dual Resonance Switcher */}
+        {isDual && top2 && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full glass rounded-2xl p-1.5 mb-5 flex items-center justify-between gap-2 select-none"
+          >
+            <span className="text-xs text-blur-text-muted pl-2.5 shrink-0">
+              测出两种高契合人格：
+            </span>
+            <div className="relative flex-1 flex gap-1">
+              <button
+                onClick={() => setSelectedKey(top1.key)}
+                className="relative flex-1 py-1.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer z-10 transition-colors duration-200"
+              >
+                <span
+                  className={`relative z-10 flex items-center gap-1.5 transition-colors duration-200 ${
+                    selectedKey === top1.key
+                      ? "text-blur-text font-medium"
+                      : "text-blur-text-muted hover:text-blur-text"
+                  }`}
+                >
+                  <span>{top1.profile.symbol}</span>
+                  <span>{top1.profile.title}</span>
+                  <span className="text-[10px] tabular-nums text-blur-text-light">{pct1}%</span>
+                </span>
+                {selectedKey === top1.key && (
+                  <motion.div
+                    layoutId="dual-tab-slider"
+                    className="absolute inset-0 rounded-xl bg-blur-surface shadow-sm pointer-events-none"
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+              </button>
+              <button
+                onClick={() => setSelectedKey(top2.key)}
+                className="relative flex-1 py-1.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer z-10 transition-colors duration-200"
+              >
+                <span
+                  className={`relative z-10 flex items-center gap-1.5 transition-colors duration-200 ${
+                    selectedKey === top2.key
+                      ? "text-blur-text font-medium"
+                      : "text-blur-text-muted hover:text-blur-text"
+                  }`}
+                >
+                  <span>{top2.profile.symbol}</span>
+                  <span>{top2.profile.title}</span>
+                  <span className="text-[10px] tabular-nums text-blur-text-light">{pct2}%</span>
+                </span>
+                {selectedKey === top2.key && (
+                  <motion.div
+                    layoutId="dual-tab-slider"
+                    className="absolute inset-0 rounded-xl bg-blur-surface shadow-sm pointer-events-none"
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+              </button>
+            </div>
+          </motion.div>
+        )}
+
         <div className="flex flex-col items-center md:items-start w-full">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-            className="flex flex-col items-center md:items-start mb-3"
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="flex flex-col items-center md:items-start mb-2"
           >
-            <span className="text-4xl mb-2">{archetype.symbol}</span>
+            <span className="text-4xl mb-1.5">{activeArchetype.symbol}</span>
             <span className="text-[11px] text-blur-text-light tracking-[0.25em] uppercase">
               Blur 人格原型
             </span>
           </motion.div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="text-[28px] font-medium text-blur-text tracking-tight leading-tight text-center md:text-left"
-          >
-            {archetype.title}
-          </motion.h1>
+          <div className="flex items-center gap-2.5 flex-wrap justify-center md:justify-start">
+            <motion.h1
+              key={activeArchetype.title}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="text-[28px] font-medium text-blur-text tracking-tight leading-tight"
+            >
+              {activeArchetype.title}
+            </motion.h1>
+            {activeArchetype.roleBadge && (
+              <span className="text-xs px-2.5 py-1 rounded-full bg-blur-surface border border-blur-border/70 text-blur-text-muted font-medium">
+                {activeArchetype.roleBadge}
+              </span>
+            )}
+          </div>
 
           <motion.p
+            key={activeArchetype.subtitle}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.2 }}
             className="text-sm text-blur-text-muted mt-1.5 text-center md:text-left"
           >
-            {archetype.subtitle}
+            {activeArchetype.subtitle}
           </motion.p>
 
-          {secondaryArchetype && (
+          {/* If switched away from primary, provide quick reset */}
+          {!isDual && selectedKey !== archetypeKey && (
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              onClick={() => setSelectedKey(archetypeKey)}
+              className="mt-2 text-[11px] text-blur-accent hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <ArrowRightLeft size={11} />
+              <span>当前为探索视角 · 点击切回基准原型【{archetype.title}】</span>
+            </motion.button>
+          )}
+
+          {/* Secondary archetype one-liner when not in dual resonance */}
+          {!isDual && secondaryArchetype && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              className="mt-2 flex items-center gap-1.5 text-xs text-blur-text-light"
+              transition={{ delay: 0.4 }}
+              className="mt-2 flex items-center gap-2 text-xs text-blur-text-light"
             >
               <span>兼具</span>
-              <span className="text-blur-accent">
-                {secondaryArchetype.symbol} {secondaryArchetype.title}
-              </span>
+              <button
+                onClick={() => setSelectedKey(secondaryArchetype.key)}
+                className="text-blur-accent font-medium hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <span>
+                  {secondaryArchetype.symbol} {secondaryArchetype.title}
+                </span>
+                {secondaryArchetype.roleBadge && (
+                  <span className="text-[10px] text-blur-text-muted">
+                    ({secondaryArchetype.roleBadge})
+                  </span>
+                )}
+              </button>
               <span>特质</span>
             </motion.div>
           )}
@@ -148,16 +278,21 @@ export default function Result({ result, onRestart }) {
           transition={{ delay: 0.5, duration: 0.5 }}
           className="md:hidden w-full glass rounded-2xl p-4 mt-5"
         >
-          <p className="text-[10px] text-blur-text-light tracking-[0.2em] uppercase mb-3 text-center">
-            人格匹配度
+          <p className="text-[10px] text-blur-text-light tracking-[0.2em] uppercase mb-2 text-center">
+            人格光谱共振
           </p>
-          <DimensionMeters similarities={similarities} activeKey={hoveredArchetype} />
+          <DimensionMeters
+            similarities={similarities}
+            activeKey={hoveredArchetype}
+            selectedKey={selectedKey}
+            onSelectArchetype={setSelectedKey}
+          />
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
+          transition={{ delay: 0.6 }}
           className="mt-6 w-full"
         >
           <DraggableTabs
@@ -173,7 +308,7 @@ export default function Result({ result, onRestart }) {
           <AnimatePresence mode="wait">
             {activeTab === "cloud" && (
               <motion.div
-                key="cloud"
+                key={`cloud-${selectedKey}`}
                 variants={tabContentVariants}
                 initial="enter"
                 animate="center"
@@ -186,7 +321,7 @@ export default function Result({ result, onRestart }) {
                   transition={{ delay: 0.1 }}
                   className="text-sm text-blur-text-muted leading-relaxed text-center md:text-left mb-5 px-2 md:px-0"
                 >
-                  {archetype.description}
+                  {activeArchetype.description}
                 </motion.p>
 
                 <motion.div
@@ -198,28 +333,66 @@ export default function Result({ result, onRestart }) {
 
                 <RecipeSection tagDetails={tagDetails} />
 
-                {suppressedTraits && suppressedTraits.length > 0 && (
+                {activeSuppressed && activeSuppressed.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                    className="glass rounded-2xl p-4 mb-5"
+                    transition={{ delay: 0.4 }}
+                    className="glass rounded-2xl p-4.5 mb-5 space-y-3.5"
                   >
-                    <div className="flex items-center gap-2 mb-3">
-                      <Zap size={14} className="text-blur-accent" />
-                      <span className="text-xs font-medium text-blur-text">你的另一面</span>
-                    </div>
-                    <p className="text-xs text-blur-text-muted leading-relaxed mb-3">
-                      你很少展露这些特质，但它们偶尔会在你毫无防备时浮现——
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {suppressedTraits.slice(0, 2).map((trait) => (
-                        <span
-                          key={trait.trait}
-                          className="text-xs px-3 py-1.5 rounded-full border border-blur-border text-blur-text-muted"
-                        >
-                          {trait.text}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Zap size={14} className="text-blur-accent" />
+                        <span className="text-xs font-medium text-blur-text">
+                          你的另一面 · 隐藏潜能
                         </span>
+                      </div>
+                      <span className="text-[10px] text-blur-text-light">深水区特质</span>
+                    </div>
+                    <p className="text-xs text-blur-text-muted leading-relaxed">
+                      你很少主动展现这些特质，甚至下意识将其折叠。但它们构成了你最真实的后盾，会在特定时刻浮现——
+                    </p>
+
+                    <div className="space-y-2.5 pt-1">
+                      {activeSuppressed.slice(0, 2).map((trait) => (
+                        <div
+                          key={trait.trait}
+                          className="p-3 rounded-xl bg-white/30 border border-blur-border/60 text-xs space-y-1.5"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-blur-text flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-blur-accent" />
+                              {trait.text} · {trait.detail}
+                            </span>
+                            <span className="text-[10px] text-blur-text-light px-2 py-0.5 rounded-full bg-blur-surface">
+                              不易察觉
+                            </span>
+                          </div>
+                          {trait.triggerScene && (
+                            <div className="text-[11px] text-blur-text-muted leading-relaxed">
+                              <span className="text-blur-text-light font-medium mr-1">
+                                显化情境:
+                              </span>
+                              {trait.triggerScene}
+                            </div>
+                          )}
+                          {trait.whyHidden && (
+                            <div className="text-[11px] text-blur-text-muted leading-relaxed">
+                              <span className="text-blur-text-light font-medium mr-1">
+                                为何隐蔽:
+                              </span>
+                              {trait.whyHidden}
+                            </div>
+                          )}
+                          {trait.latentPower && (
+                            <div className="text-[11px] text-blur-accent font-medium leading-relaxed pt-0.5">
+                              <span className="text-blur-text-light font-normal mr-1">
+                                潜在力量:
+                              </span>
+                              {trait.latentPower}
+                            </div>
+                          )}
+                        </div>
                       ))}
                     </div>
                   </motion.div>
@@ -233,6 +406,126 @@ export default function Result({ result, onRestart }) {
                 >
                   "所有不精确都值得被看见"
                 </motion.p>
+              </motion.div>
+            )}
+
+            {/* Relation / Relationship Tab */}
+            {activeTab === "relation" && (
+              <motion.div
+                key={`relation-${selectedKey}`}
+                variants={tabContentVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.3 }}
+                className="space-y-4"
+              >
+                <div className="text-center md:text-left mb-2">
+                  <div className="flex items-center gap-1.5 justify-center md:justify-start mb-1 text-blur-accent">
+                    <HeartHandshake size={15} />
+                    <h3 className="text-sm font-medium text-blur-text">
+                      关系镜像与契合伙伴
+                    </h3>
+                  </div>
+                  <p className="text-xs text-blur-text-muted">
+                    在复杂的心理光谱中，不同原型与你产生独特的共鸣与互补。
+                  </p>
+                </div>
+
+                {/* Companion Card */}
+                {activeArchetype.companion && (
+                  <div className="glass rounded-2xl p-4 border border-blur-border/70 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">{activeArchetype.companion.symbol}</span>
+                        <div>
+                          <div className="text-xs font-medium text-blur-text flex items-center gap-1.5">
+                            <span>{activeArchetype.companion.title}</span>
+                            <span className="text-[10px] text-blur-text-light px-1.5 py-0.5 rounded bg-blur-surface">
+                              {activeArchetype.companion.roleBadge}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-blur-accent font-medium">
+                            {activeArchetype.companion.relationType || "同频共振伙伴"}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-blur-text-light px-2 py-0.5 rounded-full bg-blur-surface">
+                        灵魂默契
+                      </span>
+                    </div>
+                    <p className="text-xs text-blur-text-muted leading-relaxed">
+                      {activeArchetype.companion.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* Complement Card */}
+                {activeArchetype.complement && (
+                  <div className="glass rounded-2xl p-4 border border-blur-border/70 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">{activeArchetype.complement.symbol}</span>
+                        <div>
+                          <div className="text-xs font-medium text-blur-text flex items-center gap-1.5">
+                            <span>{activeArchetype.complement.title}</span>
+                            <span className="text-[10px] text-blur-text-light px-1.5 py-0.5 rounded bg-blur-surface">
+                              {activeArchetype.complement.roleBadge}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-teal-700/80 font-medium">
+                            {activeArchetype.complement.relationType || "互补平衡伙伴"}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-blur-text-light px-2 py-0.5 rounded-full bg-blur-surface">
+                        视角互补
+                      </span>
+                    </div>
+                    <p className="text-xs text-blur-text-muted leading-relaxed">
+                      {activeArchetype.complement.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* Share / Social invitation */}
+                <div className="p-3.5 rounded-xl bg-blur-surface/50 text-center text-xs text-blur-text-light space-y-1">
+                  <p className="font-medium text-blur-text">💡 想知道身边的朋友是什么原型？</p>
+                  <p className="text-[11px] text-blur-text-muted">
+                    邀请他们完成测试，看看你们是灵魂同频共振，还是互补镜像。
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === "narrative" && (
+              <motion.div
+                key={`narrative-${selectedKey}`}
+                variants={tabContentVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.3 }}
+                className="space-y-5"
+              >
+                <NarrativeSection
+                  title="你的内在世界"
+                  content={activeNarrative.innerWorld}
+                  delay={0}
+                  accent="rgba(155, 142, 199, 0.3)"
+                />
+                <NarrativeSection
+                  title="你在关系中"
+                  content={activeNarrative.inRelation}
+                  delay={0.1}
+                  accent="rgba(143, 181, 196, 0.3)"
+                />
+                <NarrativeSection
+                  title="你的隐藏面"
+                  content={activeNarrative.hiddenSide}
+                  delay={0.2}
+                  accent="rgba(196, 165, 137, 0.3)"
+                />
               </motion.div>
             )}
 
@@ -274,45 +567,14 @@ export default function Result({ result, onRestart }) {
                 </div>
               </motion.div>
             )}
-
-            {activeTab === "narrative" && (
-              <motion.div
-                key="narrative"
-                variants={tabContentVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.3 }}
-                className="space-y-6"
-              >
-                <NarrativeSection
-                  title="你的内在世界"
-                  content={narrative.innerWorld}
-                  delay={0}
-                  accent="rgba(155, 142, 199, 0.3)"
-                />
-                <NarrativeSection
-                  title="你在关系中"
-                  content={narrative.inRelation}
-                  delay={0.1}
-                  accent="rgba(143, 181, 196, 0.3)"
-                />
-                <NarrativeSection
-                  title="你的隐藏面"
-                  content={narrative.hiddenSide}
-                  delay={0.2}
-                  accent="rgba(196, 165, 137, 0.3)"
-                />
-              </motion.div>
-            )}
           </AnimatePresence>
         </div>
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.3 }}
-          className="mt-auto pt-10 w-full"
+          transition={{ delay: 1.0 }}
+          className="mt-auto pt-8 w-full"
         >
           <div className="flex justify-center md:justify-start">
             <GlassButton variant="ghost" onClick={onRestart}>
