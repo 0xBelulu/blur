@@ -13,7 +13,7 @@
 | `npm run build` | Production build |
 | `npm run lint` | ESLint v10 (single command, no typecheck) |
 | `npm run preview` | Preview production build |
-
+| `$env:LAN="0"; npm run dev` | Opt out of LAN debug. HTTPS + LAN is currently ON by default via `LAN_DEBUG_DEFAULT` in `vite.config.js` (temporary, for mobile gyro testing); `LAN=1` forces it on |
 No test framework — zero test files.
 
 ## Scripts (calibration & audit)

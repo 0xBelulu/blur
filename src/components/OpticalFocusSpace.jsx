@@ -6,52 +6,44 @@ const SPATIAL_SYMBOLS = [
   {
     id: "rainbow",
     symbol: "🌈",
-    name: "光谱",
     x: 78,
     y: 70,
     mobileX: 82,
     mobileY: 86,
     z: 0.16,
-    color: "rgba(196,155,165,0.45)",
     driftSpeed: 0.7,
     phase: 0.4,
   },
   {
     id: "bubble",
     symbol: "🫧",
-    name: "气泡",
     x: 91,
     y: 22,
     mobileX: 86,
     mobileY: 12,
     z: 0.22,
-    color: "rgba(143,181,196,0.45)",
     driftSpeed: 1.1,
     phase: 2.1,
   },
   {
     id: "mist",
     symbol: "🌫️",
-    name: "迷雾",
     x: 12,
     y: 16,
     mobileX: 12,
     mobileY: 10,
     z: 0.28,
-    color: "rgba(155,142,199,0.45)",
     driftSpeed: 0.8,
     phase: 1.3,
   },
   {
     id: "kite",
     symbol: "🪁",
-    name: "纸鸢",
     x: 44,
     y: 82,
     mobileX: 52,
     mobileY: 93,
     z: 0.32,
-    color: "rgba(196,165,137,0.45)",
     driftSpeed: 0.9,
     phase: 3.2,
   },
@@ -60,77 +52,65 @@ const SPATIAL_SYMBOLS = [
   {
     id: "leaf",
     symbol: "🍃",
-    name: "风客",
     x: 88,
     y: 46,
     mobileX: 88,
     mobileY: 48,
     z: 0.42,
-    color: "rgba(162,196,155,0.45)",
     driftSpeed: 1.0,
     phase: 4.5,
   },
   {
     id: "camera",
     symbol: "📷",
-    name: "调焦",
     x: 53,
     y: 13,
     mobileX: 50,
     mobileY: 6,
     z: 0.48,
-    color: "rgba(155,142,199,0.45)",
     driftSpeed: 0.6,
     phase: 0.8,
   },
   {
     id: "sparkle",
     symbol: "✨",
-    name: "微光",
     x: 26,
     y: 24,
     mobileX: 8,
     mobileY: 26,
     z: 0.52,
-    color: "rgba(196,165,137,0.45)",
     driftSpeed: 1.2,
     phase: 5.1,
   },
   {
     id: "planet",
     symbol: "🪐",
-    name: "游星",
     x: 84,
     y: 84,
     mobileX: 85,
     mobileY: 66,
     z: 0.58,
-    color: "rgba(155,142,199,0.45)",
     driftSpeed: 0.5,
     phase: 2.7,
   },
   {
     id: "film",
     symbol: "🎞️",
-    name: "胶片",
     x: 67,
     y: 86,
     mobileHidden: true, // 移动端减负，保留呼吸留白
     z: 0.62,
-    color: "rgba(196,165,137,0.45)",
     driftSpeed: 0.7,
     phase: 1.9,
   },
   {
     id: "prism",
     symbol: "💎",
-    name: "棱镜",
     x: 7,
     y: 56,
     mobileX: 9,
     mobileY: 60,
     z: 0.68,
-    color: "rgba(143,181,196,0.45)",
     driftSpeed: 0.8,
     phase: 3.8,
   },
@@ -139,51 +119,43 @@ const SPATIAL_SYMBOLS = [
   {
     id: "salt",
     symbol: "🧂",
-    name: "浮盐",
     x: 19,
     y: 82,
     mobileX: 14,
     mobileY: 78,
     z: 0.76,
-    color: "rgba(181,173,163,0.45)",
     driftSpeed: 0.6,
     phase: 4.1,
   },
   {
     id: "chime",
     symbol: "🎐",
-    name: "风铃",
     x: 81,
     y: 14,
     mobileX: 80,
     mobileY: 28,
     z: 0.82,
-    color: "rgba(143,181,196,0.45)",
     driftSpeed: 0.9,
     phase: 0.2,
   },
   {
     id: "wave",
     symbol: "🌊",
-    name: "潮汐",
     x: 34,
     y: 90,
     mobileX: 20,
     mobileY: 92,
     z: 0.88,
-    color: "rgba(143,181,196,0.45)",
     driftSpeed: 0.5,
     phase: 5.6,
   },
   {
     id: "candle",
     symbol: "🕯️",
-    name: "烛照",
     x: 5,
     y: 38,
     mobileHidden: true, // 移动端避开标题区
     z: 0.92,
-    color: "rgba(196,165,137,0.45)",
     driftSpeed: 0.7,
     phase: 2.9,
   },
@@ -200,6 +172,9 @@ const STARDUST_PARTICLES = [
   { id: "dust7", x: 38, y: 76, z: 0.82, size: 3, color: "rgba(143,181,196,0.65)" },
   { id: "dust8", x: 92, y: 38, z: 0.58, size: 3.5, color: "rgba(196,155,165,0.7)" },
 ];
+
+// 点按这些元素时不触发空间对焦（按钮/链接等自身已有交互反馈）
+const INTERACTIVE_SELECTOR = "button, a, input, select, textarea, [role='button']";
 
 export default function OpticalFocusSpace() {
   const containerRef = useRef(null);
@@ -233,6 +208,8 @@ export default function OpticalFocusSpace() {
     baseBeta: 50,
     baseGamma: 0,
     gyroCalibrated: false,
+    gyroPermissionPending: false,
+    gyroPermissionDenied: false,
     activeFocusedId: null,
     lastFocusTime: 0,
     currentPositions: [], // 记录每个符号实时的屏幕像素坐标，用于精准点按命中
@@ -280,8 +257,11 @@ export default function OpticalFocusSpace() {
     // 直接对焦到指定的符号 (核心统一通道)
     const focusOnSymbol = (item, i) => {
       const pos = state.currentPositions[i];
-      const targetX = pos ? pos.x : (item.x / 100) * window.innerWidth;
-      const targetY = pos ? pos.y : (item.y / 100) * window.innerHeight;
+      const isMobile = window.innerWidth < 768;
+      const itemX = isMobile && item.mobileX !== undefined ? item.mobileX : item.x;
+      const itemY = isMobile && item.mobileY !== undefined ? item.mobileY : item.y;
+      const targetX = pos ? pos.x : (itemX / 100) * window.innerWidth;
+      const targetY = pos ? pos.y : (itemY / 100) * window.innerHeight;
 
       state.activeFocusedId = item.id;
       state.targetZ = item.z;
@@ -301,12 +281,12 @@ export default function OpticalFocusSpace() {
 
     // 在空白处点击时，寻找距离触点最近的符号并直接对焦它
     const focusOnClosest = (clientX, clientY) => {
+      const isMobile = window.innerWidth < 768;
       let closestDist = Infinity;
       let closestIdx = -1;
 
       for (let i = 0; i < SPATIAL_SYMBOLS.length; i++) {
         const item = SPATIAL_SYMBOLS[i];
-        const isMobile = window.innerWidth < 768;
         if (isMobile && item.mobileHidden) continue;
 
         const pos = state.currentPositions[i];
@@ -328,8 +308,7 @@ export default function OpticalFocusSpace() {
 
     // 指针/光标移动追踪
     const handlePointerMove = (e) => {
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const { clientX, clientY } = e;
 
       state.mouseX = clientX;
       state.mouseY = clientY;
@@ -341,8 +320,7 @@ export default function OpticalFocusSpace() {
 
     // 移动端/触屏轻触合焦（Tap-to-Focus）：直接对焦到点按的元素上！
     const handlePointerDown = (e) => {
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const { clientX, clientY } = e;
 
       state.mouseX = clientX;
       state.mouseY = clientY;
@@ -350,6 +328,9 @@ export default function OpticalFocusSpace() {
       state.mouseNormalizedY = (clientY / window.innerHeight) * 2 - 1;
       state.hasInteracted = true;
       state.lastInteractionTime = performance.now();
+
+      // 点在按钮/链接等交互元素上时，不触发对焦、准星与震动反馈
+      if (e.target instanceof Element && e.target.closest(INTERACTIVE_SELECTOR)) return;
 
       const hit = focusOnClosest(clientX, clientY);
       if (!hit) {
@@ -362,20 +343,28 @@ export default function OpticalFocusSpace() {
         state.baseGamma = state.rawGamma;
       }
 
-      // 请求 iOS 陀螺仪权限（如需）
+      // 请求 iOS 陀螺仪权限（仅一次，拒绝后不再重复打扰）
       if (
         typeof DeviceOrientationEvent !== "undefined" &&
         typeof DeviceOrientationEvent.requestPermission === "function" &&
-        !state.gyroActive
+        !state.gyroActive &&
+        !state.gyroPermissionPending &&
+        !state.gyroPermissionDenied
       ) {
+        state.gyroPermissionPending = true;
         DeviceOrientationEvent.requestPermission()
           .then((res) => {
+            state.gyroPermissionPending = false;
             if (res === "granted") {
               state.gyroActive = true;
+            } else {
+              state.gyroPermissionDenied = true;
             }
           })
           .catch(() => {
-            /* 忽略被拒情况，平滑降级 */
+            /* 被拒后平滑降级为鼠标/静态呼吸模式 */
+            state.gyroPermissionPending = false;
+            state.gyroPermissionDenied = true;
           });
       }
     };
@@ -388,7 +377,7 @@ export default function OpticalFocusSpace() {
       state.mouseNormalizedY = 0;
     };
 
-    // 移动端陀螺仪体感监听 (Device Orientation & Absolute)
+    // 移动端陀螺仪体感监听 (Device Orientation)
     const handleOrientation = (e) => {
       const beta = e.beta;
       const gamma = e.gamma;
@@ -397,6 +386,9 @@ export default function OpticalFocusSpace() {
       if (!state.gyroCalibrated) {
         state.baseBeta = beta;
         state.baseGamma = gamma;
+        // 同步平滑值与真实读数，避免校准时相机从初值漂移
+        state.smoothBeta = beta;
+        state.smoothGamma = gamma;
         state.gyroCalibrated = true;
       }
 
@@ -419,6 +411,9 @@ export default function OpticalFocusSpace() {
       }
     };
 
+    // 仅触屏（粗指针）设备启用陀螺仪，避免带传感器的笔电/平板抢走鼠标控制
+    const coarsePointer = window.matchMedia?.("(pointer: coarse)").matches ?? true;
+
     updateResponsiveLayout();
     window.addEventListener("resize", updateResponsiveLayout, { passive: true });
     window.addEventListener("pointermove", handlePointerMove, { passive: true });
@@ -426,9 +421,8 @@ export default function OpticalFocusSpace() {
     window.addEventListener("pointerleave", handlePointerLeave);
     window.addEventListener("blur", handlePointerLeave);
 
-    if (typeof window !== "undefined") {
+    if (coarsePointer) {
       window.addEventListener("deviceorientation", handleOrientation, { passive: true });
-      window.addEventListener("deviceorientationabsolute", handleOrientation, { passive: true });
     }
 
     // 核心渲染循环（零 React 重渲染，纯 GPU 驱动）
@@ -605,28 +599,80 @@ export default function OpticalFocusSpace() {
       window.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("pointerleave", handlePointerLeave);
       window.removeEventListener("blur", handlePointerLeave);
-      if (typeof window !== "undefined") {
+      if (coarsePointer) {
         window.removeEventListener("deviceorientation", handleOrientation);
-        window.removeEventListener("deviceorientationabsolute", handleOrientation);
       }
       focusOnSymbolRef.current = null;
     };
   }, []);
 
   return (
-    <div
-      ref={containerRef}
-      className="fixed inset-0 pointer-events-none overflow-hidden transition-transform duration-700 ease-out will-change-transform"
-      aria-hidden="true"
-    >
-      {/* 极简光学对焦框 (Tap-to-Focus Reticle) */}
+    <>
+      <div
+        ref={containerRef}
+        className="fixed inset-0 pointer-events-none overflow-hidden will-change-transform"
+        aria-hidden="true"
+      >
+        {/* 丁达尔微光光尘 (充盈空间立体微粒感) */}
+        {STARDUST_PARTICLES.map((dust, j) => (
+          <div
+            key={dust.id}
+            ref={(node) => { dustRef.current[j] = node; }}
+            className="absolute rounded-full pointer-events-none will-change-transform"
+            style={{
+              left: `${dust.x}%`,
+              top: `${dust.y}%`,
+              width: `${dust.size}px`,
+              height: `${dust.size}px`,
+              background: dust.color,
+              boxShadow: `0 0 10px ${dust.color}`,
+              opacity: 0.5,
+            }}
+          />
+        ))}
+
+        {SPATIAL_SYMBOLS.map((item, i) => (
+          <div
+            key={item.id}
+            ref={(node) => { wrappersRef.current[i] = node; }}
+            className="absolute select-none flex items-center justify-center will-change-transform cursor-pointer pointer-events-auto p-4 touch-manipulation group"
+            style={{
+              left: `${item.x}%`,
+              top: `${item.y}%`,
+              transform: "translate(-50%, -50%)",
+            }}
+            onPointerDown={(e) => {
+              // 直接点按命中当前符号，直接锁定合焦
+              e.stopPropagation();
+              if (focusOnSymbolRef.current) {
+                focusOnSymbolRef.current(item, i);
+              }
+            }}
+          >
+            {/* 纯粹悬浮 Emoji (自身产生真实光学景深弥散与锐度) */}
+            <span
+              ref={(node) => { elementsRef.current[i] = node; }}
+              className="text-2xl md:text-3xl lg:text-[2rem] block transform-gpu cursor-default"
+              style={{
+                opacity: 0.1,
+                filter: "blur(6px)",
+                textShadow: "0 2px 10px rgba(0,0,0,0.04)",
+              }}
+            >
+              {item.symbol}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* 极简光学对焦框 (Tap-to-Focus Reticle)：独立于缩放容器，保持视口坐标精确 */}
       <div
         ref={reticleRef}
         className="fixed top-0 left-0 pointer-events-none w-14 h-14 will-change-transform"
+        aria-hidden="true"
         style={{
           opacity: 0,
           transform: "translate(-50%, -50%) scale(1.4)",
-          transition: "opacity 0.25s ease-out",
         }}
       >
         {/* 四个角的极细对焦角标 */}
@@ -637,57 +683,6 @@ export default function OpticalFocusSpace() {
         {/* 中心微弱对焦点 */}
         <div className="absolute inset-0 m-auto w-1 h-1 rounded-full bg-blur-accent/70" />
       </div>
-
-      {/* 丁达尔微光光尘 (充盈空间立体微粒感) */}
-      {STARDUST_PARTICLES.map((dust, j) => (
-        <div
-          key={dust.id}
-          ref={(node) => { dustRef.current[j] = node; }}
-          className="absolute rounded-full pointer-events-none will-change-transform"
-          style={{
-            left: `${dust.x}%`,
-            top: `${dust.y}%`,
-            width: `${dust.size}px`,
-            height: `${dust.size}px`,
-            background: dust.color,
-            boxShadow: `0 0 10px ${dust.color}`,
-            opacity: 0.5,
-          }}
-        />
-      ))}
-
-      {SPATIAL_SYMBOLS.map((item, i) => (
-        <div
-          key={item.id}
-          ref={(node) => { wrappersRef.current[i] = node; }}
-          className="absolute select-none flex items-center justify-center will-change-transform cursor-pointer pointer-events-auto p-4 -m-4 touch-manipulation group"
-          style={{
-            left: `${item.x}%`,
-            top: `${item.y}%`,
-          }}
-          onPointerDown={(e) => {
-            // 直接点按命中当前符号，直接锁定合焦
-            e.stopPropagation();
-            if (focusOnSymbolRef.current) {
-              focusOnSymbolRef.current(item, i);
-            }
-          }}
-        >
-          {/* 纯粹悬浮 Emoji (自身产生真实光学景深弥散与锐度) */}
-          <span
-            ref={(node) => { elementsRef.current[i] = node; }}
-            className="text-2xl md:text-3xl lg:text-[2rem] block transform-gpu cursor-default"
-            style={{
-              opacity: 0.1,
-              filter: "blur(6px)",
-              transition: "text-shadow 0.3s ease",
-              textShadow: "0 2px 10px rgba(0,0,0,0.04)",
-            }}
-          >
-            {item.symbol}
-          </span>
-        </div>
-      ))}
-    </div>
+    </>
   );
 }

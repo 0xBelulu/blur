@@ -12,6 +12,10 @@ export default defineConfig([
     rules: { 'no-unused-vars': 'off' },
   },
   {
+    files: ['vite.config.js'],
+    languageOptions: { globals: globals.node },
+  },
+  {
     files: ['**/*.{js,jsx}'],
     ignores: ['scripts/**'],
     extends: [
