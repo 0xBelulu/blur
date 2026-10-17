@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Archive, Sparkles } from "lucide-react";
 import GlassButton from "../components/GlassButton";
+import OpticalFocusSpace from "../components/OpticalFocusSpace";
 
 const TIPS = [
   "如果你在读这句话，说明你确实在读。",
@@ -16,19 +17,6 @@ const TIPS = [
   "你的性格不是你的标签，是你的动词。",
   "不要在测试中思考，要在思考中测试。",
   "走神是人类最高效的并行计算。",
-];
-
-const ARCHETYPE_SYMBOLS = [
-  { symbol: "🌫️", x: "12%", y: "18%", delay: 0 },
-  { symbol: "🎐", x: "82%", y: "14%", delay: 1.2 },
-  { symbol: "🪁", x: "88%", y: "42%", delay: 2.4 },
-  { symbol: "💎", x: "8%", y: "55%", delay: 0.8 },
-  { symbol: "🌈", x: "75%", y: "68%", delay: 1.8 },
-  { symbol: "🧂", x: "18%", y: "78%", delay: 3.0 },
-  { symbol: "🎞️", x: "68%", y: "85%", delay: 0.4 },
-  { symbol: "🌊", x: "35%", y: "88%", delay: 2.0 },
-  { symbol: "📷", x: "55%", y: "12%", delay: 1.5 },
-  { symbol: "♨️", x: "45%", y: "45%", delay: 2.8 },
 ];
 
 const ACTION_CLASS = "min-h-13 flex items-center justify-center";
@@ -136,25 +124,8 @@ export default function Landing({ onStart, onExplore, onOpenHistory }) {
         />
       </div>
 
-      {/* ── Floating archetype symbols ── */}
-      <div className="fixed inset-0 pointer-events-none" aria-hidden="true">
-        {ARCHETYPE_SYMBOLS.map((item, i) => (
-          <motion.span
-            key={i}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.12 }}
-            transition={{ delay: item.delay + 1.5, duration: 2 }}
-            className="absolute text-2xl md:text-3xl select-none"
-            style={{
-              left: item.x,
-              top: item.y,
-              animation: `archetype-float-${i % 3} ${6 + i * 0.7}s ease-in-out ${item.delay}s infinite`,
-            }}
-          >
-            {item.symbol}
-          </motion.span>
-        ))}
-      </div>
+      {/* ── Optical 3D focus breathing space ── */}
+      <OpticalFocusSpace />
 
       {/* Left — Brand */}
       <div className="relative z-10 w-full md:w-1/2 text-center md:text-left flex flex-col justify-start md:justify-center md:pr-8 lg:pr-16 mb-10 md:mb-0">
