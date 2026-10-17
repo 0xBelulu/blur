@@ -2,26 +2,26 @@ export const rankQuestions = [
   {
     id: 18,
     type: "rank",
-    text: "面对身心被彻底耗尽的一天，你最渴望的生活回血方式：",
+    text: "面对身心耗尽的一天，你最渴望的生活回血方式：",
     options: [
       {
         id: "a",
-        text: "约上能无拘无束畅聊的朋友，在升腾的烟火气与笑声中重新唤醒体内的热量。",
+        text: "约好友畅快聚餐大聊，在笑声与烟火气中重燃能量。",
         dimensions: { energySource: 0.75, expressivity: 0.75, processingDepth: -0.5, sensorySensitivity: -0.5 },
       },
       {
         id: "b",
-        text: "把房间迅速整理得井井有条，关掉所有外部消息推送，在清晰纯粹的边界中重启掌控感。",
+        text: "把房间收拾得井然有序，关掉所有消息重获掌控感。",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.5, cognitiveRange: -0.7, sensorySensitivity: -0.4 },
       },
       {
         id: "c",
-        text: "独自放一张喜欢的旧黑胶唱片，点一盏柔和暖灯，让浮躁的情绪在静谧的慢时间里自然澄清。",
+        text: "独自放张喜欢的唱片，点盏暖灯在安静中慢慢放空。",
         dimensions: { sensorySensitivity: 1, processingDepth: 1.1, energySource: -0.8, boundaryClarity: -0.55, expressivity: -0.7 },
       },
       {
         id: "d",
-        text: "不设任何目的地出门夜游，漫无目的地穿过陌生的街巷与晚风，让未知的偶遇带走沉重。",
+        text: "在陌生街头吹风夜游，用漫无目的的漫步洗去疲惫。",
         dimensions: { changeAffinity: 0.75, closureTolerance: 0.65, cognitiveRange: 0.7, boundaryClarity: -0.4, processingDepth: -0.5 },
       },
     ],
@@ -29,26 +29,26 @@ export const rankQuestions = [
   {
     id: 19,
     type: "rank",
-    text: "在一次深度对话中被触及一个未曾思考过的深刻问题时，你第一时间的真实反应：",
+    text: "被触及一个从未思考过的深刻问题时，你的第一反应：",
     options: [
       {
         id: "a",
-        text: "眼睛一亮，立刻顺着当下的直觉展开讨论，坦率真切地分享自己最鲜活的第一感受。",
+        text: "顺着当下直觉展开讨论，坦率分享最鲜活的第一感受。",
         dimensions: { expressivity: 0.75, energySource: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.4 },
       },
       {
         id: "b",
-        text: "迅速抓住问题最本质的核心前提，提炼出清晰的逻辑框架，给出干净利落的切入点。",
+        text: "迅速抓住问题本质，提炼出清晰逻辑并干脆利落切入。",
         dimensions: { cognitiveRange: -0.5, closureTolerance: -0.42, boundaryClarity: 0.65, changeAffinity: -0.85, sensorySensitivity: -0.4 },
       },
       {
         id: "c",
-        text: "安静地沉思很久，不急于表态，在内心细细咀嚼这个提问在自己生命经验底层的回响。",
+        text: "安静沉思很久，在内心细细咀嚼问题带来的深层回响。",
         dimensions: { energySource: -0.7, processingDepth: 1.2, emotionalLatency: 1, temporalDepth: 0.7, boundaryClarity: -0.55, expressivity: -0.7 },
       },
       {
         id: "d",
-        text: "脑海中瞬间联想出几个看似无关的有趣意象，从多个反常规的维度尝试解构这个问题。",
+        text: "瞬间联想出几个反常规意象，从不同新维度拆解它。",
         dimensions: { cognitiveRange: 0.75, changeAffinity: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
       },
     ],
@@ -56,26 +56,26 @@ export const rankQuestions = [
   {
     id: 20,
     type: "rank",
-    text: "以下四种环境场域，按「最能让你感到身心舒展与充盈」排序：",
+    text: "以下四种环境，按最能让你感到身心舒展充盈排序：",
     options: [
       {
         id: "a",
-        text: "充满活力的开放集市或海边篝火聚会，人与人之间眼神交汇、温暖相接的流动场域。",
+        text: "充满活力的集市或海边篝火，人群热络且温暖交汇。",
         dimensions: { energySource: 0.75, expressivity: 0.75, processingDepth: -0.5, sensorySensitivity: -0.5 },
       },
       {
         id: "b",
-        text: "建筑线条干净利落、光影规整、一切物品都有其精准归宿的现代美术馆。",
+        text: "线条干练、光影规整、一切井然有序的现代展馆。",
         dimensions: { boundaryClarity: 0.65, changeAffinity: -0.5, closureTolerance: -0.42, cognitiveRange: -0.7, sensorySensitivity: -0.4 },
       },
       {
         id: "c",
-        text: "深林中下着细雨的木屋，只有雨滴打在芭蕉上的声响与茶香袅袅，感官极度沉静。",
+        text: "雨声淅沥的深林木屋，伴着清幽茶香，感官极度沉静。",
         dimensions: { sensorySensitivity: 1.1, processingDepth: 1, energySource: -0.8, boundaryClarity: -0.55, expressivity: -0.7 },
       },
       {
         id: "d",
-        text: "连绵无际的高原草甸或无风带海面，视野辽阔无边，任何方向都是未知的可能。",
+        text: "辽阔无边的高原草甸或海面，任何方向都是无限可能。",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
       },
     ],
@@ -83,26 +83,26 @@ export const rankQuestions = [
   {
     id: 36,
     type: "rank",
-    text: "清晨醒来发现多出了一整天完全自由的时间，你最理想的度过方式：",
+    text: "突然拥有一整天完全自由的时间，你最理想的度过方式：",
     options: [
       {
         id: "a",
-        text: "毫不犹豫联络好友组局，一起去体验一顿丰盛的早午餐或开启期待已久的集体行动。",
+        text: "立刻联系好友组局聚餐，开启期待已久的集体行动。",
         dimensions: { energySource: 0.75, expressivity: 0.75, processingDepth: -0.5, sensorySensitivity: -0.4 },
       },
       {
         id: "b",
-        text: "把平时想做却没空完成的事项列出优先级，按照节奏逐一打勾，享受稳步推进的充实。",
+        text: "列出待办清单并按节奏逐一完成，享受掌控与推进感。",
         dimensions: { closureTolerance: -0.42, processingDepth: -0.8, changeAffinity: -0.85, cognitiveRange: -0.5, sensorySensitivity: -0.4, boundaryClarity: 0.65 },
       },
       {
         id: "c",
-        text: "泡一壶热茶，找一本厚重的小说或诗集，一整天都在文字构筑的幽微心象世界里慢游。",
+        text: "泡一壶好茶读一本厚书，整天沉浸在文字心象世界里。",
         dimensions: { energySource: -0.7, processingDepth: 1.1, temporalDepth: 0.9, sensorySensitivity: 0.8, boundaryClarity: -0.55, expressivity: -0.7 },
       },
       {
         id: "d",
-        text: "随手抓起钥匙就出门，坐上一趟没坐过的公交车，看它会把自己带到城市的哪一个角落。",
+        text: "抓起钥匙出门，坐上一趟陌生公交随遇而安漫游城市。",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
       },
     ],
@@ -114,22 +114,22 @@ export const rankQuestions = [
     options: [
       {
         id: "a",
-        text: "摊开彼此真实的温度，把心底的委屈与关切当面直接说透，相信真诚的表达能融化隔阂。",
+        text: "当面说透心底委屈与关切，相信真诚表达能化解隔阂。",
         dimensions: { expressivity: 0.75, energySource: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.5 },
       },
       {
         id: "b",
-        text: "设立清晰的谈话边界，厘清彼此的责任与底线，就事论事地寻找双方都能接受的平衡点。",
+        text: "划清底线就事论事，理性寻找双方都能接受的平衡点。",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, emotionalLatency: -0.6, cognitiveRange: -0.7, changeAffinity: -0.5, sensorySensitivity: -0.4 },
       },
       {
         id: "c",
-        text: "先悬置争论，静静体察对方话语背后的幽微情绪，等彼此的心情都在时间里沉淀澄清后再聊。",
+        text: "先搁置争论体察情绪，等彼此心情沉淀冷静后再深聊。",
         dimensions: { energySource: -0.7, emotionalLatency: 1.1, sensorySensitivity: 0.9, processingDepth: 0.9, boundaryClarity: -0.55, expressivity: -0.7 },
       },
       {
         id: "d",
-        text: "跳出非对即错的二元对立，换一个幽默或更高维的全新角度，打破僵局寻找第三种可能。",
+        text: "跳出对错之争，换个全新角度或幽默切入打破僵局。",
         dimensions: { cognitiveRange: 0.75, changeAffinity: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
       },
     ],
@@ -137,26 +137,26 @@ export const rankQuestions = [
   {
     id: 38,
     type: "rank",
-    text: "规划一次长假旅行时，哪种旅途体验最能打动你的灵魂：",
+    text: "规划一次长假旅行时，哪种体验最能打动你的灵魂：",
     options: [
       {
         id: "a",
-        text: "住进当地热情的民宿，与市集摊主、偶遇的旅人把酒言欢，深深感受不同文化的生活热气。",
+        text: "住特色民宿并与当地人畅聊，感受浓厚的人情烟火气。",
         dimensions: { energySource: 0.75, expressivity: 0.75, boundaryClarity: -0.6, processingDepth: -0.5, sensorySensitivity: -0.4 },
       },
       {
         id: "b",
-        text: "重访那座让自己感到安心与笃定的熟悉小城，住在心仪的旅馆，遵循自己最舒服的生活节奏。",
+        text: "重访熟悉安心的小城旅店，按自己最舒服的节奏度过。",
         dimensions: { changeAffinity: -0.85, temporalDepth: 0.8, closureTolerance: -0.42, cognitiveRange: -0.5, sensorySensitivity: -0.4, boundaryClarity: 0.65 },
       },
       {
         id: "c",
-        text: "去往古老宁静的遗迹或幽深的山谷，在古树与晨雾中长久驻足，感受岁月流转的厚重。",
+        text: "去往幽深山谷或古老遗迹，长久驻足感受岁月的厚重。",
         dimensions: { energySource: -0.7, temporalDepth: 1.1, processingDepth: 1, sensorySensitivity: 0.8, boundaryClarity: -0.55, expressivity: -0.7 },
       },
       {
         id: "d",
-        text: "只买单程机票，不订固定行程，任由路上的随机机缘与突发线索决定明天的落脚点。",
+        text: "不订固定行程，任由路上的随机奇遇决定下一站去处。",
         dimensions: { changeAffinity: 0.75, closureTolerance: 0.65, cognitiveRange: 0.75, boundaryClarity: -0.4, processingDepth: -0.5 },
       },
     ],
@@ -164,26 +164,26 @@ export const rankQuestions = [
   {
     id: 39,
     type: "rank",
-    text: "如果要为自己打造一间终极灵感工作室，它必须具备的核心特质：",
+    text: "如果要打造你的专属灵感工作室，它必须具备的核心特质：",
     options: [
       {
         id: "a",
-        text: "空间通透且设有舒适的交谈长桌，随时欢迎志趣相投的伙伴来做客、碰撞灵感火花。",
+        text: "空间通透明亮，随时欢迎志趣相投的伙伴来碰撞灵感。",
         dimensions: { energySource: 0.75, expressivity: 0.75, processingDepth: -0.5, sensorySensitivity: -0.5 },
       },
       {
         id: "b",
-        text: "收纳与动线经过极致规划，工具与资料各就其位、纤尘不染，一眼看去秩序井然。",
+        text: "收纳与动线规整有序，工具资料各就其位且一尘不染。",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.5, cognitiveRange: -0.7, sensorySensitivity: -0.4 },
       },
       {
         id: "c",
-        text: "光线柔和内敛，有厚实的木质书架与深陷的沙发，像一间能隔绝一切喧嚣的深海潜艇。",
+        text: "光线柔和配厚实书架，像隔绝外界喧嚣的避世潜艇。",
         dimensions: { processingDepth: 1.1, sensorySensitivity: 0.9, energySource: -0.8, boundaryClarity: -0.55, expressivity: -0.7 },
       },
       {
         id: "d",
-        text: "家具随手可移动重组，墙上贴满来自各个维度的灵感碎片，空间随时能变换出全新形态。",
+        text: "家具可随时移动重组，墙贴灵感碎片，空间变化多样。",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
       },
     ],
@@ -191,26 +191,26 @@ export const rankQuestions = [
   {
     id: 40,
     type: "rank",
-    text: "以下四种对「时间」的比喻，哪一个最契合你内在的生命节奏：",
+    text: "以下四种对「时间」的比喻，哪一个最契合你的生命节奏：",
     options: [
       {
         id: "a",
-        text: "时间是向外奔涌的光与热，生命应当热烈燃烧、尽情投入与他人和世界的共鸣。",
+        text: "时间是奔涌的光热，应当热烈燃烧并尽情与世界共鸣。",
         dimensions: { energySource: 0.75, expressivity: 0.75, temporalDepth: -0.7, processingDepth: -0.5, sensorySensitivity: -0.4 },
       },
       {
         id: "b",
-        text: "时间是滴答流淌的精密钟表，尊重因果与规律，一步一个脚印筑起确定而坚实的城堡。",
+        text: "时间是滴答走动的精密钟表，遵循因果步步筑起城堡。",
         dimensions: { closureTolerance: -0.42, boundaryClarity: 0.65, changeAffinity: -0.85, cognitiveRange: -0.5, sensorySensitivity: -0.4 },
       },
       {
         id: "c",
-        text: "时间是慢慢沉淀的湖泊与岩层，越深处的回忆与情感越醇厚，所有经历都在悄悄显影。",
+        text: "时间是慢慢沉淀的深湖，越深处的回忆与情感越醇厚。",
         dimensions: { energySource: -0.7, temporalDepth: 1.2, processingDepth: 1.1, emotionalLatency: 0.8, boundaryClarity: -0.55, expressivity: -0.7 },
       },
       {
         id: "d",
-        text: "时间是变幻莫测的季风与洋流，没有固定终点，唯有跟随生命的浪潮轻盈起伏与跃迁。",
+        text: "时间是变幻莫测的季风，跟随生命浪潮轻盈起伏跃迁。",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
       },
     ],
@@ -218,26 +218,26 @@ export const rankQuestions = [
   {
     id: 53,
     type: "rank",
-    text: "在完成一项耗费心力的大型项目后，你最本能的庆祝与收尾动作：",
+    text: "完成一项耗费心力的大项目后，你最本能的庆祝与收尾：",
     options: [
       {
         id: "a",
-        text: "召集群体伙伴开怀举杯，在热烈的拥抱与彼此喝彩中把积蓄的压力彻底释放。",
+        text: "召集伙伴举杯庆祝，在欢呼拥抱中把积攒的压力释放。",
         dimensions: { energySource: 0.75, expressivity: 0.75, processingDepth: -0.5, sensorySensitivity: -0.5 },
       },
       {
         id: "b",
-        text: "将所有文档复盘整理妥当，给项目画上清晰笃定的句号，才安心开启下一个日程。",
+        text: "妥善归整文档做好复盘，画上清晰句号再开启新日程。",
         dimensions: { closureTolerance: -0.42, boundaryClarity: 0.65, processingDepth: -0.6, cognitiveRange: -0.7, changeAffinity: -0.5, sensorySensitivity: -0.4 },
       },
       {
         id: "c",
-        text: "一个人静静走过熟悉的长街，让紧绷的神经慢慢松弛，细细回味这一路走来的心境蜕变。",
+        text: "独自走在熟悉长街，让紧绷神经慢慢松弛并回味心路。",
         dimensions: { energySource: -0.7, processingDepth: 1.1, temporalDepth: 0.9, emotionalLatency: 0.8, boundaryClarity: -0.55, expressivity: -0.7 },
       },
       {
         id: "d",
-        text: "彻底把刚刚结束的事情抛在脑后，迫不及待地投身于一个完全不搭界的崭新奇想中。",
+        text: "把刚做完的事抛在脑后，迫不及待投入全新的奇想中。",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
       },
     ],
@@ -245,26 +245,26 @@ export const rankQuestions = [
   {
     id: 54,
     type: "rank",
-    text: "面对外界突如其来的负面评价或误解，哪种应对最符合你的骨气与修养：",
+    text: "面对突如其来的负面评价或误解，哪种应对最符合你的风格：",
     options: [
       {
         id: "a",
-        text: "不卑不亢地当面澄清事实，坦诚表达自己的底线与态度，把话说明白不留阴影。",
+        text: "当面澄清事实并表达底线态度，把话说明白不留阴影。",
         dimensions: { expressivity: 0.75, emotionalLatency: -0.4, energySource: 0.7, processingDepth: -0.5, sensorySensitivity: -0.4 },
       },
       {
         id: "b",
-        text: "迅速厘清事实与情绪，属于自己的问题就地改进，无理的越界评价则彻底屏蔽在外。",
+        text: "厘清事实理性改进，无理越界的评价则彻底屏蔽在外。",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.85, cognitiveRange: -0.5, sensorySensitivity: -0.4 },
       },
       {
         id: "c",
-        text: "保持从容，不急于辩驳，将评价作为镜子向内审视，相信时间自会滤清虚妄与真实。",
+        text: "从容自若不急辩解，向内审视自己，相信时间自会澄清。",
         dimensions: { energySource: -0.7, emotionalLatency: 1.2, processingDepth: 1.1, sensorySensitivity: 0.7, boundaryClarity: -0.55, expressivity: -0.7 },
       },
       {
         id: "d",
-        text: "视线早已越过当下的噪音投向更广阔的旷野，根本不在狭隘的评价体系里与对方缠斗。",
+        text: "视线越过眼前杂音投向旷野，不在狭隘体系里与人纠缠。",
         dimensions: { cognitiveRange: 0.75, changeAffinity: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
       },
     ],
@@ -272,26 +272,26 @@ export const rankQuestions = [
   {
     id: 55,
     type: "rank",
-    text: "在一个团队协作中，你最享受并能自然发光的角色担当：",
+    text: "在团队协作中，你最享受并能自然发光的角色担当：",
     options: [
       {
         id: "a",
-        text: "调动全员士气，营造温暖开放的气氛，成为连接每个人、点燃行动热情的催化剂。",
+        text: "调动团队士气与气氛，成为连接大家、点燃热情的纽带。",
         dimensions: { energySource: 0.75, expressivity: 0.75, processingDepth: -0.5, sensorySensitivity: -0.5 },
       },
       {
         id: "b",
-        text: "制定清晰的工作流与标准，把控交付节奏与质量底线，让大家知道事情稳稳靠得住。",
+        text: "制定流程把控交付节奏与标准，确保事情推进稳妥靠谱。",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.5, cognitiveRange: -0.7, sensorySensitivity: -0.4 },
       },
       {
         id: "c",
-        text: "关注细微但关键的逻辑破绽与成员情绪，以深刻的专业洞见确保成果具有扎实质感。",
+        text: "关注关键逻辑漏洞，以深刻洞见确保成果扎实有质感。",
         dimensions: { energySource: -0.7, sensorySensitivity: 1, processingDepth: 1.2, emotionalLatency: 0.6, boundaryClarity: -0.55, expressivity: -0.7 },
       },
       {
         id: "d",
-        text: "不断引入外部前沿视角，打破既有思维定式，为团队开拓意想不到的突破路径。",
+        text: "引入前沿视角打破定式，为团队开拓意想不到的新突破。",
         dimensions: { cognitiveRange: 0.75, changeAffinity: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
       },
     ],
@@ -299,26 +299,26 @@ export const rankQuestions = [
   {
     id: 56,
     type: "rank",
-    text: "什么样的艺术作品或审美体验，最能瞬间击中你的内心深处：",
+    text: "什么样的艺术或审美体验，最能瞬间击中你的内心深处：",
     options: [
       {
         id: "a",
-        text: "充满鲜活色彩与饱满生命力的画作或歌舞，那种扑面而来、让人想要热泪盈眶的真切感染力。",
+        text: "色彩鲜活饱满的画作歌舞，带来扑面而来的热烈感染力。",
         dimensions: { expressivity: 0.75, energySource: 0.75, sensorySensitivity: 0.6, processingDepth: -0.5 },
       },
       {
         id: "b",
-        text: "结构严丝合缝、比例精妙绝伦的古典建筑或几何晶体，体现着人类理性与笃定的神圣感。",
+        text: "严丝合缝的古典建筑与几何结构，体现理性的秩序之美。",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.85, cognitiveRange: -0.5, sensorySensitivity: -0.4 },
       },
       {
         id: "c",
-        text: "留白悠远、意蕴未尽的黑白摄影或枯山水，需要久久凝视才能读懂那一层层时间的灰度。",
+        text: "留白悠远的摄影或水墨，需要静静凝视体味时间的余韵。",
         dimensions: { energySource: -0.7, temporalDepth: 1.2, processingDepth: 1.1, emotionalLatency: 0.7, boundaryClarity: -0.55, expressivity: -0.7 },
       },
       {
         id: "d",
-        text: "打破常规视觉语法、多种媒介跨界碰撞的装置艺术，充满叛逆未知的先锋想象力。",
+        text: "打破常规的跨界装置艺术，充满叛逆未知的先锋想象力。",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
       },
     ],
@@ -326,26 +326,26 @@ export const rankQuestions = [
   {
     id: 59,
     type: "rank",
-    text: "在面对人生重大转折时，哪种信念最能给你带来勇往直前的底气：",
+    text: "面对人生重大转折时，哪种信念最能给你勇往直前的底气：",
     options: [
       {
         id: "a",
-        text: "身边有并肩作战的伙伴与彼此信任的爱，只要与所珍视的人在一起，就能跨越山海。",
+        text: "身边有并肩信任的伙伴，只要同行就能跨越一切山海。",
         dimensions: { energySource: 0.75, expressivity: 0.75, processingDepth: -0.5, sensorySensitivity: -0.5 },
       },
       {
         id: "b",
-        text: "坚守自己不可动摇的核心准则与做人底线，只要每一步都立得住脚，结果自当笃定。",
+        text: "坚守核心准则与底线，只要步步站得稳，结果自会笃定。",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.5, cognitiveRange: -0.7, sensorySensitivity: -0.4 },
       },
       {
         id: "c",
-        text: "相信所有阵痛与波折都是生命深处必经的沉积，时间自会把一切磨砺成温润的珍珠。",
+        text: "相信波折都是必经沉积，时间自会把磨砺化作温润珍珠。",
         dimensions: { energySource: -0.7, temporalDepth: 1.2, processingDepth: 1.1, emotionalLatency: 0.8, boundaryClarity: -0.55, expressivity: -0.7 },
       },
       {
         id: "d",
-        text: "人生是一场没有标准答案的开放探险，转折恰好打破了既定剧本，未知才是最大奖赏。",
+        text: "人生是无剧本的开放探险，打破既定轨道，未知才精彩。",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
       },
     ],
@@ -357,22 +357,22 @@ export const rankQuestions = [
     options: [
       {
         id: "a",
-        text: "温暖热烈的同行者：无论何时靠近你，都能被真诚的热力所感染，感受到毫无保留的善意与鼓励。",
+        text: "温暖同行者：无论何时靠近，都能感受真诚热力与鼓励。",
         dimensions: { energySource: 0.75, expressivity: 0.75, processingDepth: -0.5, sensorySensitivity: -0.4 },
       },
       {
         id: "b",
-        text: "清晰可靠的避风港：言出必行、做事有边界与担当，是风雨中最值得信赖托付的稳固基石。",
+        text: "可靠避风港：言出必行有担当，是风雨中最信赖的依靠。",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.85, cognitiveRange: -0.5, sensorySensitivity: -0.4 },
       },
       {
         id: "c",
-        text: "懂人幽微的解语花：能读懂他人未言之伤与无声叹息，给予最深沉不扰的陪伴与精神理解。",
+        text: "解语者：读懂他人未言之伤，给予安静深沉的陪伴理解。",
         dimensions: { energySource: -0.7, sensorySensitivity: 1.1, processingDepth: 1.1, emotionalLatency: 0.8, boundaryClarity: -0.55, expressivity: -0.7 },
       },
       {
         id: "d",
-        text: "启发视界的引路风：带着独特的灵性与广阔视野，总能带给他人全新的视角与挣脱束缚的勇气。",
+        text: "引路者：带来独特广阔的新视角，赋予跳出常规的勇气。",
         dimensions: { cognitiveRange: 0.75, changeAffinity: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
       },
     ],
@@ -380,26 +380,26 @@ export const rankQuestions = [
   {
     id: 71,
     type: "rank",
-    text: "当你审视自己内在力量的源泉时，你觉得它最像哪一种形态：",
+    text: "审视自己内在力量的源泉时，你觉得它最像哪一种形态：",
     options: [
       {
         id: "a",
-        text: "一股生生不息的暖阳，渴望给予、照亮与连接他人，在真切的交互中自我确认。",
+        text: "温暖阳光：渴望照亮连接他人，在真切互动中确认自我。",
         dimensions: { energySource: 0.75, expressivity: 0.75, processingDepth: -0.5, sensorySensitivity: -0.5 },
       },
       {
         id: "b",
-        text: "一座锋芒分明的晶石，拥有清晰的棱角与骨架，无论外界如何动荡，内心自成法则。",
+        text: "棱角晶石：无论外界如何动荡，内心始终自成清晰法则。",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.5, cognitiveRange: -0.7, sensorySensitivity: -0.4 },
       },
       {
         id: "c",
-        text: "一片深邃丰饶的海底，蕴藏着无尽的记忆与感悟，平静包容，在幽深处默默酝酿智慧。",
+        text: "深邃海底：蕴藏无尽记忆感悟，在幽深处平静酝酿智慧。",
         dimensions: { energySource: -0.7, processingDepth: 1.2, emotionalLatency: 1, sensorySensitivity: 0.8, boundaryClarity: -0.55, expressivity: -0.7 },
       },
       {
         id: "d",
-        text: "一只搏击长空的纸鸢，敢于迎着狂风展翅高飞，追逐更广袤的天际，心底永远保有自由。",
+        text: "高飞纸鸢：迎着大风追逐广阔天际，心底永远保有自由。",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
       },
     ],
@@ -407,26 +407,26 @@ export const rankQuestions = [
   {
     id: 72,
     type: "rank",
-    text: "如果有一座为你量身定做的理想小岛，它不可或缺的核心景致：",
+    text: "如果要为你量身定做理想小岛，不可或缺的核心景致：",
     options: [
       {
         id: "a",
-        text: "欢腾港湾：停泊着来自四面八方的帆船，码头上日夜流淌着音乐、烤鱼与人们畅聊谈笑的热气。",
+        text: "欢腾港湾：停靠各方帆船，码头日夜洋溢着音乐与欢聚。",
         dimensions: { energySource: 0.75, expressivity: 0.75, processingDepth: -0.5, sensorySensitivity: -0.4 },
       },
       {
         id: "b",
-        text: "灯塔棱堡：耸立在海角坚固基岩之上的白色灯塔，指引航向分明，拥有雷打不动的安全守望。",
+        text: "灯塔棱堡：坚固耸立在海角基岩，航向明确且守护安全。",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.85, cognitiveRange: -0.5, sensorySensitivity: -0.4 },
       },
       {
         id: "c",
-        text: "古林暗泉：隐匿在岛心古老雨林深处的清澈寒泉，倒映着古树与星空，是灵魂洗去尘埃的秘境。",
+        text: "古林暗泉：隐匿在雨林深处的清泉，倒映星空洗净尘埃。",
         dimensions: { energySource: -0.7, processingDepth: 1.2, temporalDepth: 1, sensorySensitivity: 0.8, boundaryClarity: -0.55, expressivity: -0.7 },
       },
       {
         id: "d",
-        text: "季风之角：位于洋流与季风交汇处的浪尖岬角，每天都能看到不同的候鸟与翻涌瞬息的天色。",
+        text: "季风之角：洋流交汇处，每天都有不同候鸟与多变天色。",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
       },
     ],

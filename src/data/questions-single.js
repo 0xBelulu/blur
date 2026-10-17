@@ -2,29 +2,29 @@ export const singleQuestions = [
   {
     id: 1,
     type: "single",
-    text: "当你走进一间陌生的房间，你最先注意到的是？",
+    text: "走进一间陌生房间，你最先注意到？",
     options: [
       {
         id: "a",
-        text: "人群聚集与欢笑声，寻找能融入的交谈焦点",
+        text: "热络的人群与笑声，主动寻找交谈焦点",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.5 },
         tags: ["swelling","loud"],
       },
       {
         id: "b",
-        text: "空间动线与布局秩序，快速看清格局与主次",
+        text: "空间动线与布局秩序，迅速理清格局主次",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.5, cognitiveRange: -0.7, sensorySensitivity: -0.4 },
         tags: ["outlined","stilled"],
       },
       {
         id: "c",
-        text: "室内光影、气味与微细氛围，沉浸式体会空间的情绪",
+        text: "光影、气味与氛围，沉浸体会空间情绪",
         dimensions: { sensorySensitivity: 1.1, processingDepth: 0.8, energySource: -0.6, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["acute","reverberant"],
       },
       {
         id: "d",
-        text: "奇特有趣的陈设细节，好奇地四处漫步探索未知",
+        text: "奇特有趣的陈设，好奇地四处探索未知",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5, temporalDepth: -0.5 },
         tags: ["prismatic","manifold"],
       },
@@ -37,25 +37,25 @@ export const singleQuestions = [
     options: [
       {
         id: "a",
-        text: "白天生动对话与灵感的火花回放，渴望与人分享",
+        text: "回放白天的生动对话，渴望与人分享灵感",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.4 },
         tags: ["swelling","thunder"],
       },
       {
         id: "b",
-        text: "自动梳理待办事务与条理逻辑，试图归整一切",
+        text: "梳理待办事项与逻辑，试图把一切归整清晰",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, processingDepth: 0.6, cognitiveRange: -0.5, changeAffinity: -0.85, sensorySensitivity: -0.4 },
         tags: ["outlined","filtered"],
       },
       {
         id: "c",
-        text: "细微感官与潜意识心绪的慢流，静静感受暗夜的沉淀",
+        text: "细微感知与潜意识慢流，静静感受暗夜沉淀",
         dimensions: { sensorySensitivity: 0.9, processingDepth: 1, energySource: -0.7, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["abyssal","patient"],
       },
       {
         id: "d",
-        text: "天马行空的奇思妙想，在不同的故事与构想间自由跳跃",
+        text: "奇思妙想在脑中跳跃，自由穿梭于不同构想",
         dimensions: { cognitiveRange: 0.75, changeAffinity: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["manifold","prismatic"],
       },
@@ -64,29 +64,29 @@ export const singleQuestions = [
   {
     id: 3,
     type: "single",
-    text: "如果可以选择一种天气度过一整天？",
+    text: "如果选一种天气度过一整天？",
     options: [
       {
         id: "a",
-        text: "明媚晴朗、微风和煦，适宜出门与世界共振",
+        text: "明媚晴朗微风和煦，出门尽情与世界共振",
         dimensions: { energySource: 0.75, expressivity: 0.75, changeAffinity: 0.4, processingDepth: -0.5, sensorySensitivity: -0.5 },
         tags: ["swelling","fluid"],
       },
       {
         id: "b",
-        text: "澄澈无云、秋高气爽，视野开阔且界限分明",
+        text: "澄澈无云秋高气爽，视野开阔且界限分明",
         dimensions: { boundaryClarity: 0.65, sensorySensitivity: -0.4, changeAffinity: -0.5, cognitiveRange: -0.7 },
         tags: ["edgeonly","filtered"],
       },
       {
         id: "c",
-        text: "绵绵细雨、雾气弥漫，空气中充满湿润与诗意",
+        text: "绵绵细雨雾气弥漫，静静感受湿润与诗意",
         dimensions: { sensorySensitivity: 1, processingDepth: 0.9, energySource: -0.6, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["osmotic","sedimentary"],
       },
       {
         id: "d",
-        text: "风云变幻、光影莫测，随阴晴变幻带来无限惊喜",
+        text: "风云变幻光影莫测，在阴晴流转中迎接惊喜",
         dimensions: { changeAffinity: 0.75, closureTolerance: 0.65, cognitiveRange: 0.7, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["shifting","oscillating"],
       },
@@ -95,29 +95,29 @@ export const singleQuestions = [
   {
     id: 4,
     type: "single",
-    text: "你更可能被什么样的画面打动？",
+    text: "你更容易被哪种画面打动？",
     options: [
       {
         id: "a",
-        text: "篝火旁一群人碰杯欢笑、彼此映照的生动面孔",
+        text: "篝火旁众人碰杯欢笑、彼此映照的生动面容",
         dimensions: { energySource: 0.75, expressivity: 0.75, boundaryClarity: -0.3, processingDepth: -0.5, sensorySensitivity: -0.4 },
         tags: ["swelling","loud"],
       },
       {
         id: "b",
-        text: "晨光中棱角分明、线条利落的建筑与几何阴影",
+        text: "晨光中棱角分明、线条利落的几何建筑",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, sensorySensitivity: -0.6, cognitiveRange: -0.5, changeAffinity: -0.85 },
         tags: ["outlined","edgeonly"],
       },
       {
         id: "c",
-        text: "雨水在旧玻璃窗上慢慢滑落、折射微光的轨迹",
+        text: "雨水在旧窗上慢慢滑落、折射微光的轨迹",
         dimensions: { energySource: -0.7, sensorySensitivity: 1.1, temporalDepth: 0.8, processingDepth: 0.7, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["acute","patient"],
       },
       {
         id: "d",
-        text: "旷野中候鸟迁徙、云团翻涌向未知远方的轨迹",
+        text: "旷野中候鸟迁徙、云团奔涌向未知的远方",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["adrift","shifting"],
       },
@@ -126,29 +126,29 @@ export const singleQuestions = [
   {
     id: 5,
     type: "single",
-    text: "当别人问你「你好吗」，你通常？",
+    text: "被问及「你好吗」，你通常？",
     options: [
       {
         id: "a",
-        text: "热情坦率地分享近况，顺畅打开彼此的对话",
+        text: "热情坦率分享近况，顺畅开启彼此对话",
         dimensions: { expressivity: 0.75, energySource: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.5 },
         tags: ["loud","fluid"],
       },
       {
         id: "b",
-        text: "客观清晰地说明当前状态，简明扼要界限分明",
+        text: "客观说明当前状态，简明扼要且界限分明",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, expressivity: -0.3, cognitiveRange: -0.7, changeAffinity: -0.5, sensorySensitivity: -0.4 },
         tags: ["outlined","shielded"],
       },
       {
         id: "c",
-        text: "会心停顿，感知对方提问背后的温度与真诚",
+        text: "略作停顿，静静体察对方背后的关切与温度",
         dimensions: { energySource: -0.7, sensorySensitivity: 0.9, emotionalLatency: 0.8, processingDepth: 0.6, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["reverberant","patient"],
       },
       {
         id: "d",
-        text: "随口开个轻松玩笑，带点幽默与未定的悬念",
+        text: "随口开个轻松玩笑，带点幽默与未定悬念",
         dimensions: { changeAffinity: 0.75, closureTolerance: 0.65, cognitiveRange: 0.7, boundaryClarity: -0.4, processingDepth: -0.5, temporalDepth: -0.5 },
         tags: ["equivocal","prismatic"],
       },
@@ -161,25 +161,25 @@ export const singleQuestions = [
     options: [
       {
         id: "a",
-        text: "阳光充沛的客厅，留着朋友们来往与欢聚的痕迹",
+        text: "阳光充沛的客厅，留下朋友欢聚往来的痕迹",
         dimensions: { energySource: 0.75, expressivity: 0.75, temporalDepth: -0.4, processingDepth: -0.5, sensorySensitivity: -0.4 },
         tags: ["swelling","loud"],
       },
       {
         id: "b",
-        text: "井井有条的档案室，重要时刻分类清晰随时可取",
+        text: "井井有条的档案室，重要时刻分类整齐可查",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, processingDepth: 0.5, cognitiveRange: -0.5, changeAffinity: -0.85, sensorySensitivity: -0.4 },
         tags: ["outlined","stilled"],
       },
       {
         id: "c",
-        text: "留声机低回的阁楼，藏着泛黄字迹与未褪色的温度",
+        text: "留声机低回的阁楼，藏着泛黄笔记与旧温度",
         dimensions: { energySource: -0.7, temporalDepth: 1.1, processingDepth: 0.9, sensorySensitivity: 0.7, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["sedimentary","latent"],
       },
       {
         id: "d",
-        text: "充满未拆封礼盒的工作坊，随时能拼出新的可能",
+        text: "摆满未拆礼盒的工坊，随时能拼出全新可能",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["manifold","prismatic"],
       },
@@ -188,29 +188,29 @@ export const singleQuestions = [
   {
     id: 7,
     type: "single",
-    text: "你觉得最像自己的一种颜色？",
+    text: "哪种色彩感觉最像你自己？",
     options: [
       {
         id: "a",
-        text: "琥珀金与朝阳暖黄，带着向外散发的热量与活力",
+        text: "朝阳暖黄与金色，散发向外奔涌的热量活力",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.5 },
         tags: ["swelling","fluid"],
       },
       {
         id: "b",
-        text: "冷冽如雪的纯白或钴蓝，清脆锐利、纯净笃定",
+        text: "冷冽纯白或钴蓝，清脆锐利且纯净笃定",
         dimensions: { boundaryClarity: 0.65, sensorySensitivity: -0.7, closureTolerance: -0.42, cognitiveRange: -0.7, changeAffinity: -0.5 },
         tags: ["edgeonly","stilled"],
       },
       {
         id: "c",
-        text: "墨绿或深紫，像苔藓与矿石，幽深而耐人寻味",
+        text: "墨绿或矿石深紫，幽深内敛而耐人寻味",
         dimensions: { processingDepth: 1.1, sensorySensitivity: 0.8, energySource: -0.6, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["abyssal","sedimentary"],
       },
       {
         id: "d",
-        text: "极光般流动的虹彩色，没有恒定形态，随角度变化",
+        text: "极光般流动的虹彩，形态不设限、随光变换",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["prismatic","shifting"],
       },
@@ -223,25 +223,25 @@ export const singleQuestions = [
     options: [
       {
         id: "a",
-        text: "参加一场陌生狂欢，在无拘无束的人群中尽情燃烧",
+        text: "加入一场热闹聚会，在人群中尽情释放能量",
         dimensions: { energySource: 0.75, expressivity: 0.75, changeAffinity: 0.5, processingDepth: -0.5, sensorySensitivity: -0.4 },
         tags: ["swelling","thunder"],
       },
       {
         id: "b",
-        text: "彻底关闭手机打扰，按自己的节奏完成一件专注之事",
+        text: "关掉手机屏蔽打扰，按节奏专注做完一件事",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.85, cognitiveRange: -0.5, sensorySensitivity: -0.4 },
         tags: ["shielded","filtered"],
       },
       {
         id: "c",
-        text: "独自漫步于雨后森林或美术馆，与内心的声响对话",
+        text: "独自漫步在雨后展馆，静静倾听内心的声音",
         dimensions: { sensorySensitivity: 1, processingDepth: 0.9, energySource: -0.8, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["abyssal","reverberant"],
       },
       {
         id: "d",
-        text: "不带攻略跳上一趟未知班车，走到哪算哪",
+        text: "不带攻略跳上未知班车，走到哪就算哪",
         dimensions: { changeAffinity: 0.75, closureTolerance: 0.65, cognitiveRange: 0.7, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["adrift","rhythmic"],
       },
@@ -250,29 +250,29 @@ export const singleQuestions = [
   {
     id: 9,
     type: "single",
-    text: "你最容易对什么样的人产生好感？",
+    text: "你最容易对哪种人产生好感？",
     options: [
       {
         id: "a",
-        text: "坦荡真诚、眼里有光，能直接带动场域气氛的人",
+        text: "坦荡真诚眼里有光，能自然带动气氛的人",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.5 },
         tags: ["loud","swelling"],
       },
       {
         id: "b",
-        text: "处事严谨有原则、言出必行、让人安心笃定的人",
+        text: "处事严谨言出必行，边界清晰让人笃定的人",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.5, cognitiveRange: -0.7, sensorySensitivity: -0.4 },
         tags: ["outlined","stilled"],
       },
       {
         id: "c",
-        text: "心思细腻敏感，能听懂言外之意与弦外之音的人",
+        text: "心思细腻敏锐，能听懂言外之意与未尽之言",
         dimensions: { energySource: -0.7, sensorySensitivity: 1.1, processingDepth: 0.8, emotionalLatency: 0.6, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["acute","osmotic"],
       },
       {
         id: "d",
-        text: "不受世俗规训、充满灵动玩心与未定义特质的人",
+        text: "不受世俗规训，充满灵动玩心与新鲜视角",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5, temporalDepth: -0.5 },
         tags: ["manifold","prismatic"],
       },
@@ -285,25 +285,25 @@ export const singleQuestions = [
     options: [
       {
         id: "a",
-        text: "阳光下的鲜活抓拍，笑容与色彩饱满充盈",
+        text: "阳光下的生动抓拍，笑容与色彩鲜活充盈",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.4 },
         tags: ["swelling","loud"],
       },
       {
         id: "b",
-        text: "构图严谨的黑白摄影，光影对比强烈、线条分明",
+        text: "构图严谨的黑白影调，光影分明且线条清晰",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, sensorySensitivity: -0.6, cognitiveRange: -0.5, changeAffinity: -0.85 },
         tags: ["outlined","edgeonly"],
       },
       {
         id: "c",
-        text: "泛着胶片颗粒的慢门特写，藏着绵长的情绪余韵",
+        text: "胶片质感的慢门特写，藏着绵长沉静的余韵",
         dimensions: { energySource: -0.7, temporalDepth: 1, processingDepth: 0.9, sensorySensitivity: 0.7, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["latent","patient"],
       },
       {
         id: "d",
-        text: "双重曝光的拼贴作品，多重时空交叠流动",
+        text: "多重曝光的拼贴作品，不同时空穿梭交叠",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["prismatic","refracted"],
       },
@@ -312,29 +312,29 @@ export const singleQuestions = [
   {
     id: 11,
     type: "single",
-    text: "你手机里最多的是哪类照片？",
+    text: "你相册里最多的是哪类照片？",
     options: [
       {
         id: "a",
-        text: "和朋友聚会的合影、生动表情与生活庆祝时刻",
+        text: "朋友聚会合影与抓拍，记录当下的欢聚庆祝",
         dimensions: { energySource: 0.75, expressivity: 0.75, temporalDepth: -0.4, processingDepth: -0.5, sensorySensitivity: -0.5 },
         tags: ["swelling","loud"],
       },
       {
         id: "b",
-        text: "清单截图、整洁物品、建筑线条与规整图表",
+        text: "待办截图与整洁物品，记录清晰结构与线条",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.5, cognitiveRange: -0.7, sensorySensitivity: -0.4 },
         tags: ["outlined","filtered"],
       },
       {
         id: "c",
-        text: "光影微距、植物细节、带有诗意情绪的小角落",
+        text: "光影微距与植物细节，记录耐人寻味的角落",
         dimensions: { sensorySensitivity: 1.1, processingDepth: 0.8, energySource: -0.5, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["acute","latent"],
       },
       {
         id: "d",
-        text: "路上抓拍的偶然趣事、偶遇的涂鸦与即兴抓拍",
+        text: "路上偶遇的新奇事物，随性抓拍的趣味瞬间",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["manifold","shifting"],
       },
@@ -343,29 +343,29 @@ export const singleQuestions = [
   {
     id: 12,
     type: "single",
-    text: "你更害怕哪种感觉？",
+    text: "你更抗拒哪种生活状态？",
     options: [
       {
         id: "a",
-        text: "被长期孤立隔离，无法与外界建立真实连接",
+        text: "长期孤立封闭，无法与外界建立真实连接",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.4 },
         tags: ["fluid","swelling"],
       },
       {
         id: "b",
-        text: "秩序崩溃、边界被践踏、失去对生活的掌控",
+        text: "秩序崩溃边界被践踏，失去对生活的掌控感",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.85, cognitiveRange: -0.5, sensorySensitivity: -0.4 },
         tags: ["shielded","edgeonly"],
       },
       {
         id: "c",
-        text: "感官麻木钝化，对周遭一切失去细腻的共情力",
+        text: "感官钝化麻木，对周遭失去细腻敏锐的共情",
         dimensions: { sensorySensitivity: 1.1, processingDepth: 0.9, energySource: -0.5, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["acute","osmotic"],
       },
       {
         id: "d",
-        text: "被固化在死板模板中，失去任何探索新可能的自由",
+        text: "被困在死板模板中，失去探索新可能的自由",
         dimensions: { changeAffinity: 0.75, closureTolerance: 0.65, cognitiveRange: 0.75, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["shifting","adrift"],
       },
@@ -374,29 +374,29 @@ export const singleQuestions = [
   {
     id: 13,
     type: "single",
-    text: "你理想中的周末？",
+    text: "你最理想的周末度过方式？",
     options: [
       {
         id: "a",
-        text: "召集好友聚餐野餐，在热闹与笑语中释放活力",
+        text: "召集好友聚餐游玩，在热闹欢笑中释放活力",
         dimensions: { energySource: 0.75, expressivity: 0.75, temporalDepth: -0.5, processingDepth: -0.5, sensorySensitivity: -0.5 },
         tags: ["swelling","loud"],
       },
       {
         id: "b",
-        text: "规划明确，高效完成健身或手作，保持生活节奏",
+        text: "按规划高效完成事项，保持生活秩序与节奏",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.5, cognitiveRange: -0.7, sensorySensitivity: -0.4 },
         tags: ["outlined","stilled"],
       },
       {
         id: "c",
-        text: "泡一壶热茶，沉浸阅读一本大部头或看场艺术电影",
+        text: "泡壶热茶沉浸阅读，看一部打动心灵的电影",
         dimensions: { processingDepth: 1.1, sensorySensitivity: 0.8, energySource: -0.8, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["abyssal","patient"],
       },
       {
         id: "d",
-        text: "睡到自然醒，随时接受突发奇想，随兴出发",
+        text: "睡到自然醒，跟随偶发的奇想随兴出发探索",
         dimensions: { changeAffinity: 0.75, closureTolerance: 0.65, cognitiveRange: 0.7, boundaryClarity: -0.4, processingDepth: -0.5, temporalDepth: -0.5 },
         tags: ["rhythmic","oscillating"],
       },
@@ -405,29 +405,29 @@ export const singleQuestions = [
   {
     id: 14,
     type: "single",
-    text: "听到一首喜欢的歌，你会？",
+    text: "听到一首直击心灵的歌，你会？",
     options: [
       {
         id: "a",
-        text: "忍不住想跟着哼唱、随着节拍舞动，并分享给朋友",
+        text: "跟着节拍哼唱舞动，迫不及待分享给朋友",
         dimensions: { expressivity: 0.75, energySource: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.4 },
         tags: ["loud","fluid"],
       },
       {
         id: "b",
-        text: "仔细辨别乐器编排与音轨结构，品味其精湛秩序",
+        text: "辨析乐器编排与音轨结构，品味精湛的秩序",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, processingDepth: 0.6, cognitiveRange: -0.5, changeAffinity: -0.85, sensorySensitivity: -0.4 },
         tags: ["filtered","outlined"],
       },
       {
         id: "c",
-        text: "沉入歌词背后的隐秘心境，任由情绪被反复拨动",
+        text: "沉入歌词的心境，任由情绪被幽微旋律触动",
         dimensions: { energySource: -0.7, sensorySensitivity: 1.1, processingDepth: 0.9, temporalDepth: 0.6, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["reverberant","acute"],
       },
       {
         id: "d",
-        text: "联想到完全不同的画面与记忆，展开一段联想漂流",
+        text: "联想出不同画面与意象，展开跨维度的漫游",
         dimensions: { cognitiveRange: 0.75, changeAffinity: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["manifold","prismatic"],
       },
@@ -436,29 +436,29 @@ export const singleQuestions = [
   {
     id: 15,
     type: "single",
-    text: "你更想拥有哪种能力？",
+    text: "如果能选择，你更想拥有哪种能力？",
     options: [
       {
         id: "a",
-        text: "拥有感染众人的号召力，用热情点燃整个空间",
+        text: "感染众人的号召力，用热情点燃全场氛围",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.5 },
         tags: ["thunder","loud"],
       },
       {
         id: "b",
-        text: "拥有看穿本质的穿透力，瞬间建立坚不可摧的秩序",
+        text: "洞穿本质的穿透力，迅速建立清晰坚固秩序",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, sensorySensitivity: -0.4, cognitiveRange: -0.7, changeAffinity: -0.5 },
         tags: ["edgeonly","stilled"],
       },
       {
         id: "c",
-        text: "拥有抚平创伤的感知力，无声共情并理解万物隐痛",
+        text: "抚平创伤的深刻感知力，无声共情万物情绪",
         dimensions: { sensorySensitivity: 1.2, processingDepth: 0.9, energySource: -0.6, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["osmotic","acute"],
       },
       {
         id: "d",
-        text: "拥有自由形变的能力，随时穿梭在未知的新奇世界",
+        text: "自由形变的能力，随时穿梭于未知奇趣世界",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["shifting","manifold"],
       },
@@ -467,29 +467,29 @@ export const singleQuestions = [
   {
     id: 16,
     type: "single",
-    text: "深夜一个人走在路上，你会？",
+    text: "深夜独自走在街头，你通常？",
     options: [
       {
         id: "a",
-        text: "迈着自信大方的步伐，感受晚风与城市心跳的节奏",
+        text: "迈开大步迎着晚风，感受城市律动的活力",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.4 },
         tags: ["swelling","fluid"],
       },
       {
         id: "b",
-        text: "保持警觉专注，走最有效快捷的路线径直回家",
+        text: "保持专注与警觉，沿最高效安全的路线回家",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.85, cognitiveRange: -0.5, sensorySensitivity: -0.4 },
         tags: ["shielded","filtered"],
       },
       {
         id: "c",
-        text: "放慢步调，细听夜虫与落叶的声音，任由思绪沉淀",
+        text: "放慢脚步细听风声虫鸣，任由思绪慢慢沉淀",
         dimensions: { energySource: -0.7, sensorySensitivity: 1, temporalDepth: 0.8, processingDepth: 0.7, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["patient","abyssal"],
       },
       {
         id: "d",
-        text: "随心拐进一条未走过的小巷，享受夜间的偶遇",
+        text: "随心拐进未走过的暗巷，享受偶遇的新鲜感",
         dimensions: { changeAffinity: 0.75, closureTolerance: 0.65, cognitiveRange: 0.75, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["adrift","shifting"],
       },
@@ -498,29 +498,29 @@ export const singleQuestions = [
   {
     id: 17,
     type: "single",
-    text: "你觉得「家」最像什么？",
+    text: "你觉得「家」最核心的特质是？",
     options: [
       {
         id: "a",
-        text: "炉火正旺的客厅，永远为归来的人敞开大门",
+        text: "暖意洋溢的客厅，随时为归来的伙伴敞开",
         dimensions: { energySource: 0.75, expressivity: 0.75, boundaryClarity: -0.3, processingDepth: -0.5, sensorySensitivity: -0.5 },
         tags: ["swelling","loud"],
       },
       {
         id: "b",
-        text: "坚实稳固的避风港，界限分明、整洁有序",
+        text: "坚固可靠的避风港，界限分明且整洁有序",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.5, cognitiveRange: -0.7, sensorySensitivity: -0.4 },
         tags: ["shielded","stilled"],
       },
       {
         id: "c",
-        text: "柔软温润的摇篮，承载所有隐秘情绪与安全感",
+        text: "温润安宁的摇篮，安放所有隐秘情绪与脆弱",
         dimensions: { sensorySensitivity: 0.9, processingDepth: 0.8, energySource: -0.6, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["osmotic","sedimentary"],
       },
       {
         id: "d",
-        text: "可以随心改造的旅馆，每次回来都有新的模样",
+        text: "自由改造的工作坊，每次都能变换出新格局",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5, temporalDepth: -0.5 },
         tags: ["shifting","prismatic"],
       },
@@ -529,29 +529,29 @@ export const singleQuestions = [
   {
     id: 21,
     type: "single",
-    text: "你更常在什么时候感到最像自己？",
+    text: "你最容易在什么时候感到最像自己？",
     options: [
       {
         id: "a",
-        text: "与志同道合者热烈探讨、彼此点燃的共振时刻",
+        text: "与同频伙伴热烈探讨、彼此点燃激情的时刻",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.4 },
         tags: ["thunder","swelling"],
       },
       {
         id: "b",
-        text: "排除一切杂音、专心致志达成既定目标的那一刻",
+        text: "排除外部杂音、专注推进并达成目标的一刻",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, sensorySensitivity: -0.4, cognitiveRange: -0.5, changeAffinity: -0.85 },
         tags: ["edgeonly","stilled"],
       },
       {
         id: "c",
-        text: "沉浸在深刻的情感或创作中，与内核深处对话时",
+        text: "沉浸在深刻创作与情感中，与内在深处对话",
         dimensions: { processingDepth: 1.1, sensorySensitivity: 0.9, energySource: -0.7, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["abyssal","reverberant"],
       },
       {
         id: "d",
-        text: "卸下所有社会标签、毫无束缚地尝试新事物时",
+        text: "卸下所有既定标签，毫无拘束尝试新事物时",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5, temporalDepth: -0.5 },
         tags: ["unmoored","shifting"],
       },
@@ -560,29 +560,29 @@ export const singleQuestions = [
   {
     id: 22,
     type: "single",
-    text: "如果有一段空闲时间，你最可能？",
+    text: "有一整段空闲时间，你最可能？",
     options: [
       {
         id: "a",
-        text: "主动发起一场朋友聚会或户外运动，畅快流汗",
+        text: "主动发起好友聚会或运动，畅快流汗玩乐",
         dimensions: { energySource: 0.75, expressivity: 0.75, temporalDepth: -0.5, processingDepth: -0.5, sensorySensitivity: -0.5 },
         tags: ["swelling","loud"],
       },
       {
         id: "b",
-        text: "严格按照计划清单，把积压的重点事项一一闭环",
+        text: "对照计划清单，把积压的重点事项逐一推进",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.5, cognitiveRange: -0.7, sensorySensitivity: -0.4 },
         tags: ["outlined","filtered"],
       },
       {
         id: "c",
-        text: "找个安静角落深潜阅读或写作，沉淀近期的心境",
+        text: "找个安静角落深潜阅读，沉淀当下的心绪",
         dimensions: { processingDepth: 1.1, temporalDepth: 0.8, energySource: -0.7, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["patient","abyssal"],
       },
       {
         id: "d",
-        text: "不设任何时间表，任凭灵感指引随时换个玩法",
+        text: "不设固定日程，顺应灵感指引随时换个玩法",
         dimensions: { changeAffinity: 0.75, closureTolerance: 0.65, cognitiveRange: 0.75, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["rhythmic","oscillating"],
       },
@@ -591,29 +591,29 @@ export const singleQuestions = [
   {
     id: 23,
     type: "single",
-    text: "描述你最近一次的梦境，它更可能是？",
+    text: "你最近印象深刻的梦境，更接近？",
     options: [
       {
         id: "a",
-        text: "充满对话与冒险的生动故事，自己在其中奔跑交流",
+        text: "充满对话与冒险的故事，奔跑交流热烈鲜活",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.4 },
         tags: ["swelling","fluid"],
       },
       {
         id: "b",
-        text: "逻辑清晰如解谜游戏，结构严整而步步为营",
+        text: "逻辑清晰的解谜推进，结构严谨且步步为营",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, processingDepth: 0.6, cognitiveRange: -0.5, changeAffinity: -0.85, sensorySensitivity: -0.4 },
         tags: ["outlined","stilled"],
       },
       {
         id: "c",
-        text: "情绪饱满幽微的诗意镜头，醒来余味绵长",
+        text: "情绪幽微饱满的镜头，醒来仍觉余味绵长",
         dimensions: { energySource: -0.7, sensorySensitivity: 1, emotionalLatency: 0.8, temporalDepth: 0.6, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["latent","acute"],
       },
       {
         id: "d",
-        text: "规则不断变幻的超现实拼贴，充满不可思议的转折",
+        text: "超现实奇幻拼贴，充满不可思议的情节转折",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["manifold","prismatic"],
       },
@@ -622,29 +622,29 @@ export const singleQuestions = [
   {
     id: 24,
     type: "single",
-    text: "面对一个不确定的未来，你更倾向于？",
+    text: "面对不确定的未来，你更倾向于？",
     options: [
       {
         id: "a",
-        text: "积极向外寻找盟友与资源，用行动碰撞出新方向",
+        text: "主动联络伙伴与资源，用行动碰撞出新方向",
         dimensions: { energySource: 0.75, expressivity: 0.75, changeAffinity: 0.6, processingDepth: -0.5, sensorySensitivity: -0.5 },
         tags: ["loud","fluid"],
       },
       {
         id: "b",
-        text: "制定清晰的防御与推进策略，设立明确的边界与锚点",
+        text: "制定清晰推进策略，设立明确的边界与锚点",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.5, cognitiveRange: -0.7, sensorySensitivity: -0.4 },
         tags: ["shielded","edgeonly"],
       },
       {
         id: "c",
-        text: "沉着倾听内心的直觉指引，在沉淀中慢慢看清大势",
+        text: "静听内在直觉指引，在深度沉淀中看清大势",
         dimensions: { processingDepth: 1.1, temporalDepth: 0.8, energySource: -0.6, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["patient","sedimentary"],
       },
       {
         id: "d",
-        text: "兴奋地迎接未知变数，在动态调整中享受探索过程",
+        text: "兴奋迎接未知变数，在动态调整中享受探索",
         dimensions: { changeAffinity: 0.75, closureTolerance: 0.65, cognitiveRange: 0.75, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["shifting","adrift"],
       },
@@ -653,29 +653,29 @@ export const singleQuestions = [
   {
     id: 25,
     type: "single",
-    text: "如果必须给过去的自己写一句话，你会写？",
+    text: "给过去的自己寄语，你最想写？",
     options: [
       {
         id: "a",
-        text: "“去拥抱世界吧，你的热情远比你想象的更有力量。”",
+        text: "“去拥抱世界，你的热情比想象中更有力量”",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.4 },
         tags: ["swelling","loud"],
       },
       {
         id: "b",
-        text: "“坚守你的原则与边界，清晰的自我是最强的基石。”",
+        text: "“守住原则与边界，清晰的自我是最强基石”",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.85, cognitiveRange: -0.5, sensorySensitivity: -0.4 },
         tags: ["outlined","edgeonly"],
       },
       {
         id: "c",
-        text: "“接纳你的深沉与敏锐，那些细腻感受是独特的馈赠。”",
+        text: "“接纳深沉与敏锐，细腻感知是独特的馈赠”",
         dimensions: { energySource: -0.7, sensorySensitivity: 1.1, processingDepth: 0.8, emotionalLatency: 0.6, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["acute","reverberant"],
       },
       {
         id: "d",
-        text: "“放胆去试去变，人生本就没有非走不可的固定轨道。”",
+        text: "“放胆去试去闯，人生本就没有固定路线”",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5, temporalDepth: -0.5 },
         tags: ["manifold","prismatic"],
       },
@@ -684,29 +684,29 @@ export const singleQuestions = [
   {
     id: 26,
     type: "single",
-    text: "以下哪种场景让你感到莫名的安心？",
+    text: "以下哪种场景最让你感到安心？",
     options: [
       {
         id: "a",
-        text: "节庆夜晚热闹温馨的街市，人们脸上洋溢着烟火气",
+        text: "热闹温馨的夜晚街市，人们洋溢着烟火笑意",
         dimensions: { energySource: 0.75, expressivity: 0.75, boundaryClarity: -0.3, processingDepth: -0.5, sensorySensitivity: -0.5 },
         tags: ["swelling","loud"],
       },
       {
         id: "b",
-        text: "秩序井然的书房，书架分类整齐、桌面一尘不染",
+        text: "井井有条的书房，分类整齐且桌面一尘不染",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.5, cognitiveRange: -0.7, sensorySensitivity: -0.4 },
         tags: ["outlined","stilled"],
       },
       {
         id: "c",
-        text: "深夜窗外的雨打芭蕉声，室内一灯如豆、温暖宁静",
+        text: "窗外细细雨打芭蕉，室内一灯如豆温暖宁静",
         dimensions: { sensorySensitivity: 1, temporalDepth: 0.8, energySource: -0.7, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["abyssal","patient"],
       },
       {
         id: "d",
-        text: "辽阔无垠的旷野原野，道路在前方蜿蜒伸向地平线",
+        text: "辽阔无垠的原野，道路在前方蜿蜒伸向天际",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["adrift","shifting"],
       },
@@ -715,29 +715,29 @@ export const singleQuestions = [
   {
     id: 27,
     type: "single",
-    text: "你最容易被什么类型的故事打动？",
+    text: "你最容易被哪种故事打动？",
     options: [
       {
         id: "a",
-        text: "展现热血伙伴并肩作战、坦诚相待与深刻联结的传奇",
+        text: "伙伴并肩作战、坦诚相待且深刻联结的传奇",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.4 },
         tags: ["swelling","thunder"],
       },
       {
         id: "b",
-        text: "讲述一个人坚守正义原则、在混乱世界中捍卫边界的史诗",
+        text: "坚守原则底线、在混乱世界捍卫边界的历程",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.85, cognitiveRange: -0.5, sensorySensitivity: -0.4 },
         tags: ["shielded","edgeonly"],
       },
       {
         id: "c",
-        text: "刻画人情深处微光与幽微心事、耐人寻味的心理叙事",
+        text: "刻画人情微光与幽微心事、耐人寻味的叙事",
         dimensions: { energySource: -0.7, processingDepth: 1.1, sensorySensitivity: 0.9, emotionalLatency: 0.7, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["reverberant","latent"],
       },
       {
         id: "d",
-        text: "开启奇幻旅程、打破常规禁锢与认知维度的探索故事",
+        text: "打破常规禁锢、穿梭未知维度的奇幻探索",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["manifold","prismatic"],
       },
@@ -746,29 +746,29 @@ export const singleQuestions = [
   {
     id: 41,
     type: "single",
-    text: "你使用社交媒体的方式更像？",
+    text: "你使用社交平台的方式更像？",
     options: [
       {
         id: "a",
-        text: "积极发动态、与好友点赞互动，乐于分享生活光彩",
+        text: "积极互动分享动态，乐于表达生活中的精彩",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.5 },
         tags: ["loud","swelling"],
       },
       {
         id: "b",
-        text: "定向订阅干货与专业资讯，定期整理取关无用信息",
+        text: "定向订阅干货资讯，定期取关整理无用信息",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, sensorySensitivity: -0.6, cognitiveRange: -0.7, changeAffinity: -0.5 },
         tags: ["filtered","outlined"],
       },
       {
         id: "c",
-        text: "仅关注少数灵魂共鸣的创作者，细细品读文字与影像",
+        text: "精选少数同频创作者，细细品味文字与深度",
         dimensions: { sensorySensitivity: 1, processingDepth: 0.9, energySource: -0.7, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["osmotic","sedimentary"],
       },
       {
         id: "d",
-        text: "随性浏览各种小众猎奇圈子，不设限地吸收新鲜视界",
+        text: "随性探索小众圈子，不设限地吸收新鲜视界",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5, temporalDepth: -0.5 },
         tags: ["manifold","prismatic"],
       },
@@ -777,29 +777,29 @@ export const singleQuestions = [
   {
     id: 42,
     type: "single",
-    text: "当环境突然变化（温度/光线/声音），你通常？",
+    text: "当所处环境突变（温度/声音/光线），你通常？",
     options: [
       {
         id: "a",
-        text: "大大方方表达感受，或主动调动大家一起改善环境",
+        text: "大方表达真实感受，主动招呼大家改善环境",
         dimensions: { expressivity: 0.75, energySource: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.4 },
         tags: ["loud","fluid"],
       },
       {
         id: "b",
-        text: "迅速调整应对策略，快速设立物理隔绝或恢复秩序",
+        text: "建立物理隔绝或干预，快速恢复掌控与秩序",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, sensorySensitivity: -0.7, cognitiveRange: -0.5, changeAffinity: -0.85 },
         tags: ["shielded","stilled"],
       },
       {
         id: "c",
-        text: "细腻体察变化带来的生理与心理波纹，慢慢调适",
+        text: "敏锐感知身心变化，在静默中慢慢适应调和",
         dimensions: { energySource: -0.7, sensorySensitivity: 1.1, processingDepth: 0.7, emotionalLatency: 0.7, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["acute","patient"],
       },
       {
         id: "d",
-        text: "兴致盎然地把变化当成新刺激，随遇而安自然适应",
+        text: "把突变视作新刺激，随遇而安自然享受变化",
         dimensions: { changeAffinity: 0.75, closureTolerance: 0.65, cognitiveRange: 0.7, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["shifting","rhythmic"],
       },
@@ -808,29 +808,29 @@ export const singleQuestions = [
   {
     id: 43,
     type: "single",
-    text: "当你和别人产生分歧时，你更可能？",
+    text: "当你和他人产生分歧时，你更倾向？",
     options: [
       {
         id: "a",
-        text: "坦率直陈想法，主动展开面对面沟通寻求共识",
+        text: "坦率直陈想法，主动面对面沟通寻求共识",
         dimensions: { expressivity: 0.75, energySource: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.5 },
         tags: ["loud","thunder"],
       },
       {
         id: "b",
-        text: "摆事实讲原则，清晰守住底线与客观逻辑",
+        text: "摆事实讲原则，守住客观底线与清晰逻辑",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.5, cognitiveRange: -0.7, sensorySensitivity: -0.4 },
         tags: ["outlined","edgeonly"],
       },
       {
         id: "c",
-        text: "换位体察对方的情绪症结，寻找兼顾感受的解法",
+        text: "换位体察情绪症结，寻找兼顾感受的方案",
         dimensions: { energySource: -0.7, sensorySensitivity: 1, processingDepth: 0.9, emotionalLatency: 0.6, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["osmotic","reverberant"],
       },
       {
         id: "d",
-        text: "跳脱非黑即白的立场，提出脑洞大开的第三条路径",
+        text: "跳出二元对立，提出跳脱框架的第三条路径",
         dimensions: { cognitiveRange: 0.75, changeAffinity: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["equivocal","prismatic"],
       },
@@ -839,29 +839,29 @@ export const singleQuestions = [
   {
     id: 44,
     type: "single",
-    text: "你的想法通常以什么方式出现？",
+    text: "你的新灵感通常如何涌现？",
     options: [
       {
         id: "a",
-        text: "在与他人的热烈碰撞与头脑风暴中迸发出来",
+        text: "与他人热烈头脑风暴，在交谈碰撞中迸发",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.4 },
         tags: ["thunder","swelling"],
       },
       {
         id: "b",
-        text: "沿着严密的逻辑脉络与框架结构推演成型",
+        text: "沿着严密逻辑推演，一步步搭建出清晰框架",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, processingDepth: 0.6, cognitiveRange: -0.5, changeAffinity: -0.85, sensorySensitivity: -0.4 },
         tags: ["outlined","stilled"],
       },
       {
         id: "c",
-        text: "在长久的感悟与直觉沉淀中如泉水般自然涌现",
+        text: "经过长久酝酿沉淀，在直觉中如泉水般涌出",
         dimensions: { energySource: -0.7, processingDepth: 1.1, temporalDepth: 0.8, sensorySensitivity: 0.7, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["abyssal","sedimentary"],
       },
       {
         id: "d",
-        text: "在跨界的跳跃与偶然的联想中灵光一闪出现",
+        text: "跨界跳跃偶然联想，灵光一闪突然冒出",
         dimensions: { cognitiveRange: 0.75, changeAffinity: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["manifold","prismatic"],
       },
@@ -870,29 +870,29 @@ export const singleQuestions = [
   {
     id: 45,
     type: "single",
-    text: "面对大量未读信息（文章/视频/消息），你会？",
+    text: "面对堆积的未读信息与消息，你会？",
     options: [
       {
         id: "a",
-        text: "优先回复重要人的问候，在互动交流中迅速消化",
+        text: "优先回复重要伙伴，在快速互动中清理消息",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.5 },
         tags: ["swelling","fluid"],
       },
       {
         id: "b",
-        text: "建立分类标签与批处理规则，井然有序高效清理",
+        text: "建立分类与处理规则，井然有序高效清空",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, sensorySensitivity: -0.7, cognitiveRange: -0.7, changeAffinity: -0.5 },
         tags: ["filtered","outlined"],
       },
       {
         id: "c",
-        text: "挑出最有深度的一两篇慢慢精读，不被泛滥信息裹挟",
+        text: "只挑最有深度的一两篇精读，屏蔽其余噪音",
         dimensions: { processingDepth: 1.1, sensorySensitivity: 0.8, energySource: -0.6, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["patient","abyssal"],
       },
       {
         id: "d",
-        text: "随手翻到哪篇看哪篇，享受偶遇新知的惊喜感",
+        text: "随手翻到哪看哪，享受偶遇新知识的惊喜感",
         dimensions: { changeAffinity: 0.75, closureTolerance: 0.65, cognitiveRange: 0.75, boundaryClarity: -0.4, processingDepth: -0.5, temporalDepth: -0.5 },
         tags: ["adrift","shifting"],
       },
@@ -901,29 +901,29 @@ export const singleQuestions = [
   {
     id: 46,
     type: "single",
-    text: "哪种天气最让你感到「这就是我的世界」？",
+    text: "哪种天气最契合你内心的节奏？",
     options: [
       {
         id: "a",
-        text: "晴空万里、阳光普照，整个世界充满勃勃生机",
+        text: "晴空万里阳光普照，万物充满向外蓬勃生机",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.4 },
         tags: ["swelling","loud"],
       },
       {
         id: "b",
-        text: "霜晨清冽、空气透明，一切线条都锐利分明",
+        text: "清冽霜晨空气通透，一切轮廓分明秩序井然",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, sensorySensitivity: -0.4, cognitiveRange: -0.5, changeAffinity: -0.85 },
         tags: ["edgeonly","stilled"],
       },
       {
         id: "c",
-        text: "暮色沉沉、细雨霏霏，天地间笼罩着温柔静谧",
+        text: "暮色沉沉细雨绵绵，天地笼罩在静谧温柔中",
         dimensions: { sensorySensitivity: 1, temporalDepth: 0.9, energySource: -0.7, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["abyssal","latent"],
       },
       {
         id: "d",
-        text: "阵雨初歇、彩虹横贯，风向随云彩变幻莫测",
+        text: "阵雨初歇彩虹横贯，风向与天色随时变换",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["prismatic","shifting"],
       },
@@ -932,29 +932,29 @@ export const singleQuestions = [
   {
     id: 47,
     type: "single",
-    text: "你的房间/桌面通常？",
+    text: "你的桌面与个人空间通常？",
     options: [
       {
         id: "a",
-        text: "充满生活气息与互动纪念品，随时欢迎朋友造访",
+        text: "摆满生活物件与纪念品，随时欢迎朋友造访",
         dimensions: { energySource: 0.75, expressivity: 0.75, boundaryClarity: -0.3, processingDepth: -0.5, sensorySensitivity: -0.5 },
         tags: ["swelling","loud"],
       },
       {
         id: "b",
-        text: "收纳规整、分类清晰，工具物归原位、界限分明",
+        text: "收纳清晰物归原位，工具界限分明一目了然",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.5, cognitiveRange: -0.7, sensorySensitivity: -0.4 },
         tags: ["outlined","filtered"],
       },
       {
         id: "c",
-        text: "摆放着触动情绪的绿植、香薰与旧物，注重氛围感",
+        text: "摆放绿植香薰与触动旧物，注重细腻氛围感",
         dimensions: { sensorySensitivity: 1, processingDepth: 0.8, energySource: -0.5, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["acute","sedimentary"],
       },
       {
         id: "d",
-        text: "处于动态生长中，随着近期兴趣不断改变摆设布局",
+        text: "摆设随近期兴趣动态生长，随时变换新布局",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["shifting","manifold"],
       },
@@ -963,29 +963,29 @@ export const singleQuestions = [
   {
     id: 48,
     type: "single",
-    text: "结束一段关系或离开一个地方时，你更倾向？",
+    text: "告别一段关系或离开一个地方时，你更倾向？",
     options: [
       {
         id: "a",
-        text: "坦荡告别并送上真挚祝福，感谢彼此曾经的照亮",
+        text: "坦荡道别送上真诚祝福，感谢彼此相伴照亮",
         dimensions: { expressivity: 0.75, energySource: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.4 },
         tags: ["loud","fluid"],
       },
       {
         id: "b",
-        text: "干净利落划清边界，做好清算交接，绝不拖泥带水",
+        text: "利落划清界限办妥交接，就事论事绝不拖沓",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.85, cognitiveRange: -0.5, sensorySensitivity: -0.4 },
         tags: ["edgeonly","shielded"],
       },
       {
         id: "c",
-        text: "把记忆与感激深藏心底，留出时间让情绪慢慢沉淀",
+        text: "把感激深藏心底，留出时间让情绪沉淀释怀",
         dimensions: { energySource: -0.7, temporalDepth: 1, processingDepth: 0.9, emotionalLatency: 0.8, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["latent","patient"],
       },
       {
         id: "d",
-        text: "释然看待相聚离别，知道每个人都有各自的流动轨迹",
+        text: "释然看待聚散离合，每个人都有自己的轨迹",
         dimensions: { changeAffinity: 0.75, closureTolerance: 0.65, cognitiveRange: 0.75, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["adrift","rhythmic"],
       },
@@ -994,29 +994,29 @@ export const singleQuestions = [
   {
     id: 57,
     type: "single",
-    text: "当你要做出一项重大决定时，你的主导力量是？",
+    text: "做出一项重大决定时，你的主导力量是？",
     options: [
       {
         id: "a",
-        text: "听取信任伙伴的建议，在深入探讨与共鸣中汲取力量",
+        text: "与信任伙伴深聊，在探讨与共鸣中凝聚决断",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.5 },
         tags: ["swelling","fluid"],
       },
       {
         id: "b",
-        text: "权衡利弊、依据明确原则与长远规划果断拍板",
+        text: "依据明确原则与利弊推演，果断拍板定夺",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.5, cognitiveRange: -0.7, sensorySensitivity: -0.4 },
         tags: ["outlined","stilled"],
       },
       {
         id: "c",
-        text: "静待内心波澜平息，倾听底层直觉与价值观的深层回响",
+        text: "静待心绪平息，倾听底层直觉与价值观回响",
         dimensions: { energySource: -0.7, processingDepth: 1.1, sensorySensitivity: 0.8, temporalDepth: 0.8, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["reverberant","patient"],
       },
       {
         id: "d",
-        text: "保持开放留白，选择最具探索可能性、允许随时调整的路径",
+        text: "保持开放，选择弹性最大且随时可调整的路径",
         dimensions: { changeAffinity: 0.75, closureTolerance: 0.65, cognitiveRange: 0.75, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["equivocal","manifold"],
       },
@@ -1025,29 +1025,29 @@ export const singleQuestions = [
   {
     id: 58,
     type: "single",
-    text: "面对生活中的突发冲突或意外混乱，你通常的第一本能是？",
+    text: "面对突发冲突或意外混乱，你的第一本能是？",
     options: [
       {
         id: "a",
-        text: "站出来正面沟通，用坦诚与热情化解对立氛围",
+        text: "直接正面沟通，用坦诚与行动化解对立氛围",
         dimensions: { expressivity: 0.75, energySource: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.4 },
         tags: ["loud","thunder"],
       },
       {
         id: "b",
-        text: "立刻稳住局势，厘清权责边界，按规则与步骤恢复秩序",
+        text: "厘清权责边界，按规则与步骤迅速恢复秩序",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, sensorySensitivity: -0.7, cognitiveRange: -0.5, changeAffinity: -0.85 },
         tags: ["shielded","edgeonly"],
       },
       {
         id: "c",
-        text: "敏锐安抚受伤者的情绪，在静默沉淀中化解紧张暗涌",
+        text: "敏锐安抚各方情绪，在沉静中平息紧张暗涌",
         dimensions: { energySource: -0.7, sensorySensitivity: 1, processingDepth: 0.8, emotionalLatency: 0.7, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["osmotic","acute"],
       },
       {
         id: "d",
-        text: "幽默化解尴尬，顺水推舟将意外转化为未曾预料的契机",
+        text: "幽默化解尴尬，顺水推舟将意外转为新契机",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["prismatic","shifting"],
       },
@@ -1056,29 +1056,29 @@ export const singleQuestions = [
   {
     id: 61,
     type: "single",
-    text: "当你走进一间满是人的房间，你最真实的反应是？",
+    text: "走进一间满是人的房间，你最真实的反应是？",
     options: [
       {
         id: "a",
-        text: "自然融入场域，眼神带笑，主动寻找感兴趣的交谈圈",
+        text: "自然融入人群，主动寻找感兴趣的交谈圈子",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.5 },
         tags: ["swelling","loud"],
       },
       {
         id: "b",
-        text: "迅速观察全局座次与边界，挑选最适宜落座的专注点",
+        text: "审视座次边界，挑选最适宜安静专注的位置",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.5, cognitiveRange: -0.7, sensorySensitivity: -0.4 },
         tags: ["outlined","filtered"],
       },
       {
         id: "c",
-        text: "敏锐捕捉空气中流动的情绪微澜，感应人与人的气场",
+        text: "敏锐捕捉场中情绪微澜，体察人与人的气场",
         dimensions: { sensorySensitivity: 1.1, processingDepth: 0.8, energySource: -0.6, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["acute","osmotic"],
       },
       {
         id: "d",
-        text: "游走于各个角落，随时被新奇的话题或面孔所吸引",
+        text: "随性漫步各个角落，被新奇话题与面孔吸引",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5, temporalDepth: -0.5 },
         tags: ["manifold","shifting"],
       },
@@ -1087,29 +1087,29 @@ export const singleQuestions = [
   {
     id: 62,
     type: "single",
-    text: "看一张旧照片里的自己，你通常？",
+    text: "翻看旧照片里的自己，你通常？",
     options: [
       {
         id: "a",
-        text: "会心一笑，想起当时与同伴在一起的鲜活趣事",
+        text: "会心一笑，想起与同伴打闹的鲜活快乐时光",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.4 },
         tags: ["swelling","loud"],
       },
       {
         id: "b",
-        text: "清晰看到自己一路走来的成长轨迹与目标印记",
+        text: "清晰对照成长轨迹，确认一步步前行的目标",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, processingDepth: 0.6, cognitiveRange: -0.5, changeAffinity: -0.85, sensorySensitivity: -0.4 },
         tags: ["outlined","stilled"],
       },
       {
         id: "c",
-        text: "抚摸时光的纹理，沉浸在旧日温度与未了的情愫中",
+        text: "细抚时光纹理，沉入旧日温度与未了情愫中",
         dimensions: { energySource: -0.7, temporalDepth: 1.1, sensorySensitivity: 0.8, processingDepth: 0.8, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["latent","sedimentary"],
       },
       {
         id: "d",
-        text: "惊叹于自己形态的多变，好奇下一阶段又会变成什么样",
+        text: "惊异于形态的多变，好奇下一阶段会变成怎样",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["shifting","prismatic"],
       },
@@ -1118,29 +1118,29 @@ export const singleQuestions = [
   {
     id: 63,
     type: "single",
-    text: "以下哪个比喻最像你？",
+    text: "以下哪种自然意象最像你？",
     options: [
       {
         id: "a",
-        text: "破晓时分跃出地平线的朝阳，温暖而富有感染力",
+        text: "破晓升起的朝阳，温暖明亮且极富感染力",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.5 },
         tags: ["thunder","swelling"],
       },
       {
         id: "b",
-        text: "经过千百次折射依然坚固清晰的晶体，棱角分明",
+        text: "结构清晰的折射晶体，棱角分明且坚不可摧",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, sensorySensitivity: -0.7, cognitiveRange: -0.7, changeAffinity: -0.5 },
         tags: ["edgeonly","stilled"],
       },
       {
         id: "c",
-        text: "蕴藏丰沛生命的静谧林间深潭，清澈而深不见底",
+        text: "林间静谧深潭，看似澄澈平静却深不见底",
         dimensions: { processingDepth: 1.1, sensorySensitivity: 0.9, energySource: -0.7, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["abyssal","patient"],
       },
       {
         id: "d",
-        text: "乘风穿梭于山川云海的自由纸鸢，随气流轻盈变幻",
+        text: "穿行云海的自由纸鸢，随风向轻盈起伏变幻",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["shifting","adrift"],
       },
@@ -1149,29 +1149,29 @@ export const singleQuestions = [
   {
     id: 64,
     type: "single",
-    text: "和一群朋友在一起时，你更像是？",
+    text: "在一群朋友中，你更像是？",
     options: [
       {
         id: "a",
-        text: "活跃气氛的枢纽，坦率表达并带动大家的热情",
+        text: "活跃气氛的枢纽，坦率表达并带动全场热情",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.4 },
         tags: ["loud","swelling"],
       },
       {
         id: "b",
-        text: "靠谱稳重的定海神针，把控节奏并守护约定与秩序",
+        text: "靠谱稳重的定海神针，把控节奏与规则秩序",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.85, cognitiveRange: -0.5, sensorySensitivity: -0.4 },
         tags: ["outlined","stilled"],
       },
       {
         id: "c",
-        text: "善于倾听的暖心后盾，总能觉察谁被冷落或有心事",
+        text: "倾听型的暖心后盾，敏锐体察谁正藏着心事",
         dimensions: { sensorySensitivity: 1.1, processingDepth: 0.8, energySource: -0.5, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["osmotic","acute"],
       },
       {
         id: "d",
-        text: "带来奇思妙想的活跃分子，随时提议出人意料的新玩法",
+        text: "带来奇思妙想，随时提议出人意料的新奇玩法",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["manifold","prismatic"],
       },
@@ -1180,29 +1180,29 @@ export const singleQuestions = [
   {
     id: 65,
     type: "single",
-    text: "你更害怕哪种体验？",
+    text: "你最难以忍受的生活状态？",
     options: [
       {
         id: "a",
-        text: "失去真实的声音，在人群中被剥夺表达与连接的权利",
+        text: "失去表达的声音，在冷漠中被剥夺连接的权利",
         dimensions: { expressivity: 0.75, energySource: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.5 },
         tags: ["loud","thunder"],
       },
       {
         id: "b",
-        text: "规则被践踏、底线被模糊，陷入不可控的混乱之中",
+        text: "底线被模糊规则被践踏，陷入不可控的混乱中",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.5, cognitiveRange: -0.7, sensorySensitivity: -0.4 },
         tags: ["shielded","edgeonly"],
       },
       {
         id: "c",
-        text: "麻木不仁地生活，再也无法被细腻的美与温情所打动",
+        text: "感官钝化麻木，再也无法被细腻美与温情打动",
         dimensions: { sensorySensitivity: 1.1, processingDepth: 0.8, energySource: -0.6, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["acute","reverberant"],
       },
       {
         id: "d",
-        text: "生活一眼望到头，失去一切新鲜变数与未知的可能性",
+        text: "生活一眼望到头，失去一切新鲜变数与可能性",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["manifold","shifting"],
       },
@@ -1215,25 +1215,25 @@ export const singleQuestions = [
     options: [
       {
         id: "a",
-        text: "通过与真实世界的交手与互动，在回应中看清自我",
+        text: "与真实世界积极互动，在外界反馈中看清自我",
         dimensions: { energySource: 0.75, expressivity: 0.75, emotionalLatency: -0.4, processingDepth: -0.5, sensorySensitivity: -0.4 },
         tags: ["swelling","fluid"],
       },
       {
         id: "b",
-        text: "通过自己恪守的原则与达成的成果，确证自我边界",
+        text: "恪守原则与达成目标，在秩序中确证自我边界",
         dimensions: { boundaryClarity: 0.65, closureTolerance: -0.42, changeAffinity: -0.85, cognitiveRange: -0.5, sensorySensitivity: -0.4 },
         tags: ["outlined","edgeonly"],
       },
       {
         id: "c",
-        text: "通过内省与感悟的深度，在心灵深处的独白中看清自我",
+        text: "向内深度自省，在心灵幽微的独白中体察真我",
         dimensions: { processingDepth: 1.1, sensorySensitivity: 0.9, energySource: -0.7, boundaryClarity: -0.55, expressivity: -0.7 },
         tags: ["abyssal","reverberant"],
       },
       {
         id: "d",
-        text: "通过不断打破框架与拥抱新尝试，在变化中体验自我",
+        text: "打破框架拥抱新尝试，在流转变化中体验自我",
         dimensions: { changeAffinity: 0.75, cognitiveRange: 0.75, closureTolerance: 0.65, boundaryClarity: -0.4, processingDepth: -0.5 },
         tags: ["prismatic","shifting"],
       },

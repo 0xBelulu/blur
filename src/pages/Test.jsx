@@ -59,17 +59,19 @@ export default function Test({ onComplete }) {
   const [selectedOption, setSelectedOption] = useState(null);
   const [rankOrder, setRankOrder] = useState([]);
   const [scaleValue, setScaleValue] = useState(null);
+  const [isTransition, setIsTransition] = useState(false);
+  const [hasShownTransition, setHasShownTransition] = useState(false);
 
-  const currentQuestion = shuffledQuestions[currentIndex];
+  const currentQuestion = shuffledQuestions[currentIndex] || shuffledQuestions[0];
   const isRankQuestion = currentQuestion?.type === "rank";
   const isScaleQuestion = currentQuestion?.type === "scale";
-  const isRequiredPhase = currentIndex < REQUIRED_COUNT;
-  const isTransition = currentIndex === REQUIRED_COUNT;
-  const isExplorePhase = currentIndex > REQUIRED_COUNT;
 
-  const progress = isRequiredPhase
-    ? ((currentIndex + 1) / REQUIRED_COUNT) * 100
-    : 0;
+  // 有效作答题数
+  const validAnswerCount = answers.filter(Boolean).length;
+  const isUnlocked = validAnswerCount >= REQUIRED_COUNT;
+  const isExplorePhase = hasShownTransition || isUnlocked;
+
+  const progressPct = Math.min(100, Math.round((validAnswerCount / REQUIRED_COUNT) * 100));
 
   const restoreState = (answer, question) => {
     if (!answer || !question) {
@@ -154,21 +156,28 @@ export default function Test({ onComplete }) {
     return null;
   };
 
+  const canProceed = () => {
+    if (isRankQuestion) return rankOrder.length === 4;
+    if (isScaleQuestion) return scaleValue !== null;
+    return !!selectedOption;
+  };
+
   const handleNext = () => {
     if (isTransition) return;
 
-    // 必做阶段必须回答
-    if (isRequiredPhase) {
-      if (isRankQuestion && rankOrder.length < 4) return;
-      if (isScaleQuestion && scaleValue === null) return;
-      if (!isRankQuestion && !isScaleQuestion && !selectedOption) return;
-    }
-
     const newAnswer = buildAnswer(currentQuestion, rankOrder, scaleValue, selectedOption);
-
     const newAnswers = [...answers];
     newAnswers[currentIndex] = newAnswer;
     setAnswers(newAnswers);
+
+    const newValidCount = newAnswers.filter(Boolean).length;
+
+    // 当回答满最低题数且未曾弹出过渡页时，展示“已获得基本画像”
+    if (newValidCount >= REQUIRED_COUNT && !hasShownTransition) {
+      setHasShownTransition(true);
+      setIsTransition(true);
+      return;
+    }
 
     if (currentIndex < shuffledQuestions.length - 1) {
       const nextIndex = currentIndex + 1;
@@ -176,6 +185,25 @@ export default function Test({ onComplete }) {
       restoreState(newAnswers[nextIndex], shuffledQuestions[nextIndex]);
     } else {
       finishTest(newAnswers);
+    }
+  };
+
+  const handleSkip = () => {
+    if (isTransition) return;
+
+    const newAnswers = [...answers];
+    newAnswers[currentIndex] = null;
+    setAnswers(newAnswers);
+
+    if (currentIndex < shuffledQuestions.length - 1) {
+      const nextIndex = currentIndex + 1;
+      setCurrentIndex(nextIndex);
+      restoreState(newAnswers[nextIndex], shuffledQuestions[nextIndex]);
+    } else {
+      // 已经到最后一题
+      if (newAnswers.filter(Boolean).length >= REQUIRED_COUNT) {
+        finishTest(newAnswers);
+      }
     }
   };
 
@@ -188,75 +216,67 @@ export default function Test({ onComplete }) {
   };
 
   const handleSeeResult = () => {
-    const newAnswer = isTransition ? null : buildAnswer(currentQuestion, rankOrder, scaleValue, selectedOption);
-
+    const currentAnswer = isTransition ? null : buildAnswer(currentQuestion, rankOrder, scaleValue, selectedOption);
     const newAnswers = [...answers];
-    if (newAnswer) {
-      newAnswers[currentIndex] = newAnswer;
+    if (currentAnswer) {
+      newAnswers[currentIndex] = currentAnswer;
     }
     finishTest(newAnswers);
   };
 
   const handleContinueExplore = () => {
-    const nextIdx = REQUIRED_COUNT + 1;
-    if (nextIdx >= shuffledQuestions.length) {
+    setIsTransition(false);
+    if (currentIndex < shuffledQuestions.length - 1) {
+      const nextIndex = currentIndex + 1;
+      setCurrentIndex(nextIndex);
+      restoreState(answers[nextIndex], shuffledQuestions[nextIndex]);
+    } else {
       finishTest(answers);
-      return;
     }
-    setCurrentIndex(nextIdx);
-    restoreState(answers[nextIdx], shuffledQuestions[nextIdx]);
-  };
-
-  const canProceed = () => {
-    if (!isRequiredPhase) return true;
-    if (isRankQuestion) return rankOrder.length === 4;
-    if (isScaleQuestion) return scaleValue !== null;
-    return !!selectedOption;
   };
 
   const getQuestionLabel = () => {
-    if (isRequiredPhase) return `第 ${currentIndex + 1} 题`;
-    if (isExplorePhase) return `继续探索 · 第 ${currentIndex + 1} 题`;
-    return "";
+    if (isExplorePhase) return `探索模式 · 第 ${currentIndex + 1} 题`;
+    return `第 ${currentIndex + 1} 题`;
   };
 
   const getNextButtonText = () => {
-    if (currentIndex === REQUIRED_COUNT - 1) return "完成基本题";
-    if (currentIndex === shuffledQuestions.length - 1) return "查看结果";
+    if (currentIndex === shuffledQuestions.length - 1) return "完成探索";
     return "下一题";
   };
 
   return (
     <div className="flex-1 flex flex-col px-6 py-8 max-w-lg mx-auto w-full">
-      {/* 进度条 - 仅在必做阶段显示 */}
-      {isRequiredPhase && (
+      {/* 进度与特征捕捉提示 */}
+      {!isTransition && (
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-xs text-blur-text-muted">
-              {currentIndex + 1} / {REQUIRED_COUNT}
+          <div className="flex justify-between items-center mb-2.5">
+            <span className="text-xs text-blur-text-muted flex items-center gap-1.5">
+              {isUnlocked ? (
+                <>
+                  <Sparkles size={13} className="text-blur-accent" />
+                  <span className="text-blur-accent font-medium">基本画像已就绪</span>
+                  <span>· 已收集 {validAnswerCount} 个特征</span>
+                </>
+              ) : (
+                <>
+                  <span>已捕捉特征</span>
+                  <span className="text-blur-text font-medium">{validAnswerCount} / {REQUIRED_COUNT}</span>
+                </>
+              )}
             </span>
-            <span className="text-xs text-blur-text-light">
-              {Math.round(progress)}%
+            <span className="text-[11px] text-blur-text-light tabular-nums">
+              第 {currentIndex + 1} / {shuffledQuestions.length} 题
             </span>
           </div>
           <div className="h-1 bg-blur-border rounded-full overflow-hidden">
             <motion.div
               className="h-full bg-gradient-to-r from-blur-accent to-blur-accent-cool rounded-full"
               initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.5 }}
+              animate={{ width: `${progressPct}%` }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
             />
           </div>
-        </div>
-      )}
-
-      {/* 探索阶段简洁提示 */}
-      {isExplorePhase && (
-        <div className="mb-6 flex items-center gap-2">
-          <Sparkles size={14} className="text-blur-accent" />
-          <span className="text-xs text-blur-text-muted">
-            已获得基本画像 · 继续探索中
-          </span>
         </div>
       )}
 
@@ -269,7 +289,7 @@ export default function Test({ onComplete }) {
             exit={{ opacity: 0, y: -30, filter: "blur(3px)" }}
             transition={{ duration: 0.5, ease: "easeInOut" }}
             style={{ willChange: "filter, transform, opacity" }}
-            className="flex-1 flex flex-col items-center justify-center text-center"
+            className="flex-1 flex flex-col items-center justify-center text-center py-6"
           >
             <motion.div
               initial={{ scale: 0 }}
@@ -284,26 +304,27 @@ export default function Test({ onComplete }) {
               已获得基本画像
             </h2>
             <p className="text-sm text-blur-text-muted leading-relaxed mb-2 max-w-xs">
-              你的基础画像已经成型，但还有一些更深层的问题——
+              你已完成 {REQUIRED_COUNT} 道有效作答，基础画像已经成型。
             </p>
             <p className="text-sm text-blur-text-muted leading-relaxed mb-8 max-w-xs">
-              继续探索可以让结果更精准，也可以现在就查看结果。
+              你可以现在就查看结果，也可以继续探索更多维度，让画像更细腻。
             </p>
 
             <div className="flex flex-col gap-3 w-full max-w-xs">
               <GlassButton
+                onClick={handleSeeResult}
+                className="flex items-center justify-center gap-2"
+              >
+                查看我的画像
+                <ChevronRight size={16} />
+              </GlassButton>
+              <GlassButton
+                variant="secondary"
                 onClick={handleContinueExplore}
                 className="flex items-center justify-center gap-2"
               >
                 <Sparkles size={16} />
-                继续探索
-              </GlassButton>
-              <GlassButton
-                onClick={handleSeeResult}
-                className="flex items-center justify-center gap-2"
-              >
-                查看结果
-                <ChevronRight size={16} />
+                继续探索更多
               </GlassButton>
             </div>
           </motion.div>
@@ -419,23 +440,31 @@ export default function Test({ onComplete }) {
               </div>
             )}
 
-            <div className="flex gap-3 mt-auto">
+            <div className="flex items-center gap-3 mt-auto pt-2">
               {currentIndex > 0 && (
                 <GlassButton
                   variant="secondary"
                   onClick={handlePrev}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 text-xs"
                 >
-                  <ChevronLeft size={16} />
+                  <ChevronLeft size={15} />
                   上一题
                 </GlassButton>
               )}
 
-              {isExplorePhase && (
+              <button
+                type="button"
+                onClick={handleSkip}
+                className="text-xs text-blur-text-muted hover:text-blur-text transition-colors px-2.5 py-2 cursor-pointer"
+              >
+                跳过此题
+              </button>
+
+              {isUnlocked && (
                 <GlassButton
                   variant="ghost"
                   onClick={handleSeeResult}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 text-xs text-blur-accent"
                 >
                   查看结果
                 </GlassButton>
@@ -443,7 +472,7 @@ export default function Test({ onComplete }) {
 
               <GlassButton
                 onClick={handleNext}
-                disabled={isRequiredPhase && !canProceed()}
+                disabled={!canProceed()}
                 className="flex-1 flex items-center justify-center gap-1"
               >
                 {getNextButtonText()}
