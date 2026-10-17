@@ -176,6 +176,14 @@ const STARDUST_PARTICLES = [
 // 点按这些元素时不触发空间对焦（按钮/链接等自身已有交互反馈）
 const INTERACTIVE_SELECTOR = "button, a, input, select, textarea, [role='button']";
 
+// 点按合焦锁定：被点击元素保持“清晰 + 微光”的时长（毫秒）
+// 只负责锁住该元素自身的合焦外观，期间 hover 依然实时驱动视差与景深，不会冻结场景
+const FOCUS_LOCK_MS = 4000;
+// 陀螺仪读数新鲜度窗口：超时未收到读数即视为传感器静默，自动回退鼠标视差，杜绝视点卡死
+const GYRO_FRESH_MS = 2000;
+// 鼠标接管窗口：鼠标最近活动过时优先由鼠标驱动视差（鼠标 + 陀螺仪混合设备）
+const MOUSE_TAKEOVER_MS = 4000;
+
 export default function OpticalFocusSpace() {
   const containerRef = useRef(null);
   const elementsRef = useRef([]);
@@ -201,6 +209,10 @@ export default function OpticalFocusSpace() {
     camY: 0,
     targetCamX: 0,
     targetCamY: 0,
+    // 视差驱动源仲裁：鼠标与陀螺仪谁最近在活动，谁驱动视点（保证视差永不停摆）
+    lastPointerActivity: 0,
+    lastGyroActivity: 0,
+    mouseDriven: false,
     // 移动端陀螺仪
     gyroActive: false,
     rawBeta: 50,
@@ -367,14 +379,19 @@ export default function OpticalFocusSpace() {
       return false;
     };
 
-    // 指针/光标移动追踪
+    // 指针/光标移动追踪（同时挂在 pointerenter / pointerover 上，
+    // 指针重新进入窗口时无需先移动就能立刻恢复视差驱动）
     const handlePointerMove = (e) => {
       const { clientX, clientY } = e;
 
+      // 鼠标 / 触控笔活动：标记为鼠标驱动源并记录时刻，供视差驱动源仲裁使用
+      if (e.pointerType !== "touch") state.mouseDriven = true;
+      state.lastPointerActivity = performance.now();
+
       state.mouseX = clientX;
       state.mouseY = clientY;
-      state.mouseNormalizedX = (clientX / window.innerWidth) * 2 - 1;
-      state.mouseNormalizedY = (clientY / window.innerHeight) * 2 - 1;
+      state.mouseNormalizedX = (clientX / (window.innerWidth || 1)) * 2 - 1;
+      state.mouseNormalizedY = (clientY / (window.innerHeight || 1)) * 2 - 1;
       state.hasInteracted = true;
       state.lastInteractionTime = performance.now();
     };
@@ -383,10 +400,13 @@ export default function OpticalFocusSpace() {
     const handlePointerDown = (e) => {
       const { clientX, clientY } = e;
 
+      if (e.pointerType !== "touch") state.mouseDriven = true;
+      state.lastPointerActivity = performance.now();
+
       state.mouseX = clientX;
       state.mouseY = clientY;
-      state.mouseNormalizedX = (clientX / window.innerWidth) * 2 - 1;
-      state.mouseNormalizedY = (clientY / window.innerHeight) * 2 - 1;
+      state.mouseNormalizedX = (clientX / (window.innerWidth || 1)) * 2 - 1;
+      state.mouseNormalizedY = (clientY / (window.innerHeight || 1)) * 2 - 1;
       state.hasInteracted = true;
       state.lastInteractionTime = performance.now();
 
@@ -433,11 +453,18 @@ export default function OpticalFocusSpace() {
     };
 
     const handlePointerLeave = () => {
+      // 指针真正离开窗口：清空鼠标位置，相机平滑回到中心并静止
       state.hasInteracted = false;
       state.mouseX = -9999;
       state.mouseY = -9999;
       state.mouseNormalizedX = 0;
       state.mouseNormalizedY = 0;
+    };
+
+    // 窗口失焦：只暂停“活动”状态，保留指针最后位置
+    // 回到窗口后视差沿用原视点，不会突然弹回中心，也无需先移动鼠标才恢复
+    const handleWindowBlur = () => {
+      state.hasInteracted = false;
     };
 
     // 移动端陀螺仪体感监听 (Device Orientation)
@@ -458,6 +485,7 @@ export default function OpticalFocusSpace() {
       state.rawBeta = beta;
       state.rawGamma = gamma;
       state.gyroActive = true;
+      state.lastGyroActivity = performance.now();
     };
 
     // 动态屏幕自适应布局（桌面宽屏 vs 移动狭窄竖屏）
@@ -490,22 +518,38 @@ export default function OpticalFocusSpace() {
       resizeObserver.observe(containerRef.current);
     }
     window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    // 指针重新进入窗口 / 悬停到任何元素上时即刻恢复视差驱动，不必先晃动鼠标
+    window.addEventListener("pointerenter", handlePointerMove, { passive: true });
+    window.addEventListener("pointerover", handlePointerMove, { passive: true });
     window.addEventListener("pointerdown", handlePointerDown, { passive: true });
     window.addEventListener("pointerleave", handlePointerLeave);
-    window.addEventListener("blur", handlePointerLeave);
+    window.addEventListener("blur", handleWindowBlur);
 
     if (coarsePointer) {
       window.addEventListener("deviceorientation", handleOrientation, { passive: true });
     }
 
     // 核心渲染循环（零 React 重渲染，纯 GPU 驱动）
-    const tick = (now) => {
+    // 单帧异常绝不打断循环：任何一帧出错都会被跳过，下一帧照常继续，视差永不因此停摆
+    let frameErrorLogged = false;
+
+    const renderFrame = (now) => {
       const { innerWidth: width, innerHeight: height } = window;
       const isMobile = width < 768;
       const isIdle = !state.hasInteracted || now - state.lastInteractionTime > 2600;
 
       // 1. 统一相机视点计算 (低延迟、极度跟手)
-      if (state.gyroActive) {
+      // 视差驱动源仲裁：只有“活着的输入”才能改变视点，任何一路失效都不会让视差停摆或乱飘。
+      //   · 陀螺仪读数新鲜且鼠标未接管        → 陀螺仪驱动
+      //   · 指针最近活跃（鼠标移动 / 拖动）    → 指针驱动
+      //   · 两路都静默（传感器暂停 / 指针离开）→ 保持上一帧视点，绝不无端回中
+      const pointerLive = now - state.lastPointerActivity < MOUSE_TAKEOVER_MS;
+      const mouseActive = state.mouseDriven && pointerLive;
+      const gyroFresh = state.gyroActive && now - state.lastGyroActivity < GYRO_FRESH_MS;
+      const useGyro = gyroFresh && !mouseActive;
+      const usePointer = !useGyro && pointerLive;
+
+      if (useGyro) {
         // 降低手机端阻尼 (从 0.08 提升至 0.35，灵敏度与跟手性提升 4 倍)
         state.smoothBeta += (state.rawBeta - state.smoothBeta) * 0.35;
         state.smoothGamma += (state.rawGamma - state.smoothGamma) * 0.35;
@@ -516,25 +560,30 @@ export default function OpticalFocusSpace() {
         // 左右倾斜 -> 视点 CamX；前后倾斜 -> 视点 CamY
         state.targetCamX = Math.min(Math.max(deltaGamma / 14, -1.8), 1.8);
         state.targetCamY = Math.min(Math.max(deltaBeta / 16, -1.8), 1.8);
-      } else {
-        // 桌面端鼠标驱动相机视点
+      } else if (usePointer) {
+        // 鼠标驱动相机视点（陀螺仪静默时，触摸拖动同样可以兜底驱动视差）
         state.targetCamX = state.mouseNormalizedX * 1.2;
         state.targetCamY = state.mouseNormalizedY * 1.2;
+      } else {
+        // 无任何活动输入：视点原地保持，等待下一次真实输入继续驱动
+        state.targetCamX = state.camX;
+        state.targetCamY = state.camY;
       }
 
       // 相机视点平滑追踪 (手机端 0.36 极度跟手，桌面端 0.12 丝滑微惯性)
-      const camLerp = state.gyroActive ? 0.36 : 0.12;
+      const camLerp = useGyro ? 0.36 : 0.12;
       state.camX += (state.targetCamX - state.camX) * camLerp;
       state.camY += (state.targetCamY - state.camY) * camLerp;
 
       // 2. 独立焦平面 (FocusZ) 计算：手机与电脑端行为彻底统一！
-      // 无论手机端还是电脑端，只要用户点击锁定了某个符号，镜头坚定锁定 4 秒
-      if (state.activeFocusedId) {
-        if (now - state.lastFocusTime > 4000) {
-          state.activeFocusedId = null;
-        }
-      } else if (!isMobile && !isIdle) {
-        // 电脑端鼠标移动 hover 时，柔和吸附到指针最近的符号
+      // 点击锁定只负责“锁住被点击元素自身的合焦外观”，不再阻断 hover 的连续响应：
+      // 锁定到期自动释放；到期前只要鼠标在动，焦平面就始终跟着指针走（视差永不被冻结）
+      if (state.activeFocusedId && now - state.lastFocusTime > FOCUS_LOCK_MS) {
+        state.activeFocusedId = null;
+      }
+
+      if (!isMobile && !isIdle) {
+        // 电脑端鼠标移动 hover 时，柔和吸附到指针最近的符号（锁定期间同样生效）
         // 指针先换算到容器坐标系，与 currentPositions 严格同坐标系测距
         const pointer = toContainerPoint(state.mouseX, state.mouseY);
         let closestDist = Infinity;
@@ -561,8 +610,9 @@ export default function OpticalFocusSpace() {
           const depthInfluence = (pointer.y / (h || height)) * 0.4 + 0.3;
           state.targetZ = depthInfluence;
         }
-      } else {
+      } else if (!state.activeFocusedId) {
         // 放空状态（未点按或无鼠标活动）：悠长自然的深呼吸漫游
+        // 锁定有效期内则保持 targetZ 停在被点击的符号上，不做漫游
         const t = now * 0.0003;
         state.targetZ = 0.5 + 0.3 * Math.sin(t) + 0.1 * Math.cos(t * 1.618);
       }
@@ -671,7 +721,18 @@ export default function OpticalFocusSpace() {
         dustEl.style.transform = `translate3d(${dX.toFixed(1)}px, ${dY.toFixed(1)}px, 0)`;
         dustEl.style.opacity = pulse.toFixed(2);
       }
+    };
 
+    const tick = (now) => {
+      try {
+        renderFrame(now);
+      } catch (error) {
+        // 静默容错：只提示一次，避免逐帧刷屏
+        if (!frameErrorLogged) {
+          frameErrorLogged = true;
+          console.warn("[OpticalFocusSpace] 单帧渲染异常，已跳过该帧：", error);
+        }
+      }
       animationFrameId = requestAnimationFrame(tick);
     };
 
@@ -682,9 +743,11 @@ export default function OpticalFocusSpace() {
       window.removeEventListener("resize", handleViewportChange);
       if (resizeObserver) resizeObserver.disconnect();
       window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerenter", handlePointerMove);
+      window.removeEventListener("pointerover", handlePointerMove);
       window.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("pointerleave", handlePointerLeave);
-      window.removeEventListener("blur", handlePointerLeave);
+      window.removeEventListener("blur", handleWindowBlur);
       if (coarsePointer) {
         window.removeEventListener("deviceorientation", handleOrientation);
       }
