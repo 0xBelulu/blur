@@ -183,6 +183,8 @@ export default function OpticalFocusSpace() {
   const dustRef = useRef([]);
   const reticleRef = useRef(null);
   const focusOnSymbolRef = useRef(null);
+  // 容器真实布局尺寸（Emoji 与对焦框共享同一坐标系，杜绝移动端动态视口换算误差）
+  const sizeRef = useRef({ w: 0, h: 0 });
 
   // 综合光学、交互与移动端传感器状态
   const stateRef = useRef({
@@ -212,8 +214,8 @@ export default function OpticalFocusSpace() {
     gyroPermissionDenied: false,
     activeFocusedId: null,
     lastFocusTime: 0,
-    currentPositions: [], // 记录每个符号实时的屏幕像素坐标，用于精准点按命中
-    // 点按对焦框 (Tap-to-Focus Reticle)
+    currentPositions: [], // 记录每个符号实时的容器内像素坐标，用于精准点按命中
+    // 点按对焦框 (Tap-to-Focus Reticle)：坐标一律使用容器坐标系
     reticle: {
       active: false,
       x: 0,
@@ -221,6 +223,7 @@ export default function OpticalFocusSpace() {
       opacity: 0,
       scale: 1.4,
       timestamp: 0,
+      trackIndex: -1, // 当前跟随的符号索引，>= 0 时对焦框持续锁定该元素
     },
   });
 
@@ -243,10 +246,71 @@ export default function OpticalFocusSpace() {
       }
     };
 
-    // 激活点按对焦准星
+    // 采样容器真实布局尺寸（Emoji 百分比坐标的基准，也是所有对焦坐标的基准）
+    const measureContainer = () => {
+      const el = containerRef.current;
+      if (!el) return;
+      sizeRef.current.w = el.clientWidth;
+      sizeRef.current.h = el.clientHeight;
+    };
+    measureContainer();
+
+    // 视口坐标 → 容器坐标系（自动补偿页面过渡缩放与相机呼吸缩放，移动端点按绝不偏移）
+    const toContainerPoint = (clientX, clientY) => {
+      const { w, h } = sizeRef.current;
+      const el = containerRef.current;
+      if (!el || !w || !h) return { x: clientX, y: clientY };
+
+      const rect = el.getBoundingClientRect();
+      const scale = rect.width > 0 ? rect.width / w : 1;
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      return {
+        x: w / 2 + (clientX - centerX) / scale,
+        y: h / 2 + (clientY - centerY) / scale,
+      };
+    };
+
+    // 符号的微物理浮动 + 三维透视视差偏移（Emoji 渲染与对焦框跟随共用同一公式）
+    const symbolOffset = (item, now) => {
+      const driftT = now * 0.001 * item.driftSpeed + item.phase;
+      const perspectiveFactor = 28 / (item.z + 0.34);
+
+      return {
+        driftX: Math.sin(driftT * 0.8) * 8,
+        driftY: Math.cos(driftT * 0.6) * 10,
+        parallaxX: -state.camX * perspectiveFactor,
+        parallaxY: -state.camY * perspectiveFactor,
+      };
+    };
+
+    // 符号基准百分比坐标（移动端使用专属布局坐标）
+    const symbolBase = (item) => {
+      const isMobile = window.innerWidth < 768;
+      return {
+        x: isMobile && item.mobileX !== undefined ? item.mobileX : item.x,
+        y: isMobile && item.mobileY !== undefined ? item.mobileY : item.y,
+      };
+    };
+
+    // 符号在容器坐标系中的实时位置（与 Emoji 自身渲染完全同源）
+    const symbolLocalPos = (item, now, offset) => {
+      const { w, h } = sizeRef.current;
+      const base = symbolBase(item);
+      const off = offset || symbolOffset(item, now);
+
+      return {
+        x: (base.x / 100) * (w || window.innerWidth) + off.driftX + off.parallaxX,
+        y: (base.y / 100) * (h || window.innerHeight) + off.driftY + off.parallaxY,
+      };
+    };
+
+    // 激活点按对焦准星（坐标使用容器坐标系）
     const triggerReticle = (x, y) => {
       state.reticle.x = x;
       state.reticle.y = y;
+      state.reticle.trackIndex = -1;
       state.reticle.opacity = 0.85;
       state.reticle.scale = 1.35;
       state.reticle.active = true;
@@ -256,12 +320,7 @@ export default function OpticalFocusSpace() {
 
     // 直接对焦到指定的符号 (核心统一通道)
     const focusOnSymbol = (item, i) => {
-      const pos = state.currentPositions[i];
-      const isMobile = window.innerWidth < 768;
-      const itemX = isMobile && item.mobileX !== undefined ? item.mobileX : item.x;
-      const itemY = isMobile && item.mobileY !== undefined ? item.mobileY : item.y;
-      const targetX = pos ? pos.x : (itemX / 100) * window.innerWidth;
-      const targetY = pos ? pos.y : (itemY / 100) * window.innerHeight;
+      const local = symbolLocalPos(item, performance.now());
 
       state.activeFocusedId = item.id;
       state.targetZ = item.z;
@@ -269,7 +328,9 @@ export default function OpticalFocusSpace() {
       state.hasInteracted = true;
       state.lastInteractionTime = performance.now();
 
-      triggerReticle(targetX, targetY);
+      triggerReticle(local.x, local.y);
+      // 对焦框持续跟随该符号的浮动、视差与陀螺仪位移，始终严密框住元素
+      state.reticle.trackIndex = i;
 
       if (state.gyroActive) {
         state.baseBeta = state.rawBeta;
@@ -280,7 +341,7 @@ export default function OpticalFocusSpace() {
     focusOnSymbolRef.current = focusOnSymbol;
 
     // 在空白处点击时，寻找距离触点最近的符号并直接对焦它
-    const focusOnClosest = (clientX, clientY) => {
+    const focusOnClosest = (point) => {
       const isMobile = window.innerWidth < 768;
       let closestDist = Infinity;
       let closestIdx = -1;
@@ -292,7 +353,7 @@ export default function OpticalFocusSpace() {
         const pos = state.currentPositions[i];
         if (!pos) continue;
 
-        const d = Math.hypot(pos.x - clientX, pos.y - clientY);
+        const d = Math.hypot(pos.x - point.x, pos.y - point.y);
         if (d < closestDist) {
           closestDist = d;
           closestIdx = i;
@@ -332,9 +393,11 @@ export default function OpticalFocusSpace() {
       // 点在按钮/链接等交互元素上时，不触发对焦、准星与震动反馈
       if (e.target instanceof Element && e.target.closest(INTERACTIVE_SELECTOR)) return;
 
-      const hit = focusOnClosest(clientX, clientY);
+      // 触点换算到容器坐标系后测距，避免动态视口/缩放带来的错位
+      const point = toContainerPoint(clientX, clientY);
+      const hit = focusOnClosest(point);
       if (!hit) {
-        triggerReticle(clientX, clientY);
+        triggerReticle(point.x, point.y);
       }
 
       // 轻触时重置陀螺仪中立基准角
@@ -415,7 +478,17 @@ export default function OpticalFocusSpace() {
     const coarsePointer = window.matchMedia?.("(pointer: coarse)").matches ?? true;
 
     updateResponsiveLayout();
-    window.addEventListener("resize", updateResponsiveLayout, { passive: true });
+    // 视口变化与容器尺寸变化时同步基准尺寸（旋转、动态视口、内容增高都不会再造成错位）
+    const handleViewportChange = () => {
+      measureContainer();
+      updateResponsiveLayout();
+    };
+    window.addEventListener("resize", handleViewportChange, { passive: true });
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(measureContainer) : null;
+    if (resizeObserver && containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
     window.addEventListener("pointermove", handlePointerMove, { passive: true });
     window.addEventListener("pointerdown", handlePointerDown, { passive: true });
     window.addEventListener("pointerleave", handlePointerLeave);
@@ -462,6 +535,8 @@ export default function OpticalFocusSpace() {
         }
       } else if (!isMobile && !isIdle) {
         // 电脑端鼠标移动 hover 时，柔和吸附到指针最近的符号
+        // 指针先换算到容器坐标系，与 currentPositions 严格同坐标系测距
+        const pointer = toContainerPoint(state.mouseX, state.mouseY);
         let closestDist = Infinity;
         let closestItem = null;
 
@@ -470,7 +545,7 @@ export default function OpticalFocusSpace() {
           const pos = state.currentPositions[i];
           if (!pos) continue;
 
-          const d = Math.hypot(pos.x - state.mouseX, pos.y - state.mouseY);
+          const d = Math.hypot(pos.x - pointer.x, pos.y - pointer.y);
           if (d < closestDist) {
             closestDist = d;
             closestItem = item;
@@ -482,7 +557,8 @@ export default function OpticalFocusSpace() {
           const attractWeight = 1 - closestDist / FOCUS_RADIUS;
           state.targetZ = closestItem.z * attractWeight + 0.5 * (1 - attractWeight);
         } else {
-          const depthInfluence = (state.mouseY / height) * 0.4 + 0.3;
+          const { h } = sizeRef.current;
+          const depthInfluence = (pointer.y / (h || height)) * 0.4 + 0.3;
           state.targetZ = depthInfluence;
         }
       } else {
@@ -500,16 +576,34 @@ export default function OpticalFocusSpace() {
         containerRef.current.style.transform = `scale(${breathingScale.toFixed(4)})`;
       }
 
-      // 4. 更新点按对焦准星 (Reticle) 动效
+      // 4. 更新点按对焦准星 (Reticle) 动效（容器坐标系 → 屏幕，补偿呼吸缩放）
       if (reticleRef.current && state.reticle.active) {
         const elapsed = now - state.reticle.timestamp;
         if (elapsed < 1100) {
+          const { w, h } = sizeRef.current;
+          const cw = w || width;
+          const ch = h || height;
+          let reticleX = state.reticle.x;
+          let reticleY = state.reticle.y;
+
+          // 对焦框跟随目标符号：与 Emoji 使用同一套位移公式，且补上相机呼吸缩放
+          const trackIdx = state.reticle.trackIndex;
+          if (trackIdx >= 0 && trackIdx < SPATIAL_SYMBOLS.length) {
+            const tracked = SPATIAL_SYMBOLS[trackIdx];
+            if (!(isMobile && tracked.mobileHidden)) {
+              const local = symbolLocalPos(tracked, now);
+              reticleX = cw / 2 + (local.x - cw / 2) * breathingScale;
+              reticleY = ch / 2 + (local.y - ch / 2) * breathingScale;
+            }
+          }
+
           state.reticle.scale = Math.max(1.0, 1.35 - (elapsed / 250) * 0.35);
           state.reticle.opacity = Math.max(0, 0.85 * (1 - elapsed / 1100));
           reticleRef.current.style.opacity = state.reticle.opacity.toFixed(2);
-          reticleRef.current.style.transform = `translate3d(${state.reticle.x.toFixed(1)}px, ${state.reticle.y.toFixed(1)}px, 0) translate(-50%, -50%) scale(${state.reticle.scale.toFixed(3)})`;
+          reticleRef.current.style.transform = `translate3d(${reticleX.toFixed(1)}px, ${reticleY.toFixed(1)}px, 0) translate(-50%, -50%) scale(${state.reticle.scale.toFixed(3)})`;
         } else {
           state.reticle.active = false;
+          state.reticle.trackIndex = -1;
           reticleRef.current.style.opacity = "0";
         }
       }
@@ -529,23 +623,14 @@ export default function OpticalFocusSpace() {
 
         const zi = item.z; // 绝对空间深度 (0.16 ~ 0.92)
 
-        // 微物理浮动
-        const driftT = now * 0.001 * item.driftSpeed + item.phase;
-        const driftX = Math.sin(driftT * 0.8) * 8;
-        const driftY = Math.cos(driftT * 0.6) * 10;
+        // 微物理浮动 + 三维透视视差（与对焦框共用同一公式，保证框体严密锁定元素）
+        const offset = symbolOffset(item, now);
+        const local = symbolLocalPos(item, now, offset);
 
-        // A. 严密三维透视视差公式：ΔPos = -Cam / (Z_i + Z_near)
-        // 越近 (zi 越小) 移动越大，越远 (zi 越大) 越稳如泰山
-        const perspectiveFactor = 28 / (zi + 0.34);
-        const parallaxX = -state.camX * perspectiveFactor;
-        const parallaxY = -state.camY * perspectiveFactor;
-
-        // 记录符号在屏幕上的实时中心物理像素位置 (支持精准测距与直接对焦)
-        const itemX = isMobile && item.mobileX !== undefined ? item.mobileX : item.x;
-        const itemY = isMobile && item.mobileY !== undefined ? item.mobileY : item.y;
+        // 记录符号在容器坐标系中的实时中心位置 (支持精准测距与直接对焦)
         state.currentPositions[i] = {
-          x: (itemX / 100) * width + driftX + parallaxX,
-          y: (itemY / 100) * height + driftY + parallaxY,
+          x: local.x,
+          y: local.y,
           z: zi,
           id: item.id,
         };
@@ -563,7 +648,7 @@ export default function OpticalFocusSpace() {
         const itemScale = isFocused ? 1.22 : 0.93 + (1 - defocus) * 0.22;
 
         // 更新 Emoji DOM 样式 (合焦时带有晶莹透镜微光 Bloom，告别干瘪生硬)
-        el.style.transform = `translate3d(${(driftX + parallaxX).toFixed(1)}px, ${(driftY + parallaxY).toFixed(1)}px, 0) scale(${itemScale.toFixed(3)})`;
+        el.style.transform = `translate3d(${(offset.driftX + offset.parallaxX).toFixed(1)}px, ${(offset.driftY + offset.parallaxY).toFixed(1)}px, 0) scale(${itemScale.toFixed(3)})`;
         if (isFocused) {
           el.style.filter = "blur(0px) drop-shadow(0 0 14px rgba(155,142,199,0.5)) drop-shadow(0 0 24px rgba(196,165,137,0.35))";
         } else {
@@ -594,7 +679,8 @@ export default function OpticalFocusSpace() {
 
     return () => {
       cancelAnimationFrame(animationFrameId);
-      window.removeEventListener("resize", updateResponsiveLayout);
+      window.removeEventListener("resize", handleViewportChange);
+      if (resizeObserver) resizeObserver.disconnect();
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("pointerleave", handlePointerLeave);
@@ -665,7 +751,7 @@ export default function OpticalFocusSpace() {
         ))}
       </div>
 
-      {/* 极简光学对焦框 (Tap-to-Focus Reticle)：独立于缩放容器，保持视口坐标精确 */}
+      {/* 极简光学对焦框 (Tap-to-Focus Reticle)：与 Emoji 共享容器坐标系，渲染时补偿相机呼吸缩放 */}
       <div
         ref={reticleRef}
         className="fixed top-0 left-0 pointer-events-none w-14 h-14 will-change-transform"
