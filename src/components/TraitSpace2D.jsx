@@ -20,6 +20,7 @@ export default function TraitSpace2D({
   participants = [],
   userLabel = "你",
   showArchetypes = true,
+  showArchetypeLabels = true,
   userColor = [74, 69, 64],
 }) {
   const canvasRef = useRef(null);
@@ -33,6 +34,7 @@ export default function TraitSpace2D({
   const participantsRef = useRef(participants);
   const userLabelRef = useRef(userLabel);
   const userColorRef = useRef(userColor);
+  const labelsRef = useRef(showArchetypeLabels);
   const frameCountRef = useRef(0);
   const idleRef = useRef(false);
 
@@ -57,6 +59,10 @@ export default function TraitSpace2D({
   useEffect(() => {
     userVectorRef.current = userVector;
   }, [userVector]);
+
+  useEffect(() => {
+    labelsRef.current = showArchetypeLabels;
+  }, [showArchetypeLabels]);
 
   useEffect(() => {
     startRef.current = performance.now();
@@ -282,6 +288,7 @@ export default function TraitSpace2D({
         ctx.lineWidth = 0.8;
         ctx.stroke();
 
+        if (!labelsRef.current && !isHover) return;
         ctx.font = `${isHover ? "bold " : ""}10px system-ui,-apple-system,sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "bottom";

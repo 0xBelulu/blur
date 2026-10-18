@@ -27,6 +27,8 @@ dist-ssr
 
 # Agent & Teamwork artifacts
 .agents/
+.workbuddy/
+.workbuddy-ai/
 PROJECT.md
 TEST_INFRA.md
 TEST_READY.md
