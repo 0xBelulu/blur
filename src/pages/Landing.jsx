@@ -34,9 +34,27 @@ function useRotatingTip(interval = 4000) {
   return TIPS[index];
 }
 
-export default function Landing({ onStart, onExplore, onOpenMy }) {
+// Keep the timer's updates local instead of reconciling the animated background.
+function RotatingTip() {
   const tip = useRotatingTip(4200);
 
+  return (
+    <AnimatePresence mode="wait">
+      <motion.p
+        key={tip}
+        initial={{ opacity: 0, y: 6, filter: "blur(2px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        exit={{ opacity: 0, y: -6, filter: "blur(2px)" }}
+        transition={{ duration: 0.5, ease: "easeInOut" }}
+        className="text-[13px] text-blur-text-light italic leading-relaxed"
+      >
+        {tip}
+      </motion.p>
+    </AnimatePresence>
+  );
+}
+
+export default function Landing({ onStart, onExplore, onOpenMy }) {
   const actions = [
     {
       label: "开始测试",
@@ -162,18 +180,7 @@ export default function Landing({ onStart, onExplore, onOpenMy }) {
           transition={{ delay: 0.5, duration: 0.8 }}
           className="mb-8 md:mb-12 h-6 w-full flex items-center justify-center md:justify-start"
         >
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={tip}
-              initial={{ opacity: 0, y: 6, filter: "blur(2px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: -6, filter: "blur(2px)" }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
-              className="text-[13px] text-blur-text-light italic leading-relaxed"
-            >
-              {tip}
-            </motion.p>
-          </AnimatePresence>
+          <RotatingTip />
         </motion.div>
 
         <motion.div

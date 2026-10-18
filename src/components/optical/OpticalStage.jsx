@@ -48,7 +48,7 @@ export default function OpticalStage({ preset = {}, symbols, stardust }) {
           <div
             key={i}
             ref={(node) => { wrappersRef.current[i] = node; }}
-            className="absolute select-none flex items-center justify-center will-change-transform cursor-pointer pointer-events-auto p-4 touch-manipulation group"
+            className="absolute select-none flex items-center justify-center cursor-pointer pointer-events-auto p-4 touch-manipulation group"
             style={{
               left: `${item.x}%`,
               top: `${item.y}%`,

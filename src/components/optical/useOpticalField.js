@@ -13,6 +13,21 @@ const GYRO_FRESH_MS = 2000;
 // 鼠标接管窗口：鼠标最近活动过时优先由鼠标驱动视差（鼠标 + 陀螺仪混合设备）
 const MOUSE_TAKEOVER_MS = 4000;
 
+const DUST_PULSE_SPEED = 0.0018;
+const DUST_PULSE_DURATION = (2 * Math.PI) / DUST_PULSE_SPEED;
+// Linear interpolation of this curve differs from the original sine by < 0.001.
+// Opacity can run on the compositor while JS is busy switching pages/questions.
+const DUST_PULSE_KEYFRAMES = [
+  ...Array.from({ length: 129 }, (_, i) => ({
+    offset: i / 128,
+    opacity: Math.max(0, 0.3 + 0.5 * Math.sin((i / 128) * 2 * Math.PI)),
+  })),
+  // Include the exact zero crossings so interpolation never bridges the dark phase.
+  ...[Math.PI + Math.asin(0.6), 2 * Math.PI - Math.asin(0.6)].map((angle) => ({
+    offset: angle / (2 * Math.PI), opacity: 0,
+  })),
+].sort((a, b) => a.offset - b.offset);
+
 /**
  * 光学场的物理引擎：相机视点、焦平面、透视视差、陀螺仪、点按对焦、逐帧 RAF。
  * 不含任何 DOM 结构 —— 只负责把每帧的 transform / filter / opacity 写进传入的节点上。
@@ -31,8 +46,8 @@ export function useOpticalField({
   const symbolsRef = useRef(symbolList);
   const focusConfigRef = useRef({ focusMode, focusZ, opacityCap, minBlur });
   const stardustRef = useRef(stardust || STARDUST_PARTICLES);
-  // 上一帧已写入的 filter / opacity，用来跳过无意义的重复写入。
-  // 每写一次 style.filter 都会让该层重新栅格化，Android 上 20 个模糊层逐帧重栅格会掉帧甚至撕裂。
+  // Cache DOM values as well as the existing blur/opacity thresholds.
+  // Unchanged values don't need to cross the JS/DOM boundary again.
   const lastStyleRef = useRef([]);
 
   useEffect(() => {
@@ -43,18 +58,37 @@ export function useOpticalField({
     focusConfigRef.current = { focusMode, focusZ, opacityCap, minBlur };
   }, [focusMode, focusZ, opacityCap, minBlur]);
 
-  useEffect(() => {
-    stardustRef.current = stardust || STARDUST_PARTICLES;
-  }, [stardust]);
-
   const containerRef = useRef(null);
   const elementsRef = useRef([]);
   const wrappersRef = useRef([]);
   const dustRef = useRef([]);
   const reticleRef = useRef(null);
   const focusOnSymbolRef = useRef(null);
+  const dustAnimationsRef = useRef([]);
   // 容器真实布局尺寸（Emoji 与对焦框共享同一坐标系，杜绝移动端动态视口换算误差）
   const sizeRef = useRef({ w: 0, h: 0 });
+
+  useEffect(() => {
+    stardustRef.current = stardust || STARDUST_PARTICLES;
+    const animations = stardustRef.current.map((_, i) => {
+      const el = dustRef.current[i];
+      if (typeof el?.animate !== "function") return null;
+      const animation = el.animate(DUST_PULSE_KEYFRAMES, {
+        duration: DUST_PULSE_DURATION,
+        iterations: Infinity,
+        easing: "linear",
+        delay: -(i * 1.2) / DUST_PULSE_SPEED,
+      });
+      // Match the original performance.now() phase, even after remounting.
+      animation.startTime = 0;
+      return animation;
+    });
+    dustAnimationsRef.current = animations;
+    return () => {
+      animations.forEach((animation) => animation?.cancel());
+      dustAnimationsRef.current = [];
+    };
+  }, [stardust]);
 
   // 综合光学、交互与移动端传感器状态
   const stateRef = useRef({
@@ -103,7 +137,31 @@ export function useOpticalField({
 
   useEffect(() => {
     const state = stateRef.current;
-    let animationFrameId;
+    let animationFrameId = null;
+    let disposed = false;
+    let viewportWidth = window.innerWidth;
+    let viewportHeight = window.innerHeight;
+    let layoutSymbols;
+    const offsets = [];
+    const dustStyles = [];
+    const containerStyle = {};
+    const reticleStyle = {};
+    const trackedOffset = {};
+    const trackedPosition = {};
+    // Strict Mode can restart effects on the same DOM; don't retain stale caches.
+    lastStyleRef.current = [];
+
+    const writeStyle = (el, cache, property, value) => {
+      if (cache[property] === value) return;
+      el.style[property] = value;
+      cache[property] = value;
+    };
+
+    const symbolStyle = (i, el) => {
+      const cached = lastStyleRef.current[i];
+      if (cached?.el === el) return cached;
+      return (lastStyleRef.current[i] = { el });
+    };
 
     // 注：合焦时的触觉反馈已移除。随手点空白或滑动都会触发合焦，
     // 每次都震一下只会让人觉得触点脏。选选项的震动在 BlurCard 里，那个保留。
@@ -120,6 +178,8 @@ export function useOpticalField({
     };
     // 采样容器真实布局尺寸（Emoji 百分比坐标的基准，也是所有对焦坐标的基准）
     const measureContainer = () => {
+      viewportWidth = window.innerWidth;
+      viewportHeight = window.innerHeight;
       const el = containerRef.current;
       if (!el) return;
       sizeRef.current.w = el.clientWidth;
@@ -145,37 +205,29 @@ export function useOpticalField({
     };
 
     // 符号的微物理浮动 + 三维透视视差偏移（Emoji 渲染与对焦框跟随共用同一公式）
-    const symbolOffset = (item, now) => {
+    const symbolOffset = (item, now, offset = {}) => {
       const driftT = now * 0.001 * item.driftSpeed + item.phase;
-      const perspectiveFactor = 28 / (item.z + 0.34);
-
-      return {
-        driftX: Math.sin(driftT * 0.8) * 8,
-        driftY: Math.cos(driftT * 0.6) * 10,
-        parallaxX: -state.camX * perspectiveFactor,
-        parallaxY: -state.camY * perspectiveFactor,
-      };
-    };
-
-    // 符号基准百分比坐标（移动端使用专属布局坐标）
-    const symbolBase = (item) => {
-      const isMobile = window.innerWidth < 768;
-      return {
-        x: isMobile && item.mobileX !== undefined ? item.mobileX : item.x,
-        y: isMobile && item.mobileY !== undefined ? item.mobileY : item.y,
-      };
+      if (offset.z !== item.z) {
+        offset.z = item.z;
+        offset.perspectiveFactor = 28 / (item.z + 0.34);
+      }
+      offset.driftX = Math.sin(driftT * 0.8) * 8;
+      offset.driftY = Math.cos(driftT * 0.6) * 10;
+      offset.parallaxX = -state.camX * offset.perspectiveFactor;
+      offset.parallaxY = -state.camY * offset.perspectiveFactor;
+      return offset;
     };
 
     // 符号在容器坐标系中的实时位置（与 Emoji 自身渲染完全同源）
-    const symbolLocalPos = (item, now, offset) => {
+    const symbolLocalPos = (item, now, offset, position = {}) => {
       const { w, h } = sizeRef.current;
-      const base = symbolBase(item);
+      const isMobile = viewportWidth < 768;
+      const x = isMobile && item.mobileX !== undefined ? item.mobileX : item.x;
+      const y = isMobile && item.mobileY !== undefined ? item.mobileY : item.y;
       const off = offset || symbolOffset(item, now);
-
-      return {
-        x: (base.x / 100) * (w || window.innerWidth) + off.driftX + off.parallaxX,
-        y: (base.y / 100) * (h || window.innerHeight) + off.driftY + off.parallaxY,
-      };
+      position.x = (x / 100) * (w || viewportWidth) + off.driftX + off.parallaxX;
+      position.y = (y / 100) * (h || viewportHeight) + off.driftY + off.parallaxY;
+      return position;
     };
 
     // 直接对焦到指定的符号 (核心统一通道)
@@ -202,7 +254,7 @@ export function useOpticalField({
 
     // 在空白处点击时，寻找距离触点最近的符号并直接对焦它
     const focusOnClosest = (point) => {
-      const isMobile = window.innerWidth < 768;
+      const isMobile = viewportWidth < 768;
       let closestDist = Infinity;
       let closestIdx = -1;
 
@@ -213,14 +265,16 @@ export function useOpticalField({
         const pos = state.currentPositions[i];
         if (!pos) continue;
 
-        const d = Math.hypot(pos.x - point.x, pos.y - point.y);
+        const dx = pos.x - point.x;
+        const dy = pos.y - point.y;
+        const d = dx * dx + dy * dy;
         if (d < closestDist) {
           closestDist = d;
           closestIdx = i;
         }
       }
 
-      if (closestIdx !== -1 && closestDist < 280) {
+      if (closestIdx !== -1 && closestDist < 280 * 280) {
         focusOnSymbol(symbolsRef.current[closestIdx], closestIdx);
         return true;
       }
@@ -338,16 +392,18 @@ export function useOpticalField({
 
     // 动态屏幕自适应布局（桌面宽屏 vs 移动狭窄竖屏）
     const updateResponsiveLayout = () => {
-      const isMobile = window.innerWidth < 768;
+      const isMobile = viewportWidth < 768;
       for (let i = 0; i < symbolsRef.current.length; i++) {
         const item = symbolsRef.current[i];
         const wrapper = wrappersRef.current[i];
         if (!wrapper) continue;
         const x = isMobile && item.mobileX !== undefined ? item.mobileX : item.x;
         const y = isMobile && item.mobileY !== undefined ? item.mobileY : item.y;
-        wrapper.style.left = `${x}%`;
-        wrapper.style.top = `${y}%`;
+        const cache = symbolStyle(i, elementsRef.current[i]);
+        writeStyle(wrapper, cache, "left", `${x}%`);
+        writeStyle(wrapper, cache, "top", `${y}%`);
       }
+      layoutSymbols = symbolsRef.current;
     };
 
     // 仅触屏（粗指针）设备启用陀螺仪，避免带传感器的笔电/平板抢走鼠标控制
@@ -377,13 +433,15 @@ export function useOpticalField({
       window.addEventListener("deviceorientation", handleOrientation, { passive: true });
     }
 
-    // 核心渲染循环（零 React 重渲染，纯 GPU 驱动）
+    // The RAF loop only handles interactive physics; React never renders per frame.
     // 单帧异常绝不打断循环：任何一帧出错都会被跳过，下一帧照常继续，视差永不因此停摆
     let frameErrorLogged = false;
 
     const renderFrame = (now) => {
-      const { innerWidth: width, innerHeight: height } = window;
+      const width = viewportWidth;
+      const height = viewportHeight;
       const isMobile = width < 768;
+      if (layoutSymbols !== symbolsRef.current) updateResponsiveLayout();
       const isIdle = !state.hasInteracted || now - state.lastInteractionTime > 2600;
 
       // 1. 统一相机视点计算 (低延迟、极度跟手)
@@ -446,7 +504,9 @@ export function useOpticalField({
           const pos = state.currentPositions[i];
           if (!pos) continue;
 
-          const d = Math.hypot(pos.x - pointer.x, pos.y - pointer.y);
+          const dx = pos.x - pointer.x;
+          const dy = pos.y - pointer.y;
+          const d = dx * dx + dy * dy;
           if (d < closestDist) {
             closestDist = d;
             closestItem = item;
@@ -454,8 +514,8 @@ export function useOpticalField({
         }
 
         const FOCUS_RADIUS = 240;
-        if (closestItem && closestDist < FOCUS_RADIUS) {
-          const attractWeight = 1 - closestDist / FOCUS_RADIUS;
+        if (closestItem && closestDist < FOCUS_RADIUS * FOCUS_RADIUS) {
+          const attractWeight = 1 - Math.sqrt(closestDist) / FOCUS_RADIUS;
           state.targetZ = closestItem.z * attractWeight + 0.5 * (1 - attractWeight);
         } else {
           const { h } = sizeRef.current;
@@ -475,7 +535,7 @@ export function useOpticalField({
       // 3. 相机呼吸效应（Focus Breathing）
       const breathingScale = 1.0 + (0.5 - state.focusZ) * 0.025 + Math.sin(now * 0.001) * 0.005;
       if (containerRef.current) {
-        containerRef.current.style.transform = `scale(${breathingScale.toFixed(4)})`;
+        writeStyle(containerRef.current, containerStyle, "transform", `scale(${breathingScale.toFixed(4)})`);
       }
 
       // 4. 更新点按对焦准星 (Reticle) 动效（容器坐标系 → 屏幕，补偿呼吸缩放）
@@ -493,7 +553,7 @@ export function useOpticalField({
           if (trackIdx >= 0 && trackIdx < symbolsRef.current.length) {
             const tracked = symbolsRef.current[trackIdx];
             if (!(isMobile && tracked.mobileHidden)) {
-              const local = symbolLocalPos(tracked, now);
+              const local = symbolLocalPos(tracked, now, symbolOffset(tracked, now, trackedOffset), trackedPosition);
               reticleX = cw / 2 + (local.x - cw / 2) * breathingScale;
               reticleY = ch / 2 + (local.y - ch / 2) * breathingScale;
             }
@@ -501,12 +561,12 @@ export function useOpticalField({
 
           state.reticle.scale = Math.max(1.0, 1.35 - (elapsed / 250) * 0.35);
           state.reticle.opacity = Math.max(0, 0.85 * (1 - elapsed / 1100));
-          reticleRef.current.style.opacity = state.reticle.opacity.toFixed(2);
-          reticleRef.current.style.transform = `translate3d(${reticleX.toFixed(1)}px, ${reticleY.toFixed(1)}px, 0) translate(-50%, -50%) scale(${state.reticle.scale.toFixed(3)})`;
+          writeStyle(reticleRef.current, reticleStyle, "opacity", state.reticle.opacity.toFixed(2));
+          writeStyle(reticleRef.current, reticleStyle, "transform", `translate3d(${reticleX.toFixed(1)}px, ${reticleY.toFixed(1)}px, 0) translate(-50%, -50%) scale(${state.reticle.scale.toFixed(3)})`);
         } else {
           state.reticle.active = false;
           state.reticle.trackIndex = -1;
-          reticleRef.current.style.opacity = "0";
+          writeStyle(reticleRef.current, reticleStyle, "opacity", "0");
         }
       }
 
@@ -515,27 +575,23 @@ export function useOpticalField({
         const item = symbolsRef.current[i];
         const el = elementsRef.current[i];
         if (!el) continue;
+        const last = symbolStyle(i, el);
 
+        writeStyle(el, last, "display", isMobile && item.mobileHidden ? "none" : "block");
         if (isMobile && item.mobileHidden) {
-          el.style.display = "none";
           continue;
-        } else {
-          el.style.display = "block";
         }
 
         const zi = item.z; // 绝对空间深度 (0.16 ~ 0.92)
 
         // 微物理浮动 + 三维透视视差（与对焦框共用同一公式，保证框体严密锁定元素）
-        const offset = symbolOffset(item, now);
-        const local = symbolLocalPos(item, now, offset);
+        const offset = symbolOffset(item, now, offsets[i] || (offsets[i] = {}));
+        const position = state.currentPositions[i] || (state.currentPositions[i] = {});
+        symbolLocalPos(item, now, offset, position);
 
         // 记录符号在容器坐标系中的实时中心位置 (支持精准测距与直接对焦)
-        state.currentPositions[i] = {
-          x: local.x,
-          y: local.y,
-          z: zi,
-          id: item.id,
-        };
+        position.z = zi;
+        position.id = item.id;
 
         // B. 严密薄透镜弥散圆公式 (Circle of Confusion)
         // 严格根据同一个 zi 和当前焦平面 focusZ 计算光学虚化
@@ -555,11 +611,9 @@ export function useOpticalField({
         const renderOpacity = Math.min(cap, targetOpacity);
 
         // 更新 Emoji DOM 样式 (合焦时带有晶莹透镜微光 Bloom，告别干瘪生硬)
-        el.style.transform = `translate3d(${(offset.driftX + offset.parallaxX).toFixed(1)}px, ${(offset.driftY + offset.parallaxY).toFixed(1)}px, 0) scale(${itemScale.toFixed(3)})`;
+        writeStyle(el, last, "transform", `translate3d(${(offset.driftX + offset.parallaxX).toFixed(1)}px, ${(offset.driftY + offset.parallaxY).toFixed(1)}px, 0) scale(${itemScale.toFixed(3)})`);
 
-        // filter / opacity 只在变化超过阈值时才写。逐帧无条件写入会让每个模糊层
-        // 每帧重新栅格化，这是 Android 上闪屏与分层的直接来源。
-        const last = lastStyleRef.current[i] || (lastStyleRef.current[i] = {});
+        // Keep the existing visual thresholds for the expensive blur changes.
         const focusChanged = last.focused !== isFocused;
 
         if (focusChanged || last.blur === undefined || Math.abs(last.blur - renderBlur) > 0.4) {
@@ -584,17 +638,26 @@ export function useOpticalField({
         const dustEl = dustRef.current[j];
         if (!dustEl) continue;
 
-        const dFactor = 28 / (dust.z + 0.34);
+        const last = dustStyles[j]?.el === dustEl ? dustStyles[j] : (dustStyles[j] = { el: dustEl });
+        if (last.z !== dust.z) {
+          last.z = dust.z;
+          last.perspectiveFactor = 28 / (dust.z + 0.34);
+        }
+        const dFactor = last.perspectiveFactor;
         const dX = -state.camX * dFactor;
         const dY = -state.camY * dFactor;
-        const pulse = 0.3 + 0.5 * Math.sin(now * 0.0018 + j * 1.2);
-
-        dustEl.style.transform = `translate3d(${dX.toFixed(1)}px, ${dY.toFixed(1)}px, 0)`;
-        dustEl.style.opacity = pulse.toFixed(2);
+        writeStyle(dustEl, last, "transform", `translate3d(${dX.toFixed(1)}px, ${dY.toFixed(1)}px, 0)`);
+        // Older engines without WAAPI retain the original pulse as a fallback.
+        if (!dustAnimationsRef.current[j]) {
+          const pulse = 0.3 + 0.5 * Math.sin(now * DUST_PULSE_SPEED + j * 1.2);
+          writeStyle(dustEl, last, "opacity", pulse.toFixed(2));
+        }
       }
     };
 
     const tick = (now) => {
+      animationFrameId = null;
+      if (disposed || document.hidden) return;
       try {
         renderFrame(now);
       } catch (error) {
@@ -604,13 +667,24 @@ export function useOpticalField({
           console.warn("[OpticalFocusSpace] 单帧渲染异常，已跳过该帧：", error);
         }
       }
-      animationFrameId = requestAnimationFrame(tick);
+      if (!disposed && !document.hidden) animationFrameId = requestAnimationFrame(tick);
     };
 
-    animationFrameId = requestAnimationFrame(tick);
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      } else if (!disposed && animationFrameId === null) {
+        animationFrameId = requestAnimationFrame(tick);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    handleVisibilityChange();
 
     return () => {
-      cancelAnimationFrame(animationFrameId);
+      disposed = true;
+      if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("resize", handleViewportChange);
       if (resizeObserver) resizeObserver.disconnect();
       window.removeEventListener("pointermove", handlePointerMove);

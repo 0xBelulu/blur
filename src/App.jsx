@@ -1,5 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
+import PageTransition from './components/PageTransition';
+import { nextPageRoute, pageKey } from './utils/pageTransitions';
 import Landing from './pages/Landing';
 import Test from './pages/Test';
 import Loading from './pages/Loading';
@@ -20,7 +22,6 @@ import { flushPending, refreshCloudHistory, downloadRecord } from './utils/cloud
 import { getAccountInfo, ensureLocalIdentity, updateAccountInfo } from './utils/identity';
 
 const LOADING_DURATION = 3500;
-const pages = ['landing', 'about', 'archetypes', 'traits', 'questions', 'me', 'identity', 'invite', 'friend', 'together', 'test', 'loading', 'result', 'view', 'compare'];
 
 function readRoute() {
   const [screen, id] = window.location.hash.slice(1).split('/');
@@ -37,24 +38,8 @@ function readRoute() {
   return { screen: ['about', 'archetypes', 'traits', 'questions', 'me'].includes(screen) ? screen : 'landing' };
 }
 
-const pageVariants = {
-  enter: (direction) => ({ opacity: 0, x: direction > 0 ? 60 : -60, scale: 0.97, filter: 'blur(2px)' }),
-  center: {
-    opacity: 1, x: 0, scale: 1, filter: 'blur(0px)',
-    // Release the full-page filter after the transition, including on mobile GPUs.
-    transitionEnd: { filter: 'none' },
-  },
-  exit: (direction) => ({ opacity: 0, x: direction > 0 ? -60 : 60, scale: 0.97, filter: 'blur(2px)' }),
-};
-
-// `me` keeps one key across its sub-tabs: switching a panel is not a page change,
-// so it must not replay the full-page blur/slide transition.
-const pageKey = (route) => (route.screen === 'me' ? 'me' : `${route.screen}/${route.id || ''}`);
-
 export default function App() {
-  const reduceMotion = useReducedMotion();
-  const [route, setRoute] = useState(readRoute);
-  const [direction, setDirection] = useState(1);
+  const [route, setRoute] = useState(() => ({ ...readRoute(), direction: 1 }));
   const [records, setRecords] = useState(getHistoryRecords);
   const [account, setAccount] = useState(getAccountInfo);
   const [unsavedResult, setUnsavedResult] = useState(null);
@@ -66,11 +51,13 @@ export default function App() {
   const accountId = useRef(account.id);
 
   const navigate = useCallback((screen, id) => {
-    setDirection(pages.indexOf(screen) > pages.indexOf(route.screen) ? 1 : -1);
-    setRoute({ screen, id });
-    window.history.pushState(null, '', screen === 'landing'
-      ? window.location.pathname + window.location.search : `#${screen}${id ? `/${id}` : ''}`);
-  }, [route.screen]);
+    setRoute((previous) => nextPageRoute(previous, { screen, id }));
+    const hash = screen === 'landing' ? '' : `#${screen}${id ? `/${id}` : ''}`;
+    // A second tap during exit must not add another identical history entry.
+    if (window.location.hash !== hash) {
+      window.history.pushState(null, '', hash || window.location.pathname + window.location.search);
+    }
+  }, []);
 
   useEffect(() => {
     const changed = () => {
@@ -80,7 +67,8 @@ export default function App() {
     };
     const back = () => {
       clearTimeout(loadingTimer.current);
-      setRoute(readRoute());
+      const next = readRoute();
+      setRoute((previous) => nextPageRoute(previous, next));
     };
     window.addEventListener('blur-history-change', changed);
     window.addEventListener('blur-account-change', changed);
@@ -174,7 +162,8 @@ export default function App() {
     try { await flushPending(); await refreshCloudHistory(); setNotice('待处理操作已完成'); }
     catch (error) { setNotice(error.message); }
   };
-  const myPage = <My records={records} account={account} notice={notice} onBack={home} onOpen={openRecord}
+  // Reading/parsing the full history is only needed when this page is displayed.
+  const myPage = () => <My records={records} account={account} notice={notice} onBack={home} onOpen={openRecord}
     onDeleteLocal={removeLocal} onClearLocal={clearLocal} onRefresh={refresh} onRetryPending={retryPending}
     onStartTest={() => start()}
     tab={['history', 'friends'].includes(route.id) ? route.id : 'profile'} onTab={(tab) => navigate('me', tab)}
@@ -188,7 +177,7 @@ export default function App() {
     case 'archetypes': content = <Archetypes onBack={() => navigate('about')} />; break;
     case 'traits': content = <Traits onBack={() => navigate('about')} />; break;
     case 'questions': content = <Questions onBack={() => navigate('about')} />; break;
-    case 'me': content = myPage; break;
+    case 'me': content = myPage(); break;
     case 'identity': content = <Identity account={account} onBack={openMy} onDone={() => {
       const [target, id] = (route.id || 'profile').split('-');
       if (['invite', 'friend', 'together'].includes(target)) navigate(target, id);
@@ -204,7 +193,7 @@ export default function App() {
     case 'loading': content = <Loading />; break;
     case 'result': content = record?.result || unsavedResult
       ? <Result result={record?.result || unsavedResult} record={record} onRestart={home} onOpenMy={openMy} />
-      : myPage; break;
+      : myPage(); break;
     case 'view':
     case 'compare': content = <SharedProfile shareId={route.id} mode={route.screen} records={records} selectedRecordId={comparisonRecordId}
       cached={peer?.shareId === route.id ? peer.profile : null}
@@ -215,12 +204,10 @@ export default function App() {
   }
 
   return <div className="min-h-[100svh] bg-blur-bg">
-    <AnimatePresence mode="wait" custom={direction}>
-      <motion.div key={pageKey(route)} custom={direction} variants={pageVariants}
-        initial={reduceMotion ? false : 'enter'} animate="center" exit={reduceMotion ? undefined : 'exit'} transition={{ duration: reduceMotion ? 0 : 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
-        style={{ contain: 'layout style paint' }}>
+    <AnimatePresence mode="wait" custom={route.direction}>
+      <PageTransition key={pageKey(route)} direction={route.direction}>
         {content}
-      </motion.div>
+      </PageTransition>
     </AnimatePresence>
   </div>;
 }

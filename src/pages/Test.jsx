@@ -85,6 +85,13 @@ export default function Test({ onComplete }) {
     () => buildPersonaSymbols(profile.field, revealAt(profile.answeredCount)),
     [profile],
   );
+  // Selecting an option only changes the controls; update the field on saved answers.
+  const background = useMemo(() => (
+    <>
+      <AtmosphereField />
+      <OpticalStage preset={TEST_PRESET} symbols={symbols} />
+    </>
+  ), [symbols]);
 
   const restoreState = (answer, question) => {
     if (!answer || !question) {
@@ -308,8 +315,7 @@ export default function Test({ onComplete }) {
 
   return (
     <>
-      <AtmosphereField />
-      <OpticalStage preset={TEST_PRESET} symbols={symbols} />
+      {background}
 
       <div className="relative z-10 flex-1 flex flex-col px-6 py-8 min-h-[100svh] max-w-lg mx-auto w-full">
 
