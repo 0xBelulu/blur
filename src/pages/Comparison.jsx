@@ -6,6 +6,7 @@ import CompareField from '../components/CompareField';
 import { DIMENSION_PAIRS } from '../utils/blurEngine';
 import { compareDimensions, tendency } from '../utils/comparison';
 import { buildComparisonStory } from '../utils/comparisonStory';
+import { comparisonPrompts } from '../utils/comparisonPrompts';
 import './Comparison.css';
 
 const INITIAL_DIMENSIONS = 6;
@@ -133,7 +134,7 @@ function MomentCard({ item, tone, name, count, total }) {
   </section>;
 }
 
-export default function Comparison({ mine, theirs, onBack }) {
+export default function Comparison({ mine, theirs, onBack, friendView = false }) {
   const [pairIndex, setPairIndex] = useState(0);
   const [sort, setSort] = useState('difference');
   const [expanded, setExpanded] = useState(false);
@@ -162,6 +163,7 @@ export default function Comparison({ mine, theirs, onBack }) {
   const ordered = sort === 'difference' ? [...dimensions].reverse() : dimensions;
   const visible = expanded ? ordered : ordered.slice(0, INITIAL_DIMENSIONS);
   const furthest = stats.furthest;
+  const prompts = comparisonPrompts(dimensions);
 
   return <div className="cmp-page max-w-6xl mx-auto px-5 sm:px-8 py-8">
     <header className="cmp-header">
@@ -179,7 +181,7 @@ export default function Comparison({ mine, theirs, onBack }) {
         <div className="cmp-stage">
           <CompareField overlap={stats.overlap} />
           <div className="cmp-stage-num">
-            <span className="cmp-stage-k">重合度</span>
+            <span className="cmp-stage-k">倾向重合</span>
             <span className="cmp-stage-v">{shownOverlap}<em>%</em></span>
           </div>
         </div>
@@ -187,14 +189,22 @@ export default function Comparison({ mine, theirs, onBack }) {
         <Person record={theirs} label={name} side="theirs" />
       </div>
 
-      <div className="cmp-metrics">
+      <div className={`cmp-metrics ${story.sharedCount ? '' : 'cmp-metrics--portrait'}`}>
         <div><span>同侧维度</span><b>{stats.sameSide}<em>/ 10</em></b></div>
         <div><span>最大距离</span><b>{furthest.gap.toFixed(2)}<em>{furthest.name}</em></b></div>
-        <div><span>互补维度</span><b>{stats.complements}<em>个</em></b></div>
-        <div><span>共同作答</span><b>{story.sharedCount}<em>题</em></b></div>
-        <div><span>答案相同</span><b>{story.sameCount}<em>题</em></b></div>
+        <div><span>明显差异</span><b>{stats.complements}<em>个维度</em></b></div>
+        {story.sharedCount > 0 && <><div><span>共同作答</span><b>{story.sharedCount}<em>题</em></b></div>
+          <div><span>答案相同</span><b>{story.sameCount}<em>题</em></b></div></>}
       </div>
     </section>
+
+    <div className="cmp-conversations">
+      {prompts.map(({ dimension: d, label, scene, question }) => <section className="cmp-conversation" key={d.key}>
+        <p className="cmp-eyebrow">{label} · {d.name}</p><h2>{scene}</h2>
+        <div className="cmp-conversation-tendencies"><span className="cmp-ink-mine">你 · {tendency(d.a, d)}</span><span className="cmp-ink-theirs">{name} · {tendency(d.b, d)}</span></div>
+        <p>{question}</p>
+      </section>)}
+    </div>
 
     <div className="cmp-body">
       <section className="cmp-map-col">
@@ -254,7 +264,8 @@ export default function Comparison({ mine, theirs, onBack }) {
     </div>}
 
     <footer className="cmp-footer">
-      <p>这里呈现的是本次作答中的相对倾向，不是关系契合度。你的画像只用于当前对比，不会因此公开给对方。</p>
+      <p>这里呈现的是本次作答中的相对倾向，不是关系契合度。「明显差异」指维度差距至少 0.35。可以拿这些小问题聊聊，看看实际的你们是什么样。
+        {friendView ? ' 双方使用当前主动展示给好友的画像，具体作答保持私密。' : ' 你的画像只用于当前对比，不会因此公开给对方。'}</p>
     </footer>
   </div>;
 }

@@ -69,7 +69,7 @@ export default function ShareControls({ record }) {
           onClick={() => setConfirmRemoval((value) => !value)}><CloudOff size={13} />移除云端副本</button>
       </div>
       {confirmRemoval && <div className="rounded-xl border border-blur-border bg-white/30 p-3 space-y-3">
-        <p className="text-blur-text-muted leading-relaxed">{record.localPresent ? '本机画像与答案保留。' : '会先将完整画像保存到本机。'}云端副本将移除，所有对应分享链接同时停用。</p>
+        <p className="text-blur-text-muted leading-relaxed">{record.localPresent ? '本机画像与答案保留。' : '会先将完整画像保存到本机。'}云端副本将移除，对应分享链接和好友展示同时停用。</p>
         <div className="flex gap-4">
           <button disabled={busy} className="text-blur-accent cursor-pointer disabled:opacity-40" onClick={() => run(async () => {
             await removeCloudCopy(record); setConfirmRemoval(false); setMessage('云端副本已移除，画像与答案保留在本机');

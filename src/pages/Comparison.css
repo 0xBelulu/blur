@@ -483,6 +483,12 @@
 }
 
 /* ── 移动端 ─────────────────────────────────────────────────── */
+.cmp-conversations{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:28px;margin:32px 0}
+.cmp-metrics--portrait{grid-template-columns:repeat(3,minmax(0,1fr))}
+.cmp-conversation{padding:24px 8px 23px;border-block:1px solid var(--cmp-line,rgba(119,106,95,.17))}
+.cmp-conversation h2{font-size:18px;font-weight:400;margin:15px 0}
+.cmp-conversation>p:last-child{font-size:13px;color:var(--cmp-ink-2);line-height:2;margin:18px 0 0}
+.cmp-conversation-tendencies{display:flex;gap:12px 25px;flex-wrap:wrap;font-size:11px;line-height:1.8}
 @media (max-width: 900px) {
   .cmp-summary-grid {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

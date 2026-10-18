@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import Landing from './pages/Landing';
 import Test from './pages/Test';
 import Loading from './pages/Loading';
@@ -10,17 +10,24 @@ import Traits from './pages/Traits';
 import Questions from './pages/Questions';
 import My from './pages/My';
 import SharedProfile from './pages/SharedProfile';
+import Identity from './pages/Identity';
+import Invite from './pages/Invite';
+import FriendProfile from './pages/FriendProfile';
 import { generateResult } from './utils/blurEngine';
 import { questions } from './data/questions';
 import { getHistoryRecords, getAllHistoryRecords, saveHistoryRecord, removeLocalRecord } from './utils/historyStorage';
 import { flushPending, refreshCloudHistory, downloadRecord } from './utils/cloud';
-import { getAccountInfo, ensureLocalIdentity } from './utils/identity';
+import { getAccountInfo, ensureLocalIdentity, updateAccountInfo } from './utils/identity';
 
 const LOADING_DURATION = 3500;
-const pages = ['landing', 'about', 'archetypes', 'traits', 'questions', 'me', 'test', 'loading', 'result', 'view', 'compare'];
+const pages = ['landing', 'about', 'archetypes', 'traits', 'questions', 'me', 'identity', 'invite', 'friend', 'together', 'test', 'loading', 'result', 'view', 'compare'];
 
 function readRoute() {
   const [screen, id] = window.location.hash.slice(1).split('/');
+  if (screen === 'invite') return /^[A-Fa-f0-9]{12}$/.test(id || '') ? { screen, id: id.toUpperCase() } : { screen: 'me', id: 'friends' };
+  if (['friend', 'together'].includes(screen)) return /^[a-f0-9]{32}$/.test(id || '') ? { screen, id } : { screen: 'me', id: 'friends' };
+  if (screen === 'identity') return { screen, id: /^(profile|friends|invite-[A-Fa-f0-9]{12}|friend-[a-f0-9]{32}|together-[a-f0-9]{32})$/.test(id || '') ? id : 'profile' };
+  if (screen === 'me') return { screen, id: ['history', 'friends'].includes(id) ? id : 'profile' };
   if (['view', 'compare'].includes(screen)) {
     return /^[a-f0-9]{32}$/.test(id || '') ? { screen, id } : { screen: 'landing' };
   }
@@ -37,6 +44,7 @@ const pageVariants = {
 };
 
 export default function App() {
+  const reduceMotion = useReducedMotion();
   const [route, setRoute] = useState(readRoute);
   const [direction, setDirection] = useState(1);
   const [records, setRecords] = useState(getHistoryRecords);
@@ -47,6 +55,7 @@ export default function App() {
   const [comparisonRecordId, setComparisonRecordId] = useState(null);
   const loadingTimer = useRef(null);
   const comparisonTarget = useRef(null);
+  const accountId = useRef(account.id);
 
   const navigate = useCallback((screen, id) => {
     setDirection(pages.indexOf(screen) > pages.indexOf(route.screen) ? 1 : -1);
@@ -56,7 +65,11 @@ export default function App() {
   }, [route.screen]);
 
   useEffect(() => {
-    const changed = () => { setRecords(getHistoryRecords()); setAccount(getAccountInfo()); };
+    const changed = () => {
+      const next = getAccountInfo();
+      if (next.id !== accountId.current) { setPeer(null); setComparisonRecordId(null); accountId.current = next.id; }
+      setRecords(getHistoryRecords()); setAccount(next);
+    };
     const back = () => {
       clearTimeout(loadingTimer.current);
       setRoute(readRoute());
@@ -66,6 +79,12 @@ export default function App() {
     window.addEventListener('storage', changed);
     window.addEventListener('popstate', back);
     window.addEventListener('hashchange', back);
+    // Adopt the existing latest portrait once when upgrading an older browser.
+    const info = getAccountInfo();
+    const initial = getHistoryRecords()[0];
+    if (initial && info.displayRecordId === undefined && !info.portraitId) {
+      try { updateAccountInfo({ displayRecordId: initial.id }); } catch { /* Local records remain available. */ }
+    }
     return () => {
       clearTimeout(loadingTimer.current);
       window.removeEventListener('blur-history-change', changed);
@@ -77,12 +96,12 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (route.screen !== 'me') return;
+    if (!['me', 'invite', 'friend', 'together'].includes(route.screen)) return;
     let active = true;
     ensureLocalIdentity().then(refreshCloudHistory).then(() => { if (active) setNotice(''); })
       .catch(() => { if (active) setNotice('暂时无法核实云端状态。新画像仍只保存在本机，不会自动上传。'); });
     return () => { active = false; };
-  }, [route.screen]);
+  }, [route.screen, route.id]);
 
   const home = () => {
     clearTimeout(loadingTimer.current);
@@ -110,6 +129,9 @@ export default function App() {
         setNotice('本机存储空间不足，画像暂未存档。请保留当前页面。');
         navigate('result');
         return;
+      }
+      if (getAccountInfo().displayRecordId === undefined && !getAccountInfo().portraitId) {
+        try { updateAccountInfo({ displayRecordId: saved.id }); } catch { /* The snapshot itself is already saved. */ }
       }
       if (target) { setComparisonRecordId(saved.id); navigate('compare', target); }
       else navigate('result', saved.id);
@@ -146,6 +168,10 @@ export default function App() {
   };
   const myPage = <My records={records} account={account} notice={notice} onBack={home} onOpen={openRecord}
     onDeleteLocal={removeLocal} onClearLocal={clearLocal} onRefresh={refresh} onRetryPending={retryPending}
+    onStartTest={() => start()}
+    tab={['history', 'friends'].includes(route.id) ? route.id : 'profile'} onTab={(tab) => navigate('me', tab)}
+    onCreateIdentity={() => navigate('identity', route.id === 'friends' ? 'friends' : 'profile')}
+    onFriend={(id) => navigate('friend', id)}
     pendingLegacy={getAllHistoryRecords().filter((item) => item.deletedAt).length} />;
   const record = records.find((item) => item.id === route.id);
   let content;
@@ -155,6 +181,17 @@ export default function App() {
     case 'traits': content = <Traits onBack={() => navigate('about')} />; break;
     case 'questions': content = <Questions onBack={() => navigate('about')} />; break;
     case 'me': content = myPage; break;
+    case 'identity': content = <Identity account={account} onBack={openMy} onDone={() => {
+      const [target, id] = (route.id || 'profile').split('-');
+      if (['invite', 'friend', 'together'].includes(target)) navigate(target, id);
+      else navigate('me', target);
+    }} />; break;
+    case 'invite': content = <Invite code={route.id} account={account} onBack={home}
+      onCreate={() => navigate('identity', `invite-${route.id}`)} onFriends={() => navigate('me', 'friends')} />; break;
+    case 'friend':
+    case 'together': content = <FriendProfile key={`${account.id}/${route.screen}/${route.id}`} publicId={route.id} account={account} mode={route.screen}
+      onBack={() => navigate('me', 'friends')} onCreate={() => navigate('identity', `${route.screen}-${route.id}`)}
+      onCompare={() => navigate('together', route.id)} onView={() => navigate('friend', route.id)} onMy={openMy} />; break;
     case 'test': content = <Test onComplete={complete} />; break;
     case 'loading': content = <Loading />; break;
     case 'result': content = record?.result || unsavedResult
@@ -172,7 +209,7 @@ export default function App() {
   return <div className="min-h-[100svh] bg-blur-bg">
     <AnimatePresence mode="wait" custom={direction}>
       <motion.div key={`${route.screen}/${route.id || ''}`} custom={direction} variants={pageVariants}
-        initial="enter" animate="center" exit="exit" transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+        initial={reduceMotion ? false : 'enter'} animate="center" exit={reduceMotion ? undefined : 'exit'} transition={{ duration: reduceMotion ? 0 : 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
         style={{ willChange: 'filter, transform, opacity', contain: 'layout style paint' }}>
         {content}
       </motion.div>

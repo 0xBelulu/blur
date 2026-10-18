@@ -30,7 +30,11 @@ export function updateAccountInfo(changes) {
 export async function ensureLocalIdentity() {
   const token = getIdentityToken(true);
   const id = await identityId(token);
-  if (getAccountInfo().id !== id) return updateAccountInfo({ id, nickname: '', registered: false, lastVerifiedAt: null });
+  if (getIdentityToken() !== token) throw new Error('身份已切换，请重新操作');
+  if (getAccountInfo().id !== id) {
+    if (getAccountInfo().id) localStorage.removeItem(ACCOUNT_KEY);
+    return updateAccountInfo({ id, registered: false, lastVerifiedAt: null });
+  }
   return getAccountInfo();
 }
 

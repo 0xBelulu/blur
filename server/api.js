@@ -1,30 +1,13 @@
 import { publicRecord, publicResult } from '../shared/profile.js';
 
-class HttpError extends Error {
-  constructor(status, message) { super(message); this.status = status; }
-}
-
-function json(data, status = 200) {
-  return Response.json(data, { status, headers: {
-    'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
-    'Referrer-Policy': 'no-referrer',
-  } });
-}
+import { HttpError, json, body } from './http.js';
+import { registerAccount, peopleRoute } from './people.js';
 
 async function ownerHash(request) {
   const token = request.headers.get('Authorization')?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];
   if (!token) throw new HttpError(401, '无法识别本机身份，请刷新页面后重试');
   const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
   return Array.from(new Uint8Array(hash), (b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function body(request) {
-  if (!request.headers.get('Content-Type')?.includes('application/json')) {
-    throw new HttpError(415, '请使用 JSON 提交');
-  }
-  const text = await request.text();
-  if (text.length > 256_000) throw new HttpError(413, '画像数据过大');
-  try { return JSON.parse(text); } catch { throw new HttpError(400, '数据格式不正确'); }
 }
 
 function fromRow(row) {
@@ -45,20 +28,6 @@ function summaryFromRow(row) {
   };
 }
 
-async function account(db, owner) {
-  const saved = await db.prepare('SELECT nickname, created_at FROM accounts WHERE owner_hash = ?').bind(owner).first();
-  if (saved) return { id: owner.slice(0, 12), nickname: saved.nickname, createdAt: saved.created_at };
-  // Existing anonymous identities remain recoverable without uploading them again.
-  const legacy = await db.prepare('SELECT created_at FROM profiles WHERE owner_hash = ? LIMIT 1').bind(owner).first();
-  if (!legacy) throw new HttpError(404, '这个身份还没有云端存档，请检查恢复密钥');
-  return { id: owner.slice(0, 12), nickname: '', createdAt: legacy.created_at };
-}
-
-async function registerAccount(db, owner, nickname = '') {
-  await db.prepare('INSERT INTO accounts (owner_hash, nickname, created_at) VALUES (?, ?, ?) ON CONFLICT(owner_hash) DO NOTHING')
-    .bind(owner, nickname, Date.now()).run();
-}
-
 async function ownedRecord(db, id, owner) {
   const row = await db.prepare('SELECT * FROM profiles WHERE id = ? AND owner_hash = ? AND deleted_at IS NULL').bind(id, owner).first();
   if (!row) throw new HttpError(404, '记录不存在');
@@ -76,14 +45,8 @@ async function route(request, env) {
   }
 
   const owner = await ownerHash(request);
-  if (path === '/api/account' && request.method === 'GET') return json(await account(env.DB, owner));
-  if (path === '/api/account' && request.method === 'POST') {
-    const input = await body(request);
-    if (typeof input.nickname !== 'string' || input.nickname.trim().length > 24) throw new HttpError(400, '昵称最多 24 个字');
-    await registerAccount(env.DB, owner, input.nickname.trim());
-    await env.DB.prepare('UPDATE accounts SET nickname = ? WHERE owner_hash = ?').bind(input.nickname.trim(), owner).run();
-    return json(await account(env.DB, owner));
-  }
+  const people = await peopleRoute(request, env.DB, owner, path);
+  if (people) return people;
   if (path === '/api/records' && request.method === 'GET') {
     if (new URL(request.url).searchParams.get('summary') === '1') {
       const { results } = await env.DB.prepare(`SELECT id, local_id, created_at, engine_version, question_version,
@@ -113,8 +76,10 @@ async function route(request, env) {
     if (answerCount < 10 || answerCount > 200) throw new HttpError(400, '作答数量不正确');
     const accountNickname = input.accountNickname ?? '';
     if (typeof accountNickname !== 'string' || accountNickname.trim().length > 24) throw new HttpError(400, '昵称最多 24 个字');
+    const accountBio = input.accountBio ?? '';
+    if (typeof accountBio !== 'string' || accountBio.trim().length > 80) throw new HttpError(400, '简介最多 80 个字');
     // Immutable, idempotent snapshots. A timed-out retry cannot overwrite a result.
-    await registerAccount(env.DB, owner, accountNickname.trim());
+    await registerAccount(env.DB, owner, accountNickname.trim(), accountBio.trim());
     await env.DB.prepare(`INSERT INTO profiles
       (id, owner_hash, created_at, engine_version, question_version, answer_count, answers_json, result_json, local_id)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING`)

@@ -8,6 +8,29 @@ import {
 } from './identity.js';
 
 const operations = new Map();
+const ACCOUNT_OPERATION = Symbol('account');
+let accountRevision = 0;
+
+// Account/friend mutations participate in the same identity-switch guard as uploads.
+export function identityOperation(action, callback) {
+  const previous = operations.get(ACCOUNT_OPERATION);
+  const expectedToken = getIdentityToken(true);
+  if (previous?.action === action && previous.token === expectedToken) return previous.promise;
+  accountRevision += 1;
+  const promise = (async () => {
+    if (previous) await previous.promise.catch(() => {});
+    assertIdentity({ token: expectedToken });
+    const ctx = await context();
+    const value = await callback(ctx);
+    assertIdentity(ctx);
+    return value;
+  })().finally(() => {
+    accountRevision += 1;
+    if (operations.get(ACCOUNT_OPERATION)?.promise === promise) operations.delete(ACCOUNT_OPERATION);
+  });
+  operations.set(ACCOUNT_OPERATION, { action, promise, token: expectedToken });
+  return promise;
+}
 
 export async function api(path, { method = 'GET', body, publicAccess = false, signal, token } = {}) {
   let response;
@@ -55,13 +78,15 @@ function owned(record, ctx) {
 
 function recordOperation(record, action, callback) {
   const previous = operations.get(record.id);
-  if (previous?.action === action) return previous.promise;
+  const expectedToken = getIdentityToken(true);
+  if (previous?.action === action && previous.token === expectedToken) return previous.promise;
   const promise = (async () => {
     if (previous) await previous.promise.catch(() => {});
+    assertIdentity({ token: expectedToken });
     const ctx = await context();
     return callback(owned(current(record.id), ctx), ctx);
   })().finally(() => { if (operations.get(record.id)?.promise === promise) operations.delete(record.id); });
-  operations.set(record.id, { action, promise });
+  operations.set(record.id, { action, promise, token: expectedToken });
   return promise;
 }
 
@@ -76,6 +101,7 @@ export function syncRecord(record) {
         localId: local.id, createdAt: local.createdAt, engineVersion: local.engineVersion,
         questionVersion: local.questionVersion, answers: local.answers, result: local.result,
         accountNickname: getAccountInfo().nickname || '',
+        accountBio: getAccountInfo().bio || '',
       } });
       assertIdentity(ctx);
       write(local, verified({ cloudId: saved.cloudId, cloudOwner: ctx.id, syncStatus: 'synced', shareId: saved.shareId, nickname: saved.nickname }));
@@ -172,6 +198,7 @@ export async function refreshCloudHistory() {
   const token = getIdentityToken();
   if (!token) return;
   const owner = await identityId(token);
+  const revision = accountRevision;
   const revisions = new Map(getAllHistoryRecords().map((record) => [record.id, record.cloudRevision || 0]));
   try {
     let account;
@@ -182,7 +209,8 @@ export async function refreshCloudHistory() {
     const records = account.registered === false ? [] : (await api('/records?summary=1', { token })).records;
     assertIdentity({ token });
     mergeCloudRecords(records, owner, revisions);
-    updateAccountInfo({ ...account, registered: account.registered !== false, lastVerifiedAt: Date.now(), checkStatus: 'verified' });
+    if (revision === accountRevision && !operations.has(ACCOUNT_OPERATION)) updateAccountInfo({ ...account,
+      registered: account.registered !== false, lastVerifiedAt: Date.now(), checkStatus: 'verified' });
   } catch (error) {
     if (getIdentityToken() === token) {
       for (const record of getAllHistoryRecords()) {
@@ -199,24 +227,22 @@ export async function saveNickname(nickname) {
   if (clean.length > 24) throw new Error('昵称最多 24 个字');
   await ensureLocalIdentity();
   if (getAccountInfo().registered) {
-    const ctx = await context();
-    const account = await api('/account', { token: ctx.token, method: 'POST', body: { nickname: clean } });
-    assertIdentity(ctx);
-    updateAccountInfo({ ...account, registered: true });
+    await saveProfile({ nickname: clean, bio: getAccountInfo().bio || '' });
   } else updateAccountInfo({ nickname: clean });
 }
 
-export async function exportRecoveryKey() {
-  const ctx = await context();
-  let account;
-  try { account = await api('/account', { token: ctx.token }); }
-  catch (error) {
-    if (error.status !== 404) throw error;
-    account = await api('/account', { token: ctx.token, method: 'POST', body: { nickname: getAccountInfo().nickname || '' } });
-  }
-  assertIdentity(ctx);
-  updateAccountInfo({ ...account, registered: true });
-  return formatRecoveryKey(ctx.token);
+export function exportRecoveryKey() {
+  return identityOperation('recovery-export', async (ctx) => {
+    let account;
+    try { account = await api('/account', { token: ctx.token }); }
+    catch (error) {
+      if (error.status !== 404) throw error;
+      account = await api('/account', { token: ctx.token, method: 'POST', body: { nickname: getAccountInfo().nickname || '', bio: getAccountInfo().bio || '' } });
+    }
+    assertIdentity(ctx);
+    updateAccountInfo({ ...account, registered: true });
+    return formatRecoveryKey(ctx.token);
+  });
 }
 
 export async function restoreIdentity(key) {
@@ -252,4 +278,26 @@ export async function restoreIdentity(key) {
 
 export function shareUrl(shareId) {
   return `${window.location.origin}${window.location.pathname}#view/${shareId}`;
+}
+
+export function compareUrl(shareId) {
+  return `${window.location.origin}${window.location.pathname}#compare/${shareId}`;
+}
+
+export async function saveProfile({ nickname, bio = '' }, create = false) {
+  const clean = nickname.trim();
+  const intro = bio.trim();
+  if (clean.length > 24 || intro.length > 80) throw new Error('名字最多 24 个字，简介最多 80 个字');
+  if (create && !clean) throw new Error('给自己起一个展示名字吧');
+  await ensureLocalIdentity();
+  if (!create && !getAccountInfo().registered) return updateAccountInfo({ nickname: clean, bio: intro });
+  return identityOperation(`profile:${clean}:${intro}`, async (ctx) => {
+    const account = await api('/account', { token: ctx.token, method: 'POST', body: { nickname: clean, bio: intro } });
+    assertIdentity(ctx);
+    return updateAccountInfo({ ...account, registered: true, checkStatus: 'verified' });
+  });
+}
+
+export async function saveBio(bio) {
+  return saveProfile({ nickname: getAccountInfo().nickname || '', bio });
 }

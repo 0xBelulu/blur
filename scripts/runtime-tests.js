@@ -11,6 +11,9 @@ const origin = process.argv[2] || 'http://127.0.0.1:18788';
 assert.ok(['127.0.0.1', 'localhost'].includes(new URL(origin).hostname), 'Runtime tests only write disposable records to a local server');
 const token = crypto.randomUUID().replaceAll('-', '') + crypto.randomUUID().replaceAll('-', '');
 const id = crypto.randomUUID();
+const otherToken = crypto.randomUUID().replaceAll('-', '') + crypto.randomUUID().replaceAll('-', '');
+const otherId = crypto.randomUUID();
+let relationshipId;
 const localId = crypto.randomUUID();
 const answers = questions.slice(0, 10).map((q) => ({ questionId: q.id, type: q.type, optionId: q.options[0].id }));
 const result = generateResult(answers);
@@ -55,6 +58,28 @@ assert.equal(shared.data.answers, undefined);
 assert.equal(shared.data.result.rawAnswers, undefined);
 console.log('✓ real Cloudflare runtime: D1 persistence, owner isolation, public projection');
 
+const myAccount = (await api('/account', 'POST', { nickname: '本地联调甲', bio: '喜欢散步。' })).data;
+const otherAccount = (await api('/account', 'POST', { nickname: '本地联调乙', bio: '想出去走走。' }, otherToken)).data;
+assert.equal((await api(`/people/by-code/${otherAccount.friendCode}`)).data.publicId, otherAccount.publicId);
+assert.equal((await api('/account/portrait', 'PUT', { portraitId: id, friendsVisible: true })).status, 200);
+const otherRecord = await api(`/records/${otherId}`, 'PUT', {
+  answers, result, createdAt: Date.now(), engineVersion: ENGINE_VERSION, questionVersion: QUESTION_VERSION,
+}, otherToken);
+assert.equal(otherRecord.status, 200);
+await api('/account/portrait', 'PUT', { portraitId: otherId, friendsVisible: true }, otherToken);
+relationshipId = (await api('/friends', 'POST', { publicId: otherAccount.publicId })).data.id;
+assert.equal((await api(`/friends/${myAccount.publicId}/profile`, 'GET', undefined, otherToken)).status, 403);
+assert.equal((await api(`/friends/${relationshipId}/accept`, 'POST', undefined, otherToken)).status, 200);
+const friendPortrait = (await api(`/friends/${otherAccount.publicId}/profile`)).data.portrait;
+assert.equal(friendPortrait.id, otherId);
+assert.equal(friendPortrait.answers, undefined);
+assert.equal(friendPortrait.shareId, undefined);
+assert.equal((await api('/friends')).data.connections.length, 1);
+await api('/account/portrait', 'PUT', { portraitId: otherId, friendsVisible: false }, otherToken);
+assert.equal((await api(`/friends/${otherAccount.publicId}/profile`)).data.portrait, null);
+await api('/account/portrait', 'PUT', { portraitId: otherId, friendsVisible: true }, otherToken);
+console.log('✓ two real local identities: invitation, acceptance, private portrait projection and visibility revocation');
+
 const vite = await createServer({ configFile: false, plugins: [react()],
   optimizeDeps: { noDiscovery: true, include: [] },
   server: { middlewareMode: true }, appType: 'custom' });
@@ -83,7 +108,24 @@ try {
     records: [{ ...created.data, localPresent: true }, { ...summaries[0], id: 'cloud-only', localPresent: false }],
     account: { id: 'guest', nickname: '联调身份', registered: true },
   }));
-  for (const text of ['我的画像', '下载到本机并查看', '同步与分享', '保存身份 / 在另一台设备恢复', '默认只保存在本机']) assert.ok(myPage.includes(text), text);
+  for (const text of ['我的画像', '身份与备份', '现在，我用这份画像介绍自己', '新记录会留下来', '过去的记录', '好友']) assert.ok(myPage.includes(text), text);
+  const history = renderToStaticMarkup(React.createElement(My, {
+    tab: 'history', records: [{ ...created.data, localPresent: true }], account: myAccount,
+  }));
+  for (const text of ['过去的记录', '管理', '本机记录不会自动上传']) assert.ok(history.includes(text), text);
+  const { default: Identity } = await vite.ssrLoadModule('/src/pages/Identity.jsx');
+  const { default: Invite } = await vite.ssrLoadModule('/src/pages/Invite.jsx');
+  const { default: FriendProfile } = await vite.ssrLoadModule('/src/pages/FriendProfile.jsx');
+  const identity = renderToStaticMarkup(React.createElement(Identity, { account: {} }));
+  assert.ok(identity.includes('无需邮箱') && identity.includes('创建我的身份'));
+  const invite = renderToStaticMarkup(React.createElement(Invite, { account: {}, code: otherAccount.friendCode }));
+  assert.ok(invite.includes('创建或恢复身份'));
+  const guestFriend = renderToStaticMarkup(React.createElement(FriendProfile, { account: {}, publicId: otherAccount.publicId }));
+  assert.ok(guestFriend.includes('先找回你自己的名字'));
+  const friendsComparison = renderToStaticMarkup(React.createElement(Comparison, { mine: created.data, theirs: friendPortrait, friendView: true }));
+  assert.ok(friendsComparison.includes('具体作答保持私密'));
+  assert.ok(friendsComparison.includes('相近的侧面'));
+  assert.ok(!friendsComparison.includes('共同作答'));
   const localBadge = renderToStaticMarkup(React.createElement(RecordBadges, { record: { localPresent: true } }));
   assert.ok(localBadge.includes('仅在本机') && localBadge.includes('未公开'));
   const cloudBadge = renderToStaticMarkup(React.createElement(RecordBadges, {
@@ -95,9 +137,14 @@ try {
 
 await api(`/records/${id}/share`, 'DELETE');
 assert.equal((await api(`/shares/${published.data.shareId}`)).status, 404);
+assert.equal((await api(`/friends/${myAccount.publicId}/profile`, 'GET', undefined, otherToken)).status, 200);
+await api(`/friends/${relationshipId}`, 'DELETE');
+assert.equal((await api(`/friends/${otherAccount.publicId}/profile`)).status, 403);
 await api(`/records/${id}`, 'DELETE');
 assert.equal((await api('/records')).data.records.length, 0);
 console.log('✓ real Cloudflare runtime: revocation and deletion');
 } finally {
+  if (relationshipId) await api(`/friends/${relationshipId}`, 'DELETE').catch(() => {});
   await api(`/records/${id}`, 'DELETE').catch(() => {});
+  await api(`/records/${otherId}`, 'DELETE', undefined, otherToken).catch(() => {});
 }

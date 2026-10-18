@@ -53,7 +53,7 @@ export default function Landing({ onStart, onExplore, onOpenMy }) {
       className: "text-sm gap-1.5 animate-fade-in-up delay-1100",
     },
     {
-      label: "我的 · 画像与身份",
+      label: "我的空间",
       icon: UserRound,
       variant: "primary",
       onClick: onOpenMy,
