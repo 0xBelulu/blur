@@ -11,7 +11,7 @@
   "d1_databases": [{
     "binding": "DB",
     "database_name": "blur",
-    "database_id": "00000000-0000-0000-0000-000000000000",
+    "database_id": "5d1557e1-dc45-42ee-bb43-ab8423a69f08",
     "migrations_dir": "migrations"
   }]
 }
