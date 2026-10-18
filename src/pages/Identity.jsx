@@ -29,7 +29,7 @@ export default function Identity({ account, onBack, onDone }) {
       </form>}
       {!restore && account.registered && <button className="pp-primary" onClick={onDone}>回到我的空间<ArrowRight size={15} /></button>}
       <button className="pp-text-button pp-spaced" onClick={() => setRestore(!restore)}>{restore ? '返回创建身份' : '我有恢复密钥'}</button>
-      {restore && <><AccountPanel key={account.id || 'guest'} account={account} />{account.registered && <button className="pp-primary pp-spaced" onClick={onDone}>使用当前身份继续<ArrowRight size={15} /></button>}</>}
+      {restore && <><AccountPanel key={account.id || 'guest'} account={account} initialView="restore" />{account.registered && <button className="pp-primary pp-spaced" onClick={onDone}>使用当前身份继续<ArrowRight size={15} /></button>}</>}
     </section> : <section className="pp-create pp-enter"><Check size={24} className="text-blur-accent" /><h1>你好，{account.nickname}。</h1><p className="pp-dialog-description">身份准备好了。你的好友码是 {friendCode(account.friendCode)}。</p>
       <button className="pp-outline" disabled={busy} onClick={() => run(async () => { const recovery = await exportRecoveryKey(); setKey(recovery); setKeyOwner(account.id); })}>保存一份恢复密钥</button>
       {key && keyOwner === account.id && <div><label>恢复密钥 · 请私下保管<textarea readOnly rows={3} value={key} onFocus={(e) => e.target.select()} /></label><button className="pp-outline" disabled={busy} onClick={() => run(async () => { await navigator.clipboard.writeText(key); updateAccountInfo({ backupSavedAt: Date.now() }); setError('密钥已复制，请妥善保存。'); })}>复制密钥</button></div>}

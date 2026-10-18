@@ -87,13 +87,15 @@
 .pp-friend h3 span{font-size:10px;font-weight:400;color:#8d7f73;border-left:1px solid var(--line);padding-left:13px}
 .pp-friend p{font-size:12px;margin:0 0 7px;color:#7f756d}.pp-friend small{font-size:10px;color:#9a8d81}
 /* 全局 reset 会把 dialog 的 UA `margin:auto` 一起清掉，导致弹层贴在屏幕角落，这里显式恢复居中 */
-.pp-dialog{position:fixed;inset:0;margin:auto;display:none;flex-direction:column;padding:0;max-width:calc(100vw - 32px);width:470px;max-height:min(84svh,760px);border:1px solid rgba(255,255,255,.8);border-radius:15px;background:#f7f5f2;color:var(--text);box-shadow:0 22px 90px rgba(69,57,50,.13);overscroll-behavior:contain}
+.pp-dialog{position:fixed;inset:0;margin:auto;display:none;flex-direction:column;padding:0;max-width:calc(100vw - 32px);width:466px;max-height:min(84svh,760px);border:1px solid rgba(119,106,95,.13);border-radius:10px;background:#f7f4ef;color:var(--text);box-shadow:0 18px 44px -20px rgba(69,57,50,.26),0 2px 6px rgba(69,57,50,.04);overscroll-behavior:contain}
 .pp-dialog[open]{display:flex;animation:pp-dialog-in .26s cubic-bezier(.22,.61,.36,1) both}
+.pp-dialog.is-closing{animation:pp-dialog-out .2s cubic-bezier(.4,0,.9,1) both;pointer-events:none}
+.pp-dialog.is-closing::backdrop{animation:pp-fade-out .2s ease both}
 .pp-dialog::backdrop{background:rgba(64,54,49,.17);backdrop-filter:blur(7px);animation:pp-fade-in .26s ease both}
-.pp-dialog-inner{padding:38px;position:relative;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
-.pp-close{position:absolute;top:13px;right:13px;z-index:2;padding:6px;display:flex;border:0;background:rgba(247,245,242,.86);backdrop-filter:blur(6px);color:#92867b!important;border-radius:50%;transition:background .18s ease,color .18s ease}
+.pp-dialog-inner{padding:32px 34px 34px;position:relative;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.pp-close{position:absolute;top:13px;right:13px;z-index:2;padding:6px;display:flex;border:0;background:rgba(247,244,239,.84);backdrop-filter:blur(6px);color:#92867b!important;border-radius:50%;transition:background .18s ease,color .18s ease}
 .pp-close:hover{background:rgba(119,106,95,.1);color:var(--text)!important}
-.pp-dialog h2{font-size:23px;font-weight:400;margin:10px 0 23px;line-height:1.6}
+.pp-dialog h2{font-family:'Songti SC','STSong','SimSun',serif;font-size:23px;font-weight:400;margin:4px 0 20px;line-height:1.45;letter-spacing:.045em;color:#494440}
 .pp-dialog label{display:block;font-size:11px;margin:20px 0;color:var(--muted)}
 .pp-dialog input,.pp-dialog textarea{display:block;margin-top:9px;font:inherit;font-size:14px;color:var(--text);border:1px solid var(--line);background:rgba(255,255,255,.45);padding:12px 14px;width:100%;border-radius:6px;resize:vertical;outline-color:#9b8ec7;line-height:1.7}
 .pp-dialog input:disabled{cursor:not-allowed}
@@ -114,10 +116,47 @@
 .pp-compare-names{text-align:center;font-size:18px;margin:0 0 30px}.pp-compare-names span{font-size:11px;margin:0 20px;color:var(--muted)}
 @keyframes pp-enter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pp-dialog-in{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes pp-dialog-out{from{opacity:1;transform:none}to{opacity:0;transform:translateY(7px) scale(.992)}}
 @keyframes pp-fade-in{from{opacity:0}to{opacity:1}}
+@keyframes pp-fade-out{from{opacity:1}to{opacity:0}}
 @keyframes pp-panel-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pp-symbol-enter{from{opacity:0;filter:blur(4px);transform:translateY(3px)}to{opacity:.9;filter:blur(0);transform:translateY(0)}}
 @keyframes pp-breathe{from{transform:scale(.96) rotate(-4deg)}to{transform:scale(1.045) rotate(4deg)}}
+/* 身份与备份：一屏两个入口。身份只作名片式摘要，具体流程收进二级页 */
+.pp-account-head{display:flex;align-items:center;gap:15px}
+.pp-account-mark{width:42px;height:42px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:50%;color:#7f7291;background:radial-gradient(circle at 36% 30%,#fff,rgba(155,142,199,.15) 62%,rgba(196,165,137,.12));box-shadow:inset 0 0 0 1px rgba(155,142,199,.16)}
+.pp-account-id{min-width:0;flex:1}
+.pp-account-label{display:flex;align-items:center;gap:8px;margin:0;font-size:10px;letter-spacing:.1em;color:#9a8d81}
+.pp-account-state{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:9px;letter-spacing:.05em;color:#a3978b;white-space:nowrap}
+.pp-account-state i{width:3px;height:3px;border-radius:50%;background:#b3a7c4}
+.pp-account-name{margin:5px 0 0;font-family:'Songti SC','STSong','SimSun',serif;font-size:24px;font-weight:400;line-height:1.3;letter-spacing:.02em;overflow-wrap:anywhere}
+.pp-account-code{display:flex;align-items:baseline;gap:6px;margin:6px 0 0;font-size:9px;letter-spacing:.13em;color:#a89c90}
+.pp-account-code span{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;letter-spacing:.14em;color:#8a7d72}
+.pp-account-note{margin:15px 0 0;font-size:11px;line-height:1.95;color:#8b8178}
+.pp-account-entries{margin-top:14px;border-top:1px solid var(--line)}
+.pp-entry{display:flex;align-items:center;gap:14px;width:100%;padding:16px 0;border:0;background:none;text-align:left;color:inherit}
+.pp-entry:not(:last-child){border-bottom:1px solid var(--line)}
+.pp-entry>span{flex:1;min-width:0}
+.pp-entry strong{display:block;font-size:13.5px;font-weight:400;letter-spacing:.03em;transition:color .18s ease}
+.pp-entry small{display:block;margin-top:6px;font-size:11px;color:#968c82;line-height:1.7}
+.pp-entry>svg{margin-left:auto;flex-shrink:0;color:#ada298;transition:transform .22s ease,color .18s ease}
+.pp-entry:hover strong{color:#6a5b7c}
+.pp-entry:hover>svg{transform:translateX(3px);color:#8b7d9e}
+.pp-back{display:inline-flex;align-items:center;gap:5px;margin:0 0 18px;padding:0;border:0;background:none;color:#968c82!important;font-size:10.5px!important;letter-spacing:.04em}
+.pp-back:hover{color:var(--text)!important}
+.pp-flow-title{margin:0 0 8px;font-size:11.5px;font-weight:400;letter-spacing:.07em;color:#8d8279}
+.pp-account-help{margin:0 0 4px;font-size:10.5px;line-height:1.9;color:#948a80}
+.pp-account .pp-account-input{display:block;width:100%;margin:13px 0 0;padding:10px 12px;border:1px solid rgba(119,106,95,.18);border-radius:5px;background:rgba(255,255,255,.34);font:inherit;font-size:11.5px;line-height:1.75;color:var(--text);outline:none;resize:none;transition:border-color .18s ease,background .18s ease,box-shadow .18s ease}
+.pp-account .pp-account-input::placeholder{color:#b9aea4;letter-spacing:.06em}
+.pp-account .pp-account-input:focus{border-color:rgba(155,142,199,.46);background:rgba(255,255,255,.6);box-shadow:0 0 0 3px rgba(155,142,199,.07)}
+.pp-account .pp-account-key-input{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em}
+.pp-account .pp-key{display:block;width:100%;margin:14px 0 0;padding:13px 15px;border:0;border-left:2px solid rgba(155,142,199,.38);border-radius:0;background:rgba(255,255,255,.34);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;line-height:1.95;letter-spacing:.07em;color:#6f655c;resize:none;overflow-wrap:anywhere;outline:none;cursor:text}
+.pp-account .pp-key:focus{background:rgba(255,255,255,.58)}
+.pp-account-links{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin-top:15px}
+.pp-account-links .pp-text-button{font-size:10.5px!important;padding:4px 0}
+.pp-account-links .pp-outline,.pp-account-links .pp-primary{min-height:36px;padding:8px 16px;font-size:11px!important;gap:7px}
+.pp-account .pp-check{margin-top:13px;font-size:10.5px!important;color:#948a80!important;line-height:1.85}
+.pp-account-message{margin:14px 0 0;font-size:10.5px;line-height:1.85;color:#8a6f63;overflow-wrap:anywhere}
 @media(min-width:1300px){.pp-header{padding-top:39px}.pp-identity{padding-top:38px;padding-bottom:38px}.pp-portrait{margin-top:35px;min-height:370px}.pp-field{width:330px;height:330px}}
 @media(max-width:650px){.pp-page{padding:0 23px}.pp-sample{font-size:9px;padding:8px 12px}.pp-header{padding:23px 0 20px}.pp-brand{font-size:31px}.pp-brand span{display:none}.pp-backup{font-size:11px!important}.pp-identity{padding:22px 0 27px;gap:0 10px}.pp-person-head{gap:15px}.pp-identity h1{font-size:27px}.pp-mark{width:50px;height:50px}.pp-bio{padding-left:0;margin-top:20px;font-size:13px;line-height:1.9}.pp-tabs{gap:29px}.pp-tabs button{font-size:12px;padding-bottom:13px}.pp-portrait{grid-template-columns:1fr;margin-top:20px}.pp-portrait-art{min-height:287px}.pp-field{width:278px;height:278px}.pp-art-label{top:14px;left:15px;right:15px;font-size:9px}.pp-art-date{bottom:13px}.pp-portrait-copy{padding:29px 3px 22px;position:relative}.pp-portrait-copy h2{font-size:48px;margin:10px 0 17px;gap:18px}.pp-portrait-copy h2 span{font-size:9px;max-width:none}.pp-subtitle{font-size:16px}.pp-description{max-width:none;margin-bottom:21px;font-size:12px;line-height:2}.pp-primary{min-height:43px;padding:11px 17px}.pp-change{display:inline-flex;margin-left:18px;margin-top:0;font-size:11px!important;gap:5px}.pp-portrait-foot{align-items:flex-start;gap:6px;flex-direction:column;padding-top:3px;padding-bottom:17px}.pp-portrait-foot>span{font-size:10px}.pp-portrait-foot .pp-text-button{padding:5px 0}.pp-history-peek{padding-top:22px}.pp-past-grid{gap:16px}.pp-past{gap:9px;padding:10px 0 17px}.pp-past-symbol{width:35px;height:35px;font-size:20px}.pp-past strong{font-size:13px}.pp-past small{font-size:9px}.pp-past>svg{width:13px}.pp-page-footer{font-size:10px;margin-top:24px}.pp-section-head h2{font-size:21px}.pp-section-head p{font-size:11px}.pp-history,.pp-friends{padding-top:28px}.pp-record{gap:12px;flex-wrap:wrap;padding:23px 0}.pp-record-date{width:100%;font-size:10px}.pp-record-info p{font-size:11px}.pp-record-info h3{font-size:15px;gap:10px}.pp-friend{gap:12px;flex-wrap:wrap;padding:24px 0}.pp-friend>.pp-outline{margin-left:62px;font-size:11px!important;padding:8px 14px;min-height:37px}.pp-friends>.pp-section-head{align-items:flex-start;gap:10px}.pp-friends>.pp-section-head .pp-outline{font-size:10px!important;padding:8px 10px;gap:5px;white-space:nowrap}.pp-dialog-inner{padding:34px 24px 28px}.pp-dialog h2{font-size:21px}.pp-choose{padding:17px 0}.pp-backup svg{width:15px}}
 @media(prefers-reduced-motion:reduce){.personal-space *,.personal-space *::before,.personal-space *::after{animation:none!important;transition:none!important}}
@@ -154,3 +193,4 @@
 .pp-friend-info,.pp-record-info{min-width:0;overflow-wrap:anywhere}.pp-bio,.pp-dialog-description{overflow-wrap:anywhere;white-space:pre-line}
 @media(max-width:650px){.pp-narrow{padding-inline:25px}.pp-create{padding-top:28px}.pp-create h1{font-size:27px}.pp-record>.pp-row-actions{margin-left:auto}.pp-friend .pp-row-actions{width:100%;padding-left:62px}.pp-invite-strip{gap:5px}.pp-status{font-size:11px}}
 @media(max-width:650px){.pp-header{gap:10px}.pp-header-lead{gap:13px}.pp-exit{font-size:11px!important;padding:7px 12px 7px 10px;gap:5px}.pp-exit svg{width:13px;height:13px}}
+@media(max-width:650px){.pp-dialog-inner{padding:26px 22px 28px}.pp-dialog h2{font-size:22px;margin:4px 0 18px}.pp-account-head{gap:13px}.pp-account-mark{width:38px;height:38px}.pp-account-name{font-size:22px}.pp-account-note{font-size:10.5px}.pp-account-label{font-size:9.5px}.pp-entry{padding:14px 0}}

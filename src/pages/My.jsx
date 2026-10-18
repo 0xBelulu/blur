@@ -132,10 +132,7 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
           <button className="pp-primary" disabled={busy || !choice} onClick={() => run(() => selectPortrait(records.find((r) => r.id === choice), visible), true)}>{busy ? '正在保存…' : '就用这一份'}<Check size={14} /></button>
           {!account.registered && <button className="pp-text-button pp-spaced" onClick={onCreateIdentity}>创建身份<ArrowRight size={14} /></button>}
         </>}
-        {modal.type === 'identity' && <>
-          {!account.registered && <div className="pp-identity-intro"><p>无需邮箱和密码。给自己一个名字，就可以把朋友留在这里。</p><button className="pp-primary" onClick={onCreateIdentity}>创建我的身份<ArrowRight size={14} /></button></div>}
-          <AccountPanel key={account.id || 'guest'} account={account} />
-        </>}
+        {modal.type === 'identity' && <AccountPanel key={account.id || 'guest'} account={account} onCreate={onCreateIdentity} />}
         {modal.type === 'record' && (managed ? <>
           <p className="pp-dialog-description">{date(managed)} · {managed.answerCount} 题 · {recordArchetype(managed)?.title}</p>
           <ShareControls record={managed} />

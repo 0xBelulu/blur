@@ -1,5 +1,6 @@
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { X } from 'lucide-react';
+import { ModalDismiss } from './modalDismiss';
 
 export function PortraitMark({ color = [180, 185, 195] }) {
   return <span className="pp-mark" style={{ '--ink': color.join(',') }} aria-hidden="true"><i /><i /><i /></span>;
@@ -14,7 +15,32 @@ export function PortraitField({ profile }) {
 
 export function PersonalModal({ title, onClose, busy = false, children }) {
   const dialog = useRef(null);
+  const [closing, setClosing] = useState(false);
+  const closingRef = useRef(false);
+  const finishedRef = useRef(false);
+  const afterClose = useRef(null);
+  const closeRef = useRef(onClose);
   const label = useId();
+
+  useEffect(() => { closeRef.current = onClose; }, [onClose]);
+
+  const finish = () => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    closeRef.current();
+    const after = afterClose.current;
+    afterClose.current = null;
+    if (after) after();
+  };
+  const dismiss = (after) => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    afterClose.current = typeof after === 'function' ? after : null;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { finish(); return; }
+    setClosing(true);
+  };
+  const close = () => { if (!busy) dismiss(); };
+
   useEffect(() => {
     const node = dialog.current;
     node.showModal();
@@ -22,12 +48,23 @@ export function PersonalModal({ title, onClose, busy = false, children }) {
     document.body.style.overflow = 'hidden';
     return () => { node.close(); document.body.style.overflow = previous; };
   }, []);
-  return <dialog ref={dialog} className="pp-dialog" aria-labelledby={label}
-    onCancel={(e) => { e.preventDefault(); if (!busy) onClose(); }}
-    onClick={(e) => { if (e.target === dialog.current && !busy) onClose(); }}>
-    <button className="pp-close" aria-label="关闭" disabled={busy} onClick={onClose}><X size={18} /></button>
+  // 退场动画结束再卸载；超时兜底防止动画被 --reduced-motion 之类的情况吞掉
+  useEffect(() => {
+    if (!closing) return;
+    const node = dialog.current;
+    const onEnd = (event) => { if (event.animationName === 'pp-dialog-out') finish(); };
+    node.addEventListener('animationend', onEnd);
+    const timer = setTimeout(finish, 280);
+    return () => { node.removeEventListener('animationend', onEnd); clearTimeout(timer); };
+  }, [closing]);
+
+  return <dialog ref={dialog} className={`pp-dialog${closing ? ' is-closing' : ''}`} aria-labelledby={label}
+    onCancel={(event) => { event.preventDefault(); close(); }}
+    onClick={(event) => { if (event.target === dialog.current) close(); }}>
+    <button className="pp-close" aria-label="关闭" disabled={busy} onClick={close}><X size={18} /></button>
     <div className="pp-dialog-inner">
-      <h2 id={label}>{title}</h2>{children}
+      <h2 id={label}>{title}</h2>
+      <ModalDismiss.Provider value={dismiss}>{children}</ModalDismiss.Provider>
     </div>
   </dialog>;
 }

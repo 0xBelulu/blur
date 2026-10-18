@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { Fingerprint, Download, UserRound } from 'lucide-react';
-import GlassButton from './GlassButton';
-import { saveNickname, exportRecoveryKey, restoreIdentity } from '../utils/cloud';
+import { ArrowLeft, ArrowRight, ArrowUpRight, Download, Fingerprint } from 'lucide-react';
+import { useModalDismiss } from './modalDismiss';
+import { exportRecoveryKey, restoreIdentity } from '../utils/cloud';
 import { updateAccountInfo } from '../utils/identity';
 import { friendCode } from '../utils/people';
 
-export default function AccountPanel({ account, showNickname = false }) {
-  const [draftNickname, setDraftNickname] = useState(null);
-  const nickname = draftNickname ?? account.nickname ?? '';
+export default function AccountPanel({ account, onCreate, initialView = 'menu' }) {
+  const dismiss = useModalDismiss();
+  const [view, setView] = useState(initialView);
   const [recoveryKey, setRecoveryKey] = useState('');
   const [inputKey, setInputKey] = useState('');
   const [acknowledged, setAcknowledged] = useState(false);
@@ -19,60 +19,77 @@ export default function AccountPanel({ account, showNickname = false }) {
     try { await action(); } catch (error) { setMessage(error.message); }
     finally { setBusy(false); }
   };
-  return <section className="border border-blur-border/60 bg-white/40 p-5 sm:p-6 space-y-5 rounded-none sm:rounded-sm">
-    <div className="flex gap-4 items-start">
-      <span className="border border-blur-border/60 bg-white/60 p-2.5 text-blur-accent shrink-0"><Fingerprint size={22} /></span>
-      <div className="min-w-0"><p className="text-[10px] tracking-wide text-blur-text-light">留在这里的身份</p>
-        <h2 className="text-base font-medium mt-1">{account.nickname || '未命名身份'}</h2>
-        {account.friendCode && <p className="text-xs font-mono text-blur-text-muted mt-0.5">好友码：{friendCode(account.friendCode)}</p>}
-        <p className="text-xs text-blur-text-muted mt-2 leading-relaxed">{account.registered ? '这个浏览器记得你。换设备时，用恢复密钥找回身份。' : '目前仅在这个浏览器使用。可以先创建身份，或用密钥找回已有身份。'}</p>
+  const openBackup = () => {
+    setView('backup');
+    if (!recoveryKey) run(async () => { setRecoveryKey(await exportRecoveryKey()); });
+  };
+
+  return <section className="pp-account">
+    {view === 'menu' && <>
+      <header className="pp-account-head">
+        <span className="pp-account-mark" aria-hidden="true"><Fingerprint size={18} strokeWidth={1.5} /></span>
+        <div className="pp-account-id">
+          <p className="pp-account-label">留在这里的身份<span className="pp-account-state"><i />{account.registered ? '已连接云端' : '仅在本机'}</span></p>
+          <h3 className="pp-account-name">{account.nickname || '未命名身份'}</h3>
+          {account.friendCode && <p className="pp-account-code">好友码<span>{friendCode(account.friendCode)}</span></p>}
+        </div>
+      </header>
+      <p className="pp-account-note">{account.registered ? '这个浏览器记得你。换设备时，用恢复密钥把身份带过去。' : '目前只在这个浏览器里。创建身份后朋友能找到你，也可以用密钥找回别的设备上的身份。'}</p>
+      <div className="pp-account-entries">
+        {!account.registered && onCreate && <button className="pp-entry" onClick={() => (dismiss ? dismiss(onCreate) : onCreate())}>
+          <span><strong>创建我的身份</strong><small>一个名字就够了，不用邮箱和密码</small></span><ArrowRight size={15} />
+        </button>}
+        {account.registered && <button className="pp-entry" onClick={openBackup}>
+          <span><strong>保存恢复密钥</strong><small>把身份的钥匙存到别处</small></span><ArrowRight size={15} />
+        </button>}
+        <button className="pp-entry" onClick={() => { setMessage(''); setView('restore'); }}>
+          <span><strong>{account.registered ? '换用另一个身份' : '用恢复密钥找回'}</strong><small>从另一台设备保存的密钥恢复</small></span><ArrowUpRight size={15} />
+        </button>
       </div>
-    </div>
-    {showNickname && <form className="flex flex-wrap items-end gap-2" onSubmit={(event) => {
-      event.preventDefault(); run(async () => { await saveNickname(nickname); setDraftNickname(null); setMessage(account.registered ? '昵称已保存到这个身份' : '昵称已保存在本机'); });
-    }}>
-      <label className="text-xs text-blur-text-muted flex-1 min-w-40">展示昵称（选填）
-        <input value={nickname} onChange={(event) => setDraftNickname(event.target.value)} maxLength={24}
-          placeholder="分享时也可以再改" className="mt-2 block w-full border border-blur-border bg-white/40 px-3 py-2 text-blur-text outline-blur-accent text-xs" />
-      </label>
-      <button disabled={busy} className="border border-blur-border/60 bg-white/50 px-3.5 py-2 text-xs cursor-pointer disabled:opacity-50 flex items-center gap-1.5"><UserRound size={13} />保存昵称</button>
-    </form>}
-    <div className="border-t border-blur-border/40 pt-4 space-y-4">
-      {account.registered && <div className="space-y-2"><h3 className="text-xs font-medium tracking-wide text-blur-text">保存恢复密钥</h3>
-        <p className="text-xs text-blur-text-muted leading-relaxed">恢复密钥用于换设备或找回云端画像。相当于身份钥匙，请妥善保存。</p>
-        <GlassButton variant="secondary" disabled={busy} onClick={() => run(async () => { setRecoveryKey(await exportRecoveryKey()); })}>显示我的恢复密钥</GlassButton>
-        {recoveryKey && <div className="space-y-2">
-          <textarea aria-label="我的恢复密钥" readOnly value={recoveryKey} onFocus={(event) => event.target.select()}
-            className="w-full rounded-xl bg-white/60 border border-blur-border p-3 text-xs font-mono break-all" rows={3} />
-          <div className="flex flex-wrap gap-3 text-xs">
-            <button className="text-blur-accent underline cursor-pointer" onClick={() => run(async () => {
-              await navigator.clipboard.writeText(recoveryKey); updateAccountInfo({ backupSavedAt: Date.now() }); setMessage('恢复密钥已复制，请自行妥善保存');
-            })}>复制密钥</button>
-            <button className="text-blur-accent underline cursor-pointer inline-flex items-center gap-1" onClick={() => {
-              const url = URL.createObjectURL(new Blob([recoveryKey], { type: 'text/plain;charset=utf-8' }));
-              const link = document.createElement('a'); link.href = url; link.download = 'blur-identity-key.txt'; link.click();
-              URL.revokeObjectURL(url);
-              updateAccountInfo({ backupSavedAt: Date.now() });
-            }}><Download size={12} />下载密钥文件</button>
-          </div>
-        </div>}
-      </div>}
-      <form className="border-t border-blur-border pt-4 space-y-3" onSubmit={(event) => {
-        event.preventDefault(); run(async () => { await restoreIdentity(inputKey); setInputKey(''); setMessage('身份已恢复，云端画像已列出；本机画像没有上传'); });
-      }}>
-        <h3 className="text-sm font-medium">恢复已有身份</h3>
-        <p className="text-xs text-blur-text-muted leading-relaxed">输入另一台设备保存的密钥。将切换到那个身份；本机画像保留，云端画像按需下载。</p>
-        <textarea aria-label="输入恢复密钥" value={inputKey} onChange={(event) => setInputKey(event.target.value)}
-          spellCheck={false} autoCapitalize="off" autoComplete="off" placeholder="BLUR-…" rows={3}
-          className="w-full rounded-xl bg-white/40 border border-blur-border p-3 text-xs font-mono outline-blur-accent" />
-        {account.registered && <label className="flex gap-2 items-start text-xs text-blur-text-muted leading-relaxed">
-          <input type="checkbox" checked={acknowledged} onChange={(event) => setAcknowledged(event.target.checked)} className="mt-1" />
-          我已保存当前身份的恢复密钥。原身份的云端画像仍需用原密钥管理。
-        </label>}
+      {message && <p role="status" className="pp-account-message">{message}</p>}
+    </>}
+
+    {view === 'restore' && <div className="pp-flow">
+      {initialView === 'menu' && <button className="pp-back" onClick={() => setView('menu')}><ArrowLeft size={13} />返回</button>}
+      <h3 className="pp-flow-title">恢复已有身份</h3>
+      <p className="pp-account-help">粘贴另一台设备保存的密钥。会切换到那个身份，本机画像仍然保留。</p>
+      <textarea aria-label="输入恢复密钥" value={inputKey} onChange={(event) => setInputKey(event.target.value)}
+        spellCheck={false} autoCapitalize="off" autoComplete="off" placeholder="BLUR-…" rows={2}
+        className="pp-account-input pp-account-key-input" />
+      {account.registered && <label className="pp-check">
+        <input type="checkbox" checked={acknowledged} onChange={(event) => setAcknowledged(event.target.checked)} />
+        我已保存当前身份的密钥，之后仍可用它找回。
+      </label>}
+      <div className="pp-account-links">
         <button disabled={busy || !inputKey.trim() || (account.registered && !acknowledged)}
-          className="border border-blur-border/60 bg-white/50 px-4 py-2 text-xs cursor-pointer disabled:opacity-40">{busy ? '正在验证…' : '恢复这个身份'}</button>
-      </form>
-    </div>
-    {message && <p role="status" className="text-xs text-blur-text-muted leading-relaxed">{message}</p>}
+          className="pp-primary" onClick={() => run(async () => {
+            await restoreIdentity(inputKey); setInputKey(''); setMessage('身份已恢复，云端画像已列出；本机画像没有上传');
+          })}>{busy ? '正在验证…' : '恢复这个身份'}<ArrowRight size={14} /></button>
+      </div>
+      {message && <p role="status" className="pp-account-message">{message}</p>}
+    </div>}
+
+    {view === 'backup' && <div className="pp-flow">
+      {initialView === 'menu' && <button className="pp-back" onClick={() => setView('menu')}><ArrowLeft size={13} />返回</button>}
+      <h3 className="pp-flow-title">恢复密钥</h3>
+      <p className="pp-account-help">这是这个身份的钥匙。换设备时用它找回；只留给自己，别发给别人。</p>
+      {!recoveryKey && <p className="pp-account-message">{busy ? '正在生成…' : '还没有取到密钥。'}</p>}
+      {recoveryKey && <>
+        <textarea aria-label="我的恢复密钥" readOnly value={recoveryKey} rows={4} spellCheck={false}
+          className="pp-key" onFocus={(event) => event.target.select()} />
+        <div className="pp-account-links">
+          <button className="pp-text-button" onClick={() => run(async () => {
+            await navigator.clipboard.writeText(recoveryKey); updateAccountInfo({ backupSavedAt: Date.now() }); setMessage('密钥已复制，请自己存好');
+          })}>复制密钥</button>
+          <button className="pp-text-button" onClick={() => {
+            const url = URL.createObjectURL(new Blob([recoveryKey], { type: 'text/plain;charset=utf-8' }));
+            const link = document.createElement('a'); link.href = url; link.download = 'blur-identity-key.txt'; link.click();
+            URL.revokeObjectURL(url);
+            updateAccountInfo({ backupSavedAt: Date.now() });
+          }}><Download size={12} />下载文件</button>
+        </div>
+      </>}
+      {message && <p role="status" className="pp-account-message">{message}</p>}
+    </div>}
   </section>;
 }
