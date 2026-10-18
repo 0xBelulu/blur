@@ -80,7 +80,26 @@
 
 ---
 
+## 十、代码质量优化与缺陷修复 (2026-10-18)
+
+- [x] **TD-31** `QuestionBank.jsx` 孤立死代码清理 — 该组件定义了 232 行代码但在项目中完全未被引用（题目浏览功能已统一由 `src/pages/Questions.jsx` 承担） → 已安全删除文件，并更新 AGENTS.md 组件清单为 10 个。
+- [x] **TD-32** `configManager.js` 孤立死代码清理 — 早期留存的配置管理单例在项目中无任何消费方，评分权重逻辑已内聚于 `blurEngine.js` → 已安全删除文件。
+- [x] **TD-33** `weightConfig.js` 重复硬编码权重与单源不一致隐患 — `weightConfig.js` 与 `blurEngine.js` 各自维护了一份 `rankWeights` / `scaleWeights` 数组 → 改为直接从 `blurEngine.js` 导入，消除配置漂移风险。
+- [x] **TD-34** `historyStorage.js` 清空记录失效 bug — `writeRecords` 原循环条件为 `while (current.length > 0)`，传入空数组 `[]` 时循环直接跳过导致 `clearHistoryRecords()` 无法重置本地存储 → 已修复边界判断，空数组时安全写入 `"[]"`。
+- [x] **TD-35** `historyStorage.js` 异常与配额兜底增强 — 引入 `safeClone` 安全深拷贝，并在 `localStorage` 超额异常时自动淘汰最旧历史记录，确保用户最新的测验画像绝不丢失。
+- [x] **TD-36** `Result.jsx` 缺失双原型交融卡片 — `blurEngine.js` 计算了 `dualSynergy` 并在 `dualArchetypes.js` 中撰写了详尽的双原型张力与叙事，但在结果页未呈现 → 已在双峰共振时渲染专属的双原型交融卡片。
+- [x] **TD-37** `Result.jsx` 缺少分享/复制画像能力 — 用户测试完成后无法分享画像配方摘要 → 新增“分享画像”按钮，支持原生 Web Share API 与剪贴板回退，附带交互反馈。
+- [x] **TD-38** `Test.jsx` 随机洗牌算法偏差与题库交错优化 — 替换不均匀的 `sort(() => Math.random() - 0.5)` 为标准的 Fisher-Yates 洗牌算法，并优化最后一题跳过时的兜底防卡死逻辑。
+- [x] **TD-39** `Test.jsx` 键盘快速作答与无障碍强化 — 支持数字键 1-5 快速选择量表值、数字/字母键选择选项、Enter 下一题、方向键回退，并为选项与量表按钮补充完整的 `aria-pressed` 与 `aria-label`。
+- [x] **TD-40** `App.jsx` 路由状态同步与浏览器返回支持 — 支持根据 URL hash 初始化视图并监听 `popstate`，在历史记录、关于等子页面点击物理/浏览器返回键时可自然回退，并增加了组件卸载时定时器清理机制。
+- [x] **TD-41** Vite 打包分包优化 — 在 Vite 配置中配置 `manualChunks` 将 `framer-motion`、`lucide-react`、`react` 拆分为独立 vendor chunk，主包体积由 529.75 kB 降至 210 kB，彻底消除 chunk 体积警告并优化长期缓存。
+- [x] **TD-42** 自动化测试套件建立 — 新建 `scripts/unit-tests.js` 单元测试套件，并在 `package.json` 中配置 `npm test`，联动 E2E 测试共 38 项自动化测试全部通过。
+
+---
+
 ## 修复验证
 
 - ✅ `npm run lint` — 0 errors, 0 warnings
-- ✅ `npm run build` — 构建成功（386.76 kB gzipped: 124.27 kB）
+- ✅ `npm test` — 38 tests passed (13 unit tests + 25 E2E specification tests)
+- ✅ `npm run build` — 构建成功（主包 210 kB，无警告）
+- ✅ `node scripts/balance-audit.js --trials 5000` — 原型分布平衡

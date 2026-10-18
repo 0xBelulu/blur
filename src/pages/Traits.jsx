@@ -84,6 +84,7 @@ export default function Traits({ onBack }) {
                       onClick={() =>
                         setOpenTraitGroup(openTraitGroup === key ? null : key)
                       }
+                      aria-expanded={openTraitGroup === key}
                       className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-blur-surface-hover/20 transition-colors cursor-pointer"
                     >
                       <span className="text-sm font-medium text-blur-text">

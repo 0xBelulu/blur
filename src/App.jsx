@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Landing from "./pages/Landing";
 import Test from "./pages/Test";
@@ -40,15 +40,39 @@ const pageVariants = {
 const pageTransition = { duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] };
 
 export default function App() {
-  const [screen, setScreen] = useState("landing");
+  const [screen, setScreen] = useState(() => {
+    if (typeof window === "undefined") return "landing";
+    const hash = window.location.hash.replace("#", "");
+    return ["about", "archetypes", "traits", "questions", "history"].includes(hash) ? hash : "landing";
+  });
   const [result, setResult] = useState(null);
   const [direction, setDirection] = useState(1);
   const [historyRecords, setHistoryRecords] = useState(() => getHistoryRecords());
   const loadingTimerRef = useRef(null);
 
-  const navigate = useCallback((nextScreen) => {
+  const navigate = useCallback((nextScreen, pushHistory = true) => {
     setDirection(screenOrder.indexOf(nextScreen) > screenOrder.indexOf(screen) ? 1 : -1);
     setScreen(nextScreen);
+    if (pushHistory && typeof window !== "undefined") {
+      const hash = nextScreen === "landing" ? window.location.pathname + window.location.search : `#${nextScreen}`;
+      window.history.pushState({ screen: nextScreen }, "", hash);
+    }
+  }, [screen]);
+
+  useEffect(() => {
+    const handlePopState = (e) => {
+      const target = e.state?.screen || (typeof window !== "undefined" ? window.location.hash.replace("#", "") : "") || "landing";
+      if (screenOrder.includes(target) && target !== "loading") {
+        setDirection(screenOrder.indexOf(target) > screenOrder.indexOf(screen) ? 1 : -1);
+        setScreen(target);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
+    };
   }, [screen]);
 
   const handleStart = useCallback(() => {

@@ -117,6 +117,7 @@ export default function Questions({ onBack }) {
                   >
                     <button
                       onClick={() => setOpenId(isOpen ? null : q.id)}
+                      aria-expanded={isOpen}
                       className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-blur-surface-hover/20 transition-colors cursor-pointer"
                     >
                       <div className="flex items-center gap-2 min-w-0">

@@ -17,15 +17,44 @@ function readRecords() {
   }
 }
 
+function safeClone(data) {
+  try {
+    if (typeof structuredClone === "function") {
+      return structuredClone(data);
+    }
+  } catch {
+    /* fallback to JSON serialization */
+  }
+  return JSON.parse(JSON.stringify(data));
+}
+
 function writeRecords(records) {
   if (!canUseStorage()) return false;
 
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-    return true;
-  } catch {
-    return false;
+  if (records.length === 0) {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, "[]");
+      return true;
+    } catch {
+      return false;
+    }
   }
+
+  let current = records;
+  while (current.length > 0) {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+      return true;
+    } catch {
+      // If quota exceeded, try dropping the oldest record and retry
+      if (current.length > 1) {
+        current = current.slice(0, -1);
+      } else {
+        return false;
+      }
+    }
+  }
+  return false;
 }
 
 export function getHistoryRecords() {
@@ -38,8 +67,8 @@ export function saveHistoryRecord(answers, result) {
     createdAt: Date.now(),
     engineVersion: ENGINE_VERSION,
     questionVersion: QUESTION_VERSION,
-    answers: structuredClone(answers),
-    result: structuredClone(result),
+    answers: safeClone(answers),
+    result: safeClone(result),
   };
 
   const records = [record, ...readRecords()].slice(0, 30);

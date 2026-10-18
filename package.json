@@ -7,6 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "test": "node scripts/unit-tests.js && node scripts/verify-e2e.js",
+    "audit:balance": "node scripts/balance-audit.js --trials 5000",
+    "audit:exposure": "node scripts/analyze-exposure.js",
     "preview": "vite preview"
   },
   "dependencies": {

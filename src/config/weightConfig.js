@@ -10,16 +10,18 @@
  * - 权重调整应保持相对比例关系，避免极端值
  */
 
+import { rankWeights, scaleWeights } from "../utils/blurEngine.js";
+
 export const WEIGHT_CONFIG = {
   rankWeights: {
     description: "排序题权重，对应 rankOrder 中的位置索引 (0=最像:+1.0, 1=第二:+0.4, 2=第三:0.0, 3=最不像:-0.6)",
-    values: [1.0, 0.4, 0.0, -0.6],
+    values: rankWeights,
     defaultValue: 0,
   },
 
   scaleWeights: {
     description: "量表题权重，对应用户选择的量表值（以 3 为基准的双向对称权重，1=完全不同意 … 5=完全同意）",
-    values: [0, -1.2, -0.6, 0.0, 0.6, 1.2],
+    values: scaleWeights,
     defaultValue: 0,
   },
 };

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ArrowLeft, ChevronRight, Clock3, Trash2 } from "lucide-react";
 import GlassButton from "../components/GlassButton";
 
@@ -13,6 +14,8 @@ function formatDate(timestamp) {
 }
 
 export default function History({ records, onBack, onOpen, onDelete, onClear }) {
+  const [confirmClear, setConfirmClear] = useState(false);
+
   return (
     <div className="min-h-[100svh] px-6 py-8 md:py-12">
       <div className="max-w-2xl mx-auto">
@@ -44,9 +47,33 @@ export default function History({ records, onBack, onOpen, onDelete, onClear }) 
           <>
             <div className="flex items-end justify-between mb-4">
               <p className="text-xs text-blur-text-muted">{records.length} 次记录 · 仅保存在当前设备</p>
-              <button onClick={onClear} className="text-xs text-blur-text-light hover:text-blur-accent transition-colors cursor-pointer">
-                清空全部
-              </button>
+              {confirmClear ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-red-400">确定清空？</span>
+                  <button
+                    onClick={() => {
+                      onClear();
+                      setConfirmClear(false);
+                    }}
+                    className="text-xs text-red-400 hover:text-red-300 font-medium underline cursor-pointer"
+                  >
+                    确定
+                  </button>
+                  <button
+                    onClick={() => setConfirmClear(false)}
+                    className="text-xs text-blur-text-light hover:text-blur-text cursor-pointer"
+                  >
+                    取消
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmClear(true)}
+                  className="text-xs text-blur-text-light hover:text-red-400 transition-colors cursor-pointer"
+                >
+                  清空全部
+                </button>
+              )}
             </div>
             <div className="space-y-3">
               {records.map((record) => (

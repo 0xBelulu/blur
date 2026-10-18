@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Eye, Sparkles } from "lucide-react";
 import { questions } from "../data/questions";
@@ -7,16 +7,19 @@ import GlassButton from "../components/GlassButton";
 
 const REQUIRED_COUNT = 10;
 
+function fisherYatesShuffle(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 function shuffleQuestions(questionList) {
-  const single = questionList
-    .filter((q) => q.type === "single" || !q.type)
-    .sort(() => Math.random() - 0.5);
-  const scale = questionList
-    .filter((q) => q.type === "scale")
-    .sort(() => Math.random() - 0.5);
-  const rank = questionList
-    .filter((q) => q.type === "rank")
-    .sort(() => Math.random() - 0.5);
+  const single = fisherYatesShuffle(questionList.filter((q) => q.type === "single" || !q.type));
+  const scale = fisherYatesShuffle(questionList.filter((q) => q.type === "scale"));
+  const rank = fisherYatesShuffle(questionList.filter((q) => q.type === "rank"));
 
   // 必做题（前10题）：按简单 → 复杂排列
   const requiredSingle = Math.min(Math.round(REQUIRED_COUNT * 0.6), single.length);
@@ -29,7 +32,7 @@ function shuffleQuestions(questionList) {
     ...rank.slice(0, requiredRank),
   ];
 
-  // 探索题（剩余30题）：3:1:1 配比交错
+  // 探索题（剩余题目）：3:1:1 配比交错
   const remainingSingle = single.slice(requiredSingle);
   const remainingScale = scale.slice(requiredScale);
   const remainingRank = rank.slice(requiredRank);
@@ -201,8 +204,15 @@ export default function Test({ onComplete }) {
       restoreState(newAnswers[nextIndex], shuffledQuestions[nextIndex]);
     } else {
       // 已经到最后一题
-      if (newAnswers.filter(Boolean).length >= REQUIRED_COUNT) {
+      const validCount = newAnswers.filter(Boolean).length;
+      if (validCount >= REQUIRED_COUNT) {
         finishTest(newAnswers);
+      } else {
+        const firstUnansweredIndex = shuffledQuestions.findIndex((_, idx) => !newAnswers[idx]);
+        if (firstUnansweredIndex !== -1 && firstUnansweredIndex !== currentIndex) {
+          setCurrentIndex(firstUnansweredIndex);
+          restoreState(newAnswers[firstUnansweredIndex], shuffledQuestions[firstUnansweredIndex]);
+        }
       }
     }
   };
@@ -234,6 +244,50 @@ export default function Test({ onComplete }) {
       finishTest(answers);
     }
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (isTransition) return;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      const key = e.key;
+
+      if (isScaleQuestion) {
+        if (["1", "2", "3", "4", "5"].includes(key)) {
+          setScaleValue(Number(key));
+          return;
+        }
+      } else if (isRankQuestion) {
+        if (["1", "2", "3", "4"].includes(key)) {
+          handleRankClick(Number(key) - 1);
+          return;
+        }
+      } else if (currentQuestion?.options) {
+        const optionKeys = ["a", "b", "c", "d"];
+        const numberKeys = ["1", "2", "3", "4"];
+        const lowerKey = key.toLowerCase();
+
+        let optIndex = optionKeys.indexOf(lowerKey);
+        if (optIndex === -1) optIndex = numberKeys.indexOf(key);
+
+        if (optIndex >= 0 && optIndex < currentQuestion.options.length) {
+          handleSelect(currentQuestion.options[optIndex]);
+          return;
+        }
+      }
+
+      if (key === "Enter" && canProceed()) {
+        e.preventDefault();
+        handleNext();
+      } else if (key === "ArrowLeft" && currentIndex > 0) {
+        e.preventDefault();
+        handlePrev();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  });
 
   const getQuestionLabel = () => {
     if (isExplorePhase) return `探索模式 · 第 ${currentIndex + 1} 题`;
@@ -366,8 +420,11 @@ export default function Test({ onComplete }) {
                   return (
                     <motion.button
                       key={option.id}
+                      type="button"
+                      aria-pressed={isRanked}
+                      aria-label={`选项 ${optionIndex + 1}: ${option.text}${isRanked ? ` (已排第${rankPos + 1})` : ""}`}
                       onClick={() => handleRankClick(optionIndex)}
-                      className={`w-full text-left flex items-center gap-3 glass rounded-xl px-4 py-3 transition-all duration-300 ${
+                      className={`w-full text-left flex items-center gap-3 glass rounded-xl px-4 py-3 transition-all duration-300 cursor-pointer ${
                         isRanked
                           ? "border-blur-accent/50 bg-blur-accent/5 shadow-[0_0_12px_rgba(180,185,195,0.15)]"
                           : "hover:border-blur-text-muted/30"
@@ -415,8 +472,11 @@ export default function Test({ onComplete }) {
                   {[1, 2, 3, 4, 5].map((value) => (
                     <button
                       key={value}
+                      type="button"
+                      aria-pressed={scaleValue === value}
+                      aria-label={`程度 ${value} (${value === 1 ? "完全不同意" : value === 5 ? "完全同意" : value})`}
                       onClick={() => handleScaleSelect(value)}
-                      className={`flex-1 h-14 rounded-xl flex items-center justify-center text-base font-bold transition-all duration-300 border-2 ${
+                      className={`flex-1 h-14 rounded-xl flex items-center justify-center text-base font-bold transition-all duration-300 border-2 cursor-pointer ${
                         scaleValue === value
                           ? "border-blur-accent bg-blur-accent/20 text-blur-accent shadow-[0_0_16px_rgba(180,185,195,0.25)] scale-105"
                           : "border-blur-border/60 glass text-blur-text-muted hover:border-blur-text-muted/40 hover:bg-blur-surface-hover"

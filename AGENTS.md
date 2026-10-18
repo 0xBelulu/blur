@@ -12,9 +12,9 @@
 | `npm run dev` | Dev server with HMR |
 | `npm run build` | Production build |
 | `npm run lint` | ESLint v10 (single command, no typecheck) |
+| `npm test` | Automated unit & E2E verification test suite |
 | `npm run preview` | Preview production build |
 | `$env:LAN="0"; npm run dev` | Opt out of LAN debug. HTTPS + LAN is currently ON by default via `LAN_DEBUG_DEFAULT` in `vite.config.js` (temporary, for mobile gyro testing); `LAN=1` forces it on |
-No test framework — zero test files.
 
 ## Scripts (calibration & audit)
 | Script | Purpose |
@@ -30,7 +30,7 @@ No test framework — zero test files.
 - **Question bank**: ~72 questions across 3 data files re-exported from `src/data/questions.js`: `questions-single.js` (40, 4-choice), `questions-scale.js` (16, Likert 1-5), `questions-rank.js` (16, rank 4). ~60/20/20 split. All UI text is Chinese.
 - **src/data/tags.js** & **src/data/archetypeProfiles.js** — 54 trait tags in 10 archetype groups, 10 archetype profiles (with 10-D vectors and narrative sub-sections `innerWorld`/`inRelation`/`hiddenSide`), 10 dimension configs (`src/data/dimensions.js`).
 - **src/utils/blurEngine.js** — `generateResult(answers)` calculates 10-dimensional user vector from weighted responses, normalizes cosine similarities against 10 archetype profiles, picks top 5 tags, determines primary + secondary archetype, computes suppressed traits, and returns `dimensionScores`, `userVector`, `similarities`. Exports `DIMENSION_PAIRS`.
-- **Components** (11): `ArchetypeProfileChart`, `BlurCard`, `DimensionMeters`, `DraggableTabs`, `GlassButton`, `OpticalFocusSpace` (3D parallax atmosphere), `ProgressBar`, `QuestionBank`, `TraitRadar` (SVG), `TraitSpace2D` (interactive 2D canvas vector space), `TraitWeightChart`.
+- **Components** (10): `ArchetypeProfileChart`, `BlurCard`, `DimensionMeters`, `DraggableTabs`, `GlassButton`, `OpticalFocusSpace` (3D parallax atmosphere), `ProgressBar`, `TraitRadar` (SVG), `TraitSpace2D` (interactive 2D canvas vector space), `TraitWeightChart`.
 - **src/index.css** — `@theme` custom color tokens (`--color-blur-*`), glass morphism classes (`.glass`, `.glass-strong`), gradient border (`.prism-shift`), animation utilities (`animate-float`, `animate-pulse-glow`, `animate-drift`, `animate-breathe*`), custom range input (`.blur-slider`), custom scrollbar.
 
 ## Conventions
