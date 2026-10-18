@@ -35,6 +35,9 @@ export const PERSONA_FOCAL_Z = 0.4;
 /** 权重拉开的景深幅度：低权重符号被推到焦平面两侧多远 */
 const DEFOCUS_SPREAD = 0.5;
 
+/** 同一原型内部在景深上的错开幅度（乘以 relative，弱势原型不受影响） */
+const DEPTH_JITTER = 0.3;
+
 /**
  * 显影曲线：决定"画面里到底有多少 emoji 存在"。
  *
@@ -84,11 +87,28 @@ function allocateSlots(field, total) {
   return counts;
 }
 
-export function buildPersonaSymbols(field, reveal = 1) {
+/**
+ * 屏幕上同时存在多少个 emoji。
+ * 这是唯一的密度旋钮 —— 想更空就调小，想更满就调大，不要再用其他间接参数去凑。
+ */
+export const VISIBLE_SLOTS = 10;
+
+/**
+ * 从位置池里等距抽取 count 个，保证抽出来的位置在画面上是散开的
+ * （池子按景深排序，不是按空间排序，所以必须等距抽而不是取前 N 个）
+ */
+function pickPositions(count) {
+  const stride = SLOT_LAYOUT.length / count;
+  return Array.from({ length: count }, (_, i) =>
+    SLOT_LAYOUT[Math.min(SLOT_LAYOUT.length - 1, Math.floor(i * stride))],
+  );
+}
+
+export function buildPersonaSymbols(field, reveal = 1, slotCount = VISIBLE_SLOTS) {
   if (!field || field.length === 0) return [];
 
-  const total = SLOT_LAYOUT.length;
-  const counts = allocateSlots(field, total);
+  const counts = allocateSlots(field, slotCount);
+  const positions = pickPositions(slotCount);
   const maxWeight = Math.max(...field.map((item) => item.weight), 0.0001);
 
   // 轮转展开：A B C … J A B …，让同一原型的多个槽位在画面上散开而不是挤在一起
@@ -103,7 +123,7 @@ export function buildPersonaSymbols(field, reveal = 1) {
   // 还没显影时整体把符号推离焦平面，画面保持弥散
   const undecided = (1 - reveal) * 0.45;
 
-  return SLOT_LAYOUT.map((slot, i) => {
+  return positions.map((slot, i) => {
     const arch = expanded[i] || field[i % field.length];
     const relative = arch.weight / maxWeight;
 
@@ -112,7 +132,9 @@ export function buildPersonaSymbols(field, reveal = 1) {
     const depth =
       PERSONA_FOCAL_Z +
       ((1 - relative) * DEFOCUS_SPREAD + undecided) * side +
-      (slot.z - 0.5) * 0.1;
+      // 同一原型的多个槽位要在景深上错开，否则 7 个副本一样锐，像贴纸而不是摄影。
+      // 系数按 relative 缩放，保证弱势原型不会被这个抖动拉回焦平面。
+      (slot.z - 0.5) * DEPTH_JITTER * relative;
 
     return {
       id: `slot-${i}`,

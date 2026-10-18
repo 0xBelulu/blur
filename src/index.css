@@ -162,26 +162,30 @@ input[type="range"].blur-slider::-moz-range-thumb {
   50% { opacity: 0.76; }
 }
 
-@keyframes orb-morph-1 {
-  0%, 100% { transform: scale(1) translate(0, 0); border-radius: 40% 60% 55% 45% / 55% 40% 60% 45%; }
-  33% { transform: scale(1.08) translate(15px, -10px); border-radius: 55% 45% 40% 60% / 45% 55% 50% 50%; }
-  66% { transform: scale(0.95) translate(-10px, 12px); border-radius: 45% 55% 60% 40% / 60% 45% 40% 55%; }
+/* 光球漂移只动 transform。
+   绝对不要在这里动 border-radius：它无法走合成层，会让挂着 blur(45px) 的大元素
+   每帧重绘并重新模糊。Android 上这直接表现为闪屏、撕裂和可见的图层色块。
+   形状改成静态的（见 AtmosphereField 的 borderRadius），肉眼无差。 */
+@keyframes orb-float-1 {
+  0%, 100% { transform: scale(1) translate(0, 0); }
+  33% { transform: scale(1.08) translate(15px, -10px); }
+  66% { transform: scale(0.95) translate(-10px, 12px); }
 }
 
-@keyframes orb-morph-2 {
-  0%, 100% { transform: scale(1) translate(0, 0); border-radius: 55% 45% 50% 50% / 45% 55% 45% 55%; }
-  33% { transform: scale(1.05) translate(-12px, 8px); border-radius: 45% 55% 60% 40% / 55% 45% 50% 50%; }
-  66% { transform: scale(0.97) translate(8px, -14px); border-radius: 60% 40% 45% 55% / 40% 60% 55% 45%; }
+@keyframes orb-float-2 {
+  0%, 100% { transform: scale(1) translate(0, 0); }
+  33% { transform: scale(1.05) translate(-12px, 8px); }
+  66% { transform: scale(0.97) translate(8px, -14px); }
 }
 
-@keyframes orb-morph-3 {
-  0%, 100% { transform: scale(1) translate(0, 0); border-radius: 50% 50% 45% 55% / 55% 45% 50% 50%; }
-  50% { transform: scale(1.1) translate(10px, 8px); border-radius: 45% 55% 55% 45% / 50% 50% 55% 45%; }
+@keyframes orb-float-3 {
+  0%, 100% { transform: scale(1) translate(0, 0); }
+  50% { transform: scale(1.1) translate(10px, 8px); }
 }
 
-@keyframes orb-morph-4 {
-  0%, 100% { transform: scale(1) translate(0, 0); border-radius: 60% 40% 50% 50% / 50% 50% 60% 40%; }
-  50% { transform: scale(1.06) translate(-8px, -10px); border-radius: 50% 50% 60% 40% / 45% 55% 50% 50%; }
+@keyframes orb-float-4 {
+  0%, 100% { transform: scale(1) translate(0, 0); }
+  50% { transform: scale(1.06) translate(-8px, -10px); }
 }
 
 @keyframes orb-scale-1 {

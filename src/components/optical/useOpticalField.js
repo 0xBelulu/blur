@@ -1,177 +1,6 @@
 import { useEffect, useRef } from "react";
 
-// 空间散布的原型与感知意象符号（包含桌面端与移动端响应式坐标配置）
-const SPATIAL_SYMBOLS = [
-  // 前景组 (近焦平面，浅景深)
-  {
-    id: "rainbow",
-    symbol: "🌈",
-    x: 78,
-    y: 70,
-    mobileX: 82,
-    mobileY: 86,
-    z: 0.16,
-    driftSpeed: 0.7,
-    phase: 0.4,
-  },
-  {
-    id: "bubble",
-    symbol: "🫧",
-    x: 91,
-    y: 22,
-    mobileX: 86,
-    mobileY: 12,
-    z: 0.22,
-    driftSpeed: 1.1,
-    phase: 2.1,
-  },
-  {
-    id: "mist",
-    symbol: "🌫️",
-    x: 12,
-    y: 16,
-    mobileX: 12,
-    mobileY: 10,
-    z: 0.28,
-    driftSpeed: 0.8,
-    phase: 1.3,
-  },
-  {
-    id: "kite",
-    symbol: "🪁",
-    x: 44,
-    y: 82,
-    mobileX: 52,
-    mobileY: 93,
-    z: 0.32,
-    driftSpeed: 0.9,
-    phase: 3.2,
-  },
-
-  // 中景组 (主对焦层，层次分明)
-  {
-    id: "leaf",
-    symbol: "🍃",
-    x: 88,
-    y: 46,
-    mobileX: 88,
-    mobileY: 48,
-    z: 0.42,
-    driftSpeed: 1.0,
-    phase: 4.5,
-  },
-  {
-    id: "camera",
-    symbol: "📷",
-    x: 53,
-    y: 13,
-    mobileX: 50,
-    mobileY: 6,
-    z: 0.48,
-    driftSpeed: 0.6,
-    phase: 0.8,
-  },
-  {
-    id: "sparkle",
-    symbol: "✨",
-    x: 26,
-    y: 24,
-    mobileX: 8,
-    mobileY: 26,
-    z: 0.52,
-    driftSpeed: 1.2,
-    phase: 5.1,
-  },
-  {
-    id: "planet",
-    symbol: "🪐",
-    x: 84,
-    y: 84,
-    mobileX: 85,
-    mobileY: 66,
-    z: 0.58,
-    driftSpeed: 0.5,
-    phase: 2.7,
-  },
-  {
-    id: "film",
-    symbol: "🎞️",
-    x: 67,
-    y: 86,
-    mobileHidden: true, // 移动端减负，保留呼吸留白
-    z: 0.62,
-    driftSpeed: 0.7,
-    phase: 1.9,
-  },
-  {
-    id: "prism",
-    symbol: "💎",
-    x: 7,
-    y: 56,
-    mobileX: 9,
-    mobileY: 60,
-    z: 0.68,
-    driftSpeed: 0.8,
-    phase: 3.8,
-  },
-
-  // 远景组 (深场景深，如夜空散景光斑)
-  {
-    id: "salt",
-    symbol: "🧂",
-    x: 19,
-    y: 82,
-    mobileX: 14,
-    mobileY: 78,
-    z: 0.76,
-    driftSpeed: 0.6,
-    phase: 4.1,
-  },
-  {
-    id: "chime",
-    symbol: "🎐",
-    x: 81,
-    y: 14,
-    mobileX: 80,
-    mobileY: 28,
-    z: 0.82,
-    driftSpeed: 0.9,
-    phase: 0.2,
-  },
-  {
-    id: "wave",
-    symbol: "🌊",
-    x: 34,
-    y: 90,
-    mobileX: 20,
-    mobileY: 92,
-    z: 0.88,
-    driftSpeed: 0.5,
-    phase: 5.6,
-  },
-  {
-    id: "candle",
-    symbol: "🕯️",
-    x: 5,
-    y: 38,
-    mobileHidden: true, // 移动端避开标题区
-    z: 0.92,
-    driftSpeed: 0.7,
-    phase: 2.9,
-  },
-];
-
-// 丁达尔悬浮光尘粒子 (充盈三维空间微光空气感)
-const STARDUST_PARTICLES = [
-  { id: "dust1", x: 22, y: 32, z: 0.22, size: 4, color: "rgba(196,165,137,0.75)" },
-  { id: "dust2", x: 74, y: 18, z: 0.42, size: 3.5, color: "rgba(155,142,199,0.7)" },
-  { id: "dust3", x: 86, y: 70, z: 0.16, size: 4.5, color: "rgba(143,181,196,0.75)" },
-  { id: "dust4", x: 16, y: 64, z: 0.68, size: 3, color: "rgba(196,155,165,0.65)" },
-  { id: "dust5", x: 48, y: 22, z: 0.35, size: 3.5, color: "rgba(155,142,199,0.7)" },
-  { id: "dust6", x: 62, y: 88, z: 0.54, size: 4, color: "rgba(196,165,137,0.75)" },
-  { id: "dust7", x: 38, y: 76, z: 0.82, size: 3, color: "rgba(143,181,196,0.65)" },
-  { id: "dust8", x: 92, y: 38, z: 0.58, size: 3.5, color: "rgba(196,155,165,0.7)" },
-];
+import { SPATIAL_SYMBOLS, STARDUST_PARTICLES } from "./symbols";
 
 // 点按这些元素时不触发空间对焦（按钮/链接等自身已有交互反馈）
 const INTERACTIVE_SELECTOR = "button, a, input, select, textarea, [role='button']";
@@ -185,25 +14,26 @@ const GYRO_FRESH_MS = 2000;
 const MOUSE_TAKEOVER_MS = 4000;
 
 /**
- * 光学对焦背景（Landing / 做题页共用）
+ * 光学场的物理引擎：相机视点、焦平面、透视视差、陀螺仪、点按对焦、逐帧 RAF。
+ * 不含任何 DOM 结构 —— 只负责把每帧的 transform / filter / opacity 写进传入的节点上。
  *
- * symbols 可选：不传则用 Landing 的固定 14 个空间符号；
- * 做题页传入由实时解算结果生成的符号表，渲染与交互逻辑完全一致。
- * 符号表变化时只换 emoji 字形与归属，不重跑 effect（位置、视差、陀螺仪状态全部保持）。
+ * 渲染壳在 OpticalStage.jsx，两边特化靠 presets.js。
  */
-export default function OpticalFocusSpace({
+export function useOpticalField({
   symbols,
-  // "pointer"：焦平面跟随指针/陀螺仪（Landing 的原始行为）
-  // "persona"：焦平面钉在固定景深上，由符号自身的 z 决定谁清楚谁糊（做题页）
+  stardust,
   focusMode = "pointer",
   focusZ = 0.5,
-  // 做题页需要压低上限，避免 emoji 盖过题干
   opacityCap = 1,
   minBlur = 0,
 }) {
   const symbolList = symbols || SPATIAL_SYMBOLS;
   const symbolsRef = useRef(symbolList);
   const focusConfigRef = useRef({ focusMode, focusZ, opacityCap, minBlur });
+  const stardustRef = useRef(stardust || STARDUST_PARTICLES);
+  // 上一帧已写入的 filter / opacity，用来跳过无意义的重复写入。
+  // 每写一次 style.filter 都会让该层重新栅格化，Android 上 20 个模糊层逐帧重栅格会掉帧甚至撕裂。
+  const lastStyleRef = useRef([]);
 
   useEffect(() => {
     symbolsRef.current = symbolList;
@@ -212,6 +42,10 @@ export default function OpticalFocusSpace({
   useEffect(() => {
     focusConfigRef.current = { focusMode, focusZ, opacityCap, minBlur };
   }, [focusMode, focusZ, opacityCap, minBlur]);
+
+  useEffect(() => {
+    stardustRef.current = stardust || STARDUST_PARTICLES;
+  }, [stardust]);
 
   const containerRef = useRef(null);
   const elementsRef = useRef([]);
@@ -271,21 +105,19 @@ export default function OpticalFocusSpace({
     const state = stateRef.current;
     let animationFrameId;
 
-    // 触发设备轻微触觉反馈 (静默安全校验，避免 Chromium 未激活时的干预拦截)
-    const triggerHaptic = () => {
-      try {
-        if (
-          typeof navigator !== "undefined" &&
-          typeof navigator.vibrate === "function" &&
-          (!navigator.userActivation || navigator.userActivation.hasBeenActive)
-        ) {
-          navigator.vibrate(10);
-        }
-      } catch {
-        /* 静默容错 */
-      }
-    };
+    // 注：合焦时的触觉反馈已移除。随手点空白或滑动都会触发合焦，
+    // 每次都震一下只会让人觉得触点脏。选选项的震动在 BlurCard 里，那个保留。
 
+    // 激活点按对焦准星（坐标使用容器坐标系）
+    const triggerReticle = (x, y) => {
+      state.reticle.x = x;
+      state.reticle.y = y;
+      state.reticle.trackIndex = -1;
+      state.reticle.opacity = 0.85;
+      state.reticle.scale = 1.35;
+      state.reticle.active = true;
+      state.reticle.timestamp = performance.now();
+    };
     // 采样容器真实布局尺寸（Emoji 百分比坐标的基准，也是所有对焦坐标的基准）
     const measureContainer = () => {
       const el = containerRef.current;
@@ -344,18 +176,6 @@ export default function OpticalFocusSpace({
         x: (base.x / 100) * (w || window.innerWidth) + off.driftX + off.parallaxX,
         y: (base.y / 100) * (h || window.innerHeight) + off.driftY + off.parallaxY,
       };
-    };
-
-    // 激活点按对焦准星（坐标使用容器坐标系）
-    const triggerReticle = (x, y) => {
-      state.reticle.x = x;
-      state.reticle.y = y;
-      state.reticle.trackIndex = -1;
-      state.reticle.opacity = 0.85;
-      state.reticle.scale = 1.35;
-      state.reticle.active = true;
-      state.reticle.timestamp = performance.now();
-      triggerHaptic();
     };
 
     // 直接对焦到指定的符号 (核心统一通道)
@@ -736,17 +556,31 @@ export default function OpticalFocusSpace({
 
         // 更新 Emoji DOM 样式 (合焦时带有晶莹透镜微光 Bloom，告别干瘪生硬)
         el.style.transform = `translate3d(${(offset.driftX + offset.parallaxX).toFixed(1)}px, ${(offset.driftY + offset.parallaxY).toFixed(1)}px, 0) scale(${itemScale.toFixed(3)})`;
-        if (isFocused && blurFloor === 0) {
-          el.style.filter = "blur(0px) drop-shadow(0 0 14px rgba(155,142,199,0.5)) drop-shadow(0 0 24px rgba(196,165,137,0.35))";
-        } else {
-          el.style.filter = `blur(${renderBlur.toFixed(1)}px)`;
+
+        // filter / opacity 只在变化超过阈值时才写。逐帧无条件写入会让每个模糊层
+        // 每帧重新栅格化，这是 Android 上闪屏与分层的直接来源。
+        const last = lastStyleRef.current[i] || (lastStyleRef.current[i] = {});
+        const focusChanged = last.focused !== isFocused;
+
+        if (focusChanged || last.blur === undefined || Math.abs(last.blur - renderBlur) > 0.4) {
+          if (isFocused && blurFloor === 0) {
+            el.style.filter = "blur(0px) drop-shadow(0 0 14px rgba(155,142,199,0.5)) drop-shadow(0 0 24px rgba(196,165,137,0.35))";
+          } else {
+            el.style.filter = `blur(${renderBlur.toFixed(1)}px)`;
+          }
+          last.blur = renderBlur;
+          last.focused = isFocused;
         }
-        el.style.opacity = renderOpacity.toFixed(3);
+
+        if (last.opacity === undefined || Math.abs(last.opacity - renderOpacity) > 0.02) {
+          el.style.opacity = renderOpacity.toFixed(3);
+          last.opacity = renderOpacity;
+        }
       }
 
       // 6. 丁达尔微光星尘视差与呼吸流转
-      for (let j = 0; j < STARDUST_PARTICLES.length; j++) {
-        const dust = STARDUST_PARTICLES[j];
+      for (let j = 0; j < stardustRef.current.length; j++) {
+        const dust = stardustRef.current[j];
         const dustEl = dustRef.current[j];
         if (!dustEl) continue;
 
@@ -792,86 +626,12 @@ export default function OpticalFocusSpace({
     };
   }, []);
 
-  return (
-    <>
-      <div
-        ref={containerRef}
-        className="fixed inset-0 pointer-events-none overflow-hidden will-change-transform"
-        aria-hidden="true"
-      >
-        {/* 丁达尔微光光尘 (充盈空间立体微粒感) */}
-        {STARDUST_PARTICLES.map((dust, j) => (
-          <div
-            key={dust.id}
-            ref={(node) => { dustRef.current[j] = node; }}
-            className="absolute rounded-full pointer-events-none will-change-transform"
-            style={{
-              left: `${dust.x}%`,
-              top: `${dust.y}%`,
-              width: `${dust.size}px`,
-              height: `${dust.size}px`,
-              background: dust.color,
-              boxShadow: `0 0 10px ${dust.color}`,
-              opacity: 0.5,
-            }}
-          />
-        ))}
-
-        {symbolList.map((item, i) => (
-          <div
-            key={i}
-            ref={(node) => { wrappersRef.current[i] = node; }}
-            className="absolute select-none flex items-center justify-center will-change-transform cursor-pointer pointer-events-auto p-4 touch-manipulation group"
-            style={{
-              left: `${item.x}%`,
-              top: `${item.y}%`,
-              transform: "translate(-50%, -50%)",
-            }}
-            onPointerDown={(e) => {
-              // 直接点按命中当前符号，直接锁定合焦
-              e.stopPropagation();
-              if (focusOnSymbolRef.current) {
-                focusOnSymbolRef.current(item, i);
-              }
-            }}
-          >
-            {/* 纯粹悬浮 Emoji (自身产生真实光学景深弥散与锐度) */}
-            <span
-              ref={(node) => { elementsRef.current[i] = node; }}
-              className="text-2xl md:text-3xl lg:text-[2rem] block transform-gpu cursor-default"
-              style={{
-                opacity: 0.1,
-                filter: "blur(6px)",
-                textShadow: "0 2px 10px rgba(0,0,0,0.04)",
-              }}
-            >
-              {/* 归属变化时字形淡入，避免直接跳字 */}
-              <span key={item.symbol} className="glyph-swap block">
-                {item.symbol}
-              </span>
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* 极简光学对焦框 (Tap-to-Focus Reticle)：与 Emoji 共享容器坐标系，渲染时补偿相机呼吸缩放 */}
-      <div
-        ref={reticleRef}
-        className="fixed top-0 left-0 pointer-events-none w-14 h-14 will-change-transform"
-        aria-hidden="true"
-        style={{
-          opacity: 0,
-          transform: "translate(-50%, -50%) scale(1.4)",
-        }}
-      >
-        {/* 四个角的极细对焦角标 */}
-        <div className="absolute top-0 left-0 w-2.5 h-2.5 border-t border-l border-blur-accent/80 rounded-tl-[1px]" />
-        <div className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-blur-accent/80 rounded-tr-[1px]" />
-        <div className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l border-blur-accent/80 rounded-bl-[1px]" />
-        <div className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-blur-accent/80 rounded-br-[1px]" />
-        {/* 中心微弱对焦点 */}
-        <div className="absolute inset-0 m-auto w-1 h-1 rounded-full bg-blur-accent/70" />
-      </div>
-    </>
-  );
+  return {
+    containerRef,
+    elementsRef,
+    wrappersRef,
+    dustRef,
+    reticleRef,
+    focusOnSymbolRef,
+  };
 }

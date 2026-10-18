@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { UserRound, Sparkles } from "lucide-react";
 import GlassButton from "../components/GlassButton";
 import AtmosphereField from "../components/AtmosphereField";
-import OpticalFocusSpace from "../components/OpticalFocusSpace";
+import OpticalStage from "../components/optical/OpticalStage";
+import { LANDING_PRESET } from "../components/optical/presets";
 
 const TIPS = [
   "如果你在读这句话，说明你确实在读。",
@@ -66,7 +67,7 @@ export default function Landing({ onStart, onExplore, onOpenMy }) {
       <AtmosphereField />
 
       {/* ── Optical 3D focus breathing space ── */}
-      <OpticalFocusSpace />
+      <OpticalStage preset={LANDING_PRESET} />
 
       {/* Left — Brand */}
       <div className="relative z-10 w-full md:w-1/2 text-center md:text-left flex flex-col justify-start md:justify-center md:pr-8 lg:pr-16 mb-10 md:mb-0">

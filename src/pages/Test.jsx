@@ -5,9 +5,10 @@ import { questions } from "../data/questions";
 import BlurCard from "../components/BlurCard";
 import GlassButton from "../components/GlassButton";
 import AtmosphereField from "../components/AtmosphereField";
-import OpticalFocusSpace from "../components/OpticalFocusSpace";
+import OpticalStage from "../components/optical/OpticalStage";
+import { TEST_PRESET } from "../components/optical/presets";
 import { solveProfile } from "../utils/blurEngine";
-import { buildPersonaSymbols, revealAt, PERSONA_FOCAL_Z } from "../utils/personaSymbols";
+import { buildPersonaSymbols, revealAt } from "../utils/personaSymbols";
 
 const REQUIRED_COUNT = 10;
 
@@ -308,13 +309,7 @@ export default function Test({ onComplete }) {
   return (
     <>
       <AtmosphereField />
-      <OpticalFocusSpace
-        symbols={symbols}
-        focusMode="persona"
-        focusZ={PERSONA_FOCAL_Z}
-        opacityCap={0.5}
-        minBlur={1.5}
-      />
+      <OpticalStage preset={TEST_PRESET} symbols={symbols} />
 
       <div className="relative z-10 flex-1 flex flex-col px-6 py-8 min-h-[100svh] max-w-lg mx-auto w-full">
 
@@ -365,11 +360,11 @@ export default function Test({ onComplete }) {
           {isTransition ? (
             <motion.div
               key="transition"
-              initial={{ opacity: 0, y: 30, filter: "blur(3px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: -30, filter: "blur(3px)" }}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -30 }}
               transition={{ duration: 0.5, ease: "easeInOut" }}
-              style={{ willChange: "filter, transform, opacity" }}
+              style={{ willChange: "transform, opacity" }}
               className="flex-1 flex flex-col items-center justify-center text-center py-6"
             >
               <motion.div
@@ -412,11 +407,11 @@ export default function Test({ onComplete }) {
           ) : (
             <motion.div
               key={`question-${currentQuestion.id}`}
-              initial={{ opacity: 0, x: 40, filter: "blur(3px)" }}
-              animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, x: -40, filter: "blur(3px)" }}
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -40 }}
               transition={{ duration: 0.45, ease: "easeInOut" }}
-              style={{ willChange: "filter, transform, opacity" }}
+              style={{ willChange: "transform, opacity" }}
               className="flex-1 flex flex-col"
             >
             <div className="mb-6">

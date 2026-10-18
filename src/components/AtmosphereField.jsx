@@ -20,47 +20,51 @@ export default function AtmosphereField({ intensity = 1 }) {
         }}
       />
       <div
-        className="absolute rounded-full filter blur-[45px]"
+        className="absolute filter blur-[45px]"
         style={{
           width: "55vmax",
           height: "55vmax",
           top: "12%",
           left: "18%",
           background: "radial-gradient(circle, rgba(155,142,199,0.18) 0%, transparent 68%)",
-          animation: "orb-morph-1 14s ease-in-out infinite",
+          borderRadius: "40% 60% 55% 45% / 55% 40% 60% 45%",
+          animation: "orb-float-1 14s ease-in-out infinite",
         }}
       />
       <div
-        className="absolute rounded-full filter blur-[45px]"
+        className="absolute filter blur-[45px]"
         style={{
           width: "45vmax",
           height: "45vmax",
           bottom: "8%",
           right: "12%",
           background: "radial-gradient(circle, rgba(143,181,196,0.16) 0%, transparent 65%)",
-          animation: "orb-morph-2 18s ease-in-out infinite",
+          borderRadius: "55% 45% 50% 50% / 45% 55% 45% 55%",
+          animation: "orb-float-2 18s ease-in-out infinite",
         }}
       />
       <div
-        className="absolute rounded-full filter blur-[40px]"
+        className="absolute filter blur-[40px]"
         style={{
           width: "35vmax",
           height: "35vmax",
           top: "48%",
           left: "52%",
           background: "radial-gradient(circle, rgba(196,165,137,0.15) 0%, transparent 60%)",
-          animation: "orb-morph-3 12s ease-in-out infinite",
+          borderRadius: "50% 50% 45% 55% / 55% 45% 50% 50%",
+          animation: "orb-float-3 12s ease-in-out infinite",
         }}
       />
       <div
-        className="absolute rounded-full filter blur-[35px]"
+        className="absolute filter blur-[35px]"
         style={{
           width: "25vmax",
           height: "25vmax",
           bottom: "28%",
           left: "8%",
           background: "radial-gradient(circle, rgba(196,155,165,0.13) 0%, transparent 55%)",
-          animation: "orb-morph-4 16s ease-in-out 3s infinite",
+          borderRadius: "60% 40% 50% 50% / 50% 50% 60% 40%",
+          animation: "orb-float-4 16s ease-in-out 3s infinite",
         }}
       />
       <div
