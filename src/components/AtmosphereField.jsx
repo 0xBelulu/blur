@@ -3,9 +3,7 @@ import atmosphereDither from "../assets/atmosphere-dither.png";
 /**
  * 温润水彩漫染流光 —— 页面最底层的氛围。
  *
- * 原本内联写在 Landing.jsx 里，做题页直接漏掉了这一层，
- * 所以只有 emoji 没有底光，看起来是"散落的贴纸"而不是"一片场"。
- * 现在抽出来两边共用；intensity 用于按页面调压。
+ * 由 AppBackground 持续持有，切页时只改变 intensity，不重建纹理和动画。
  */
 export default function AtmosphereField({ intensity = 1 }) {
   return (

@@ -99,3 +99,72 @@ test('compositor pulse stays within 0.001 opacity of the sine, including the dar
   }
   host.unmount();
 });
+
+test('persistent scenes suspend rendering, input and dust without recreating nodes or animations', () => {
+  const host = createOpticalHost(undefined, { width: 412, height: 915, coarse: true });
+  host.step(10000);
+  const nodes = [...host.nodes];
+  const animations = host.nodes.flatMap((node) => node.animations);
+  const listeners = host.window.listenerCount + host.document.listenerCount;
+  host.update({ active: false });
+  assert.equal(host.pendingFrames, 0);
+  assert.ok(animations.every((animation) => animation.playState === 'paused'));
+  const state = JSON.stringify(host.state);
+  const snapshot = host.snapshot();
+  host.resetCounts();
+  host.step(20000);
+  host.window.emit('pointermove', { clientX: 100, clientY: 100, pointerType: 'mouse' });
+  host.window.emit('pointerdown', { clientX: 100, clientY: 100, pointerType: 'touch' });
+  host.window.emit('pointerleave');
+  host.window.emit('deviceorientation', { beta: 75, gamma: 20 });
+  host.result.focusOnSymbolRef.current(host.symbols[0], 0);
+  assert.equal(JSON.stringify(host.state), state);
+  assert.deepEqual(host.snapshot(), snapshot);
+  assert.equal(host.counts.writes, 0);
+  // Visibility changes must not wake an inactive scene.
+  host.visible(false); host.visible(true);
+  assert.equal(host.pendingFrames, 0);
+  for (let i = 0; i < 12; i++) {
+    host.update({ active: true });
+    host.visible(true);
+    assert.equal(host.pendingFrames, 1);
+    host.step(20000 + i * 16);
+    assert.equal(host.pendingFrames, 1);
+    host.update({ active: false });
+    assert.equal(host.pendingFrames, 0);
+  }
+  assert.deepEqual(host.nodes, nodes);
+  assert.deepEqual(host.nodes.flatMap((node) => node.animations), animations);
+  assert.ok(animations.every((animation) => !animation.cancelled));
+  assert.equal(host.window.listenerCount + host.document.listenerCount, listeners);
+  assert.equal(host.warnings.length, 0);
+  host.unmount();
+  assert.equal(host.window.listenerCount + host.document.listenerCount, 0);
+});
+
+test('inactive initial mount and scene changes resume with current symbols and no stale focus lock', () => {
+  const host = createOpticalHost(undefined, { active: false });
+  assert.equal(host.pendingFrames, 0);
+  host.restartEffects();
+  assert.equal(host.pendingFrames, 0);
+  host.visible(false);
+  host.update({ active: true });
+  assert.equal(host.pendingFrames, 0);
+  host.visible(true);
+  host.step(10000);
+  host.result.focusOnSymbolRef.current(host.symbols[0], 0);
+  host.step(10016);
+  assert.notEqual(host.state.activeFocusedId, null);
+  host.update({ active: false });
+  const symbols = host.symbols.map((item) => ({ ...item, id: `persona-${item.id}`, z: 0.4 }));
+  host.update({ symbols, focusMode: 'persona', focusZ: 0.4 });
+  assert.equal(host.state.activeFocusedId, null);
+  assert.equal(host.state.reticle.trackIndex, -1);
+  host.update({ active: true });
+  host.step(10032);
+  assert.equal(host.pendingFrames, 1);
+  assert.equal(host.result.reticleRef.current.style.opacity, '0');
+  assert.ok(host.state.currentPositions.every((position) => position.z === 0.4));
+  assert.equal(host.warnings.length, 0);
+  host.unmount();
+});

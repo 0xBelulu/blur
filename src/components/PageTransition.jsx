@@ -1,9 +1,14 @@
+import { useLayoutEffect } from 'react';
 import { motion, useIsPresent, useReducedMotion } from 'framer-motion';
 import { PAGE_TRANSITION, PAGE_VARIANTS } from '../utils/pageTransitions';
 
-export default function PageTransition({ children, direction }) {
+export default function PageTransition({ children, direction, screen, onTransition, opacity }) {
   const isPresent = useIsPresent();
   const reduceMotion = useReducedMotion();
+
+  // In wait mode the route intent changes before the next page mounts. Commit
+  // its background here so the outgoing page keeps its scene until it exits.
+  useLayoutEffect(() => { onTransition(screen, isPresent); }, [screen, isPresent, onTransition]);
 
   return (
     <motion.div
@@ -14,8 +19,8 @@ export default function PageTransition({ children, direction }) {
       exit={reduceMotion ? undefined : 'exit'}
       transition={reduceMotion ? { duration: 0 } : PAGE_TRANSITION}
       inert={!isPresent}
-      className="min-h-[100svh]"
-      style={{ contain: 'layout style paint' }}
+      className="relative z-10 min-h-[100svh]"
+      style={{ opacity, contain: 'layout style paint' }}
     >
       {children}
     </motion.div>

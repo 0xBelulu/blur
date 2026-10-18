@@ -51,6 +51,26 @@ body {
   isolation: isolate;
 }
 
+/* Keep expensive background surfaces outside the sliding/filtered page tree.
+   Scene styles switch immediately at the shared fade's transparent boundary.
+   Hidden scenes retain their DOM and pause their animations rather than restart. */
+.app-background-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 1;
+  visibility: visible;
+}
+
+.app-background-layer[data-visible="false"] {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.app-background-layer[data-visible="false"] * {
+  animation-play-state: paused !important;
+}
+
 .atmosphere-dither {
   background-repeat: repeat;
   background-size: 128px 128px;

@@ -13,6 +13,7 @@ export default function OpticalStage({
   className = "",
   symbolClassName = "text-2xl md:text-3xl lg:text-[2rem]",
   onFocusChange,
+  active = true,
 }) {
   const symbolList = symbols || preset.symbols || SPATIAL_SYMBOLS;
   const dustList = stardust || preset.stardust || STARDUST_PARTICLES;
@@ -28,6 +29,7 @@ export default function OpticalStage({
       maxBlur: preset.maxBlur,
       scope,
       onFocusChange,
+      active,
     });
 
   // "viewport" 铺满整屏（Landing / 做题页）；"container" 只铺满最近的有定位的父级（探索页）

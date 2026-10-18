@@ -35,6 +35,7 @@
 
 ## Architecture
 - **App.jsx** — state machine (`landing → test → loading → result`), all state lives here, pages receive callbacks via props. No routing library. Uses `AnimatePresence mode="wait"` with `custom=direction` for slide transitions. Loading has a hardcoded **3.5s `setTimeout`**.
+- **AppBackground.jsx** — persistent viewport atmosphere/optical scenes outside the page transition tree. Background and foreground share one opacity MotionValue (old scene 1→0, new scene 0→1); scene styles switch immediately at the transparent boundary, without independent CSS fades. `PageTransition` reports its presence so the background changes when the next page actually mounts, after the previous exit. Only the detailed optical layer shares the transition blur; large watercolor textures and dither remain stable. Hidden scenes pause instead of remounting. Test reports saved-answer symbols to App; About's embedded optical field remains local.
 - **Test.jsx two-phase flow**: first ~10 questions required with progress bar, then "已获得基本画像" transition, then optional explore phase (~62 more questions) that can be ended anytime.
 - **Question bank**: ~72 questions across 3 data files re-exported from `src/data/questions.js`: `questions-single.js` (40, 4-choice), `questions-scale.js` (16, Likert 1-5), `questions-rank.js` (16, rank 4). ~60/20/20 split. All UI text is Chinese.
 - **src/pages/About.jsx** — the explore page: editorial sections plus an embedded `OpticalStage` (`scope="container"`, `ABOUT_PRESET`, `ARCHETYPE_SYMBOLS`) whose `onFocusChange` drives the archetype readout. Interior scrolls inside `h-[100svh]`.
@@ -48,6 +49,7 @@
   - `presets.js` — `LANDING_PRESET` / `TEST_PRESET` / `ABOUT_PRESET`. **Per-page differences belong here**, not in the engine. `maxBlur` caps defocus (a 360px-tall field can't use the full-viewport 13.5px); `minBlur` raises it.
   - `focusMode`: `"pointer"` (Landing + explore page, focus follows cursor/gyro) vs `"persona"` (test page, focus plane pinned, clarity driven by each symbol's `z`).
   - `onFocusChange(item | null)` fires only when the focused symbol changes, so pages can render a readout without per-frame React renders. `scope="container"` ignores pointer input outside the container and normalizes parallax to it.
+  - `active={false}` suspends RAF, native dust animations and input handling while retaining nodes, engine state and animation objects. Visibility changes must not wake an inactive field.
 - **src/index.css** — `@theme` custom color tokens (`--color-blur-*`), glass morphism classes (`.glass`, `.glass-strong`), gradient border (`.prism-shift`), animation utilities (`animate-float`, `animate-pulse-glow`, `animate-drift`, `animate-breathe*`), custom range input (`.blur-slider`), custom scrollbar.
 
 ## Conventions

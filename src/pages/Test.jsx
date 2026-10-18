@@ -4,9 +4,6 @@ import { ChevronLeft, ChevronRight, Eye, Sparkles } from "lucide-react";
 import { questions } from "../data/questions";
 import BlurCard from "../components/BlurCard";
 import GlassButton from "../components/GlassButton";
-import AtmosphereField from "../components/AtmosphereField";
-import OpticalStage from "../components/optical/OpticalStage";
-import { TEST_PRESET } from "../components/optical/presets";
 import { solveProfile } from "../utils/blurEngine";
 import { buildPersonaSymbols, revealAt } from "../utils/personaSymbols";
 
@@ -60,7 +57,7 @@ function shuffleQuestions(questionList) {
   return [...required, ...exploratory];
 }
 
-export default function Test({ onComplete }) {
+export default function Test({ onComplete, onSymbolsChange }) {
   const shuffledQuestions = useMemo(() => shuffleQuestions(questions), []);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
@@ -85,13 +82,8 @@ export default function Test({ onComplete }) {
     () => buildPersonaSymbols(profile.field, revealAt(profile.answeredCount)),
     [profile],
   );
-  // Selecting an option only changes the controls; update the field on saved answers.
-  const background = useMemo(() => (
-    <>
-      <AtmosphereField />
-      <OpticalStage preset={TEST_PRESET} symbols={symbols} />
-    </>
-  ), [symbols]);
+  // The persistent app background only updates when saved answers change.
+  useEffect(() => { onSymbolsChange(symbols); }, [symbols, onSymbolsChange]);
 
   const restoreState = (answer, question) => {
     if (!answer || !question) {
@@ -315,8 +307,6 @@ export default function Test({ onComplete }) {
 
   return (
     <>
-      {background}
-
       <div className="relative z-10 flex-1 flex flex-col px-6 py-8 min-h-[100svh] max-w-lg mx-auto w-full">
 
         {/* 进度与特征捕捉提示 */}

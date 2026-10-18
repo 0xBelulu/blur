@@ -1,14 +1,24 @@
-// Preserve the page order and animation parameters from the known-good 8c247da.
+// Preserve page order and numeric slide/scale ownership from the known-good 8c247da.
 const PAGE_ORDER = ['landing', 'about', 'archetypes', 'traits', 'questions', 'me', 'identity', 'invite', 'friend', 'together', 'test', 'loading', 'result', 'view', 'compare'];
 
+const TRANSITION_BLUR = 'blur(4px)';
+
 export const PAGE_VARIANTS = {
-  enter: (direction = 1) => ({ opacity: 0, x: direction > 0 ? 60 : -60, scale: 0.97, filter: 'blur(2px)' }),
+  enter: (direction = 1) => ({ opacity: 0, x: direction > 0 ? 60 : -60, scale: 0.97, filter: TRANSITION_BLUR }),
   center: {
     opacity: 1, x: 0, scale: 1, filter: 'blur(0px)',
-    // Motion owns x/scale throughout. Never reset its transform string on completion.
+    // Restore normal backdrop sampling for glass controls when the page settles.
+    // The expensive background is a persistent sibling, outside this filter.
     transitionEnd: { filter: 'none' },
   },
-  exit: (direction = 1) => ({ opacity: 0, x: direction > 0 ? -60 : 60, scale: 0.97, filter: 'blur(2px)' }),
+  exit: (direction = 1) => ({ opacity: 0, x: direction > 0 ? -60 : 60, scale: 0.97, filter: TRANSITION_BLUR }),
+};
+
+// The same always-mounted surface blurs on exit and clears on entry. Its filter
+// stays present at rest, so background compositing does not switch at completion.
+export const BACKGROUND_VARIANTS = {
+  center: { filter: 'blur(0px)' },
+  exit: { filter: TRANSITION_BLUR },
 };
 
 export const PAGE_TRANSITION = { duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] };

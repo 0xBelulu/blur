@@ -38,21 +38,6 @@ export default function Loading() {
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6 min-h-[100svh] relative overflow-hidden">
-      {/* ====== 环境光晕 ====== */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div
-          className="absolute top-[15%] left-[12%] w-48 h-48 rounded-full bg-blur-accent/6 blur-3xl animate-breathe-slow"
-        />
-        <div
-          className="absolute bottom-[20%] right-[15%] w-56 h-56 rounded-full bg-blur-accent-cool/6 blur-3xl animate-breathe-slow"
-          style={{ animationDelay: "1.5s" }}
-        />
-        <div
-          className="absolute top-[50%] right-[30%] w-32 h-32 rounded-full bg-blur-accent-warm/5 blur-3xl animate-breathe-slow"
-          style={{ animationDelay: "3s" }}
-        />
-      </div>
-
       {/* ====== 中央呼吸圆 ====== */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95, filter: "blur(4px)" }}

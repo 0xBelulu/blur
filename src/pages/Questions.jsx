@@ -56,17 +56,6 @@ export default function Questions({ onBack }) {
 
   return (
     <div className="flex-1 flex flex-col min-h-[100svh] relative overflow-hidden">
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div
-          className="absolute top-[14%] left-[8%] w-40 h-40 rounded-full bg-blur-accent/8 blur-3xl"
-          style={{ animation: "orb-scale-1 11s ease-in-out infinite" }}
-        />
-        <div
-          className="absolute bottom-[16%] right-[10%] w-48 h-48 rounded-full bg-blur-accent-cool/8 blur-3xl"
-          style={{ animation: "orb-scale-2 13s ease-in-out infinite" }}
-        />
-      </div>
-
       <div className="relative z-10 w-full max-w-2xl mx-auto flex flex-col min-h-[100svh]">
         <header className="flex-shrink-0 flex items-center justify-between px-6 md:px-10 py-5 border-b border-blur-border/20">
           <button

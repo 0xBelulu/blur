@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { ArrowLeft, ArrowRight, Check, Fingerprint } from 'lucide-react';
-import AtmosphereField from '../components/AtmosphereField';
 import AccountPanel from '../components/AccountPanel';
 import { saveProfile, exportRecoveryKey } from '../utils/cloud';
 import { updateAccountInfo } from '../utils/identity';
@@ -17,7 +16,7 @@ export default function Identity({ account, onBack, onDone }) {
   const [key, setKey] = useState('');
   const [keyOwner, setKeyOwner] = useState(null);
   const run = async (action) => { setBusy(true); setError(''); try { await action(); } catch (e) { setError(e.message); } finally { setBusy(false); } };
-  return <div className="personal-space"><AtmosphereField intensity={0.34} /><div className="pp-page pp-narrow">
+  return <div className="personal-space"><div className="pp-page pp-narrow">
     <header className="pp-header"><button className="pp-text-button" onClick={onBack}><ArrowLeft size={16} />回到刚才</button><span className="pp-brand">blur</span></header>
     {!created ? <section className="pp-create pp-enter"><p className="pp-eyebrow"><Fingerprint size={18} /></p><h1>下次来，还是你。</h1>
       <p className="pp-dialog-description">给自己起个名字，让朋友能找到你。无需邮箱，也不用记密码。</p>

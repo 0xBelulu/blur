@@ -45,6 +45,7 @@ export function useOpticalField({
   maxBlur = 13.5,
   scope = "viewport",
   onFocusChange,
+  active = true,
 }) {
   const symbolList = symbols || SPATIAL_SYMBOLS;
   const symbolsRef = useRef(symbolList);
@@ -57,12 +58,27 @@ export function useOpticalField({
   // Cache DOM values as well as the existing blur/opacity thresholds.
   // Unchanged values don't need to cross the JS/DOM boundary again.
   const lastStyleRef = useRef([]);
+  const activeRef = useRef(active);
+  const syncActivityRef = useRef(null);
+
+  useEffect(() => {
+    activeRef.current = active;
+    syncActivityRef.current?.();
+  }, [active]);
 
   useEffect(() => {
     symbolsRef.current = symbolList;
   }, [symbolList]);
 
   useEffect(() => {
+    if (focusConfigRef.current.focusMode !== focusMode) {
+      // A scene change must not carry a tap lock/reticle into the new symbol set.
+      const state = stateRef.current;
+      state.activeFocusedId = null;
+      state.reticle.active = false;
+      state.reticle.opacity = 0;
+      state.reticle.trackIndex = -1;
+    }
     focusConfigRef.current = { focusMode, focusZ, opacityCap, minBlur, maxBlur };
   }, [focusMode, focusZ, opacityCap, minBlur, maxBlur]);
 
@@ -100,6 +116,7 @@ export function useOpticalField({
       return animation;
     });
     dustAnimationsRef.current = animations;
+    syncActivityRef.current?.();
     return () => {
       animations.forEach((animation) => animation?.cancel());
       dustAnimationsRef.current = [];
@@ -258,6 +275,7 @@ export function useOpticalField({
 
     // 直接对焦到指定的符号 (核心统一通道)
     const focusOnSymbol = (item, i) => {
+      if (!activeRef.current) return;
       const local = symbolLocalPos(item, performance.now());
 
       state.activeFocusedId = item.id;
@@ -311,6 +329,7 @@ export function useOpticalField({
     // 指针/光标移动追踪（同时挂在 pointerenter / pointerover 上，
     // 指针重新进入窗口时无需先移动就能立刻恢复视差驱动）
     const handlePointerMove = (e) => {
+      if (!activeRef.current) return;
       const { clientX, clientY } = e;
 
       // 鼠标 / 触控笔活动：标记为鼠标驱动源并记录时刻，供视差驱动源仲裁使用
@@ -341,6 +360,7 @@ export function useOpticalField({
 
     // 移动端/触屏轻触合焦（Tap-to-Focus）：直接对焦到点按的元素上！
     const handlePointerDown = (e) => {
+      if (!activeRef.current) return;
       const { clientX, clientY } = e;
 
       if (e.pointerType !== "touch") state.mouseDriven = true;
@@ -403,6 +423,7 @@ export function useOpticalField({
     };
 
     const handlePointerLeave = () => {
+      if (!activeRef.current) return;
       // 指针真正离开窗口：清空鼠标位置，相机平滑回到中心并静止
       state.hasInteracted = false;
       state.mouseX = -9999;
@@ -415,11 +436,13 @@ export function useOpticalField({
     // 窗口失焦：只暂停“活动”状态，保留指针最后位置
     // 回到窗口后视差沿用原视点，不会突然弹回中心，也无需先移动鼠标才恢复
     const handleWindowBlur = () => {
+      if (!activeRef.current) return;
       state.hasInteracted = false;
     };
 
     // 移动端陀螺仪体感监听 (Device Orientation)
     const handleOrientation = (e) => {
+      if (!activeRef.current) return;
       const beta = e.beta;
       const gamma = e.gamma;
       if (beta === null || gamma === null) return;
@@ -624,6 +647,8 @@ export function useOpticalField({
           state.reticle.trackIndex = -1;
           writeStyle(reticleRef.current, reticleStyle, "opacity", "0");
         }
+      } else if (reticleRef.current) {
+        writeStyle(reticleRef.current, reticleStyle, "opacity", "0");
       }
 
       // 5. 核心统一物理场：由每个符号唯一的空间深度 Z_i 严格统领视差与弥散圆
@@ -713,7 +738,7 @@ export function useOpticalField({
 
     const tick = (now) => {
       animationFrameId = null;
-      if (disposed || document.hidden) return;
+      if (disposed || document.hidden || !activeRef.current) return;
       try {
         renderFrame(now);
       } catch (error) {
@@ -723,22 +748,34 @@ export function useOpticalField({
           console.warn("[OpticalFocusSpace] 单帧渲染异常，已跳过该帧：", error);
         }
       }
-      if (!disposed && !document.hidden) animationFrameId = requestAnimationFrame(tick);
+      if (!disposed && !document.hidden && activeRef.current) animationFrameId = requestAnimationFrame(tick);
     };
 
     const handleVisibilityChange = () => {
-      if (document.hidden) {
+      const running = !disposed && !document.hidden && activeRef.current;
+      for (const animation of dustAnimationsRef.current) {
+        if (!animation) continue;
+        if (!running && animation.playState !== 'paused') animation.pause();
+        else if (running && animation.playState === 'paused') {
+          animation.play();
+          // Restore the shared clock used by the JS fallback as well.
+          animation.startTime = 0;
+        }
+      }
+      if (!running) {
         if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
         animationFrameId = null;
       } else if (!disposed && animationFrameId === null) {
         animationFrameId = requestAnimationFrame(tick);
       }
     };
+    syncActivityRef.current = handleVisibilityChange;
     document.addEventListener("visibilitychange", handleVisibilityChange);
     handleVisibilityChange();
 
     return () => {
       disposed = true;
+      syncActivityRef.current = null;
       if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("resize", handleViewportChange);

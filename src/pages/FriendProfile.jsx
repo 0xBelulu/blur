@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
-import AtmosphereField from '../components/AtmosphereField';
 import { PortraitField, PortraitMark } from '../components/PersonalElements';
 import { readPeople } from '../utils/people';
 import { canCompare } from '../../shared/profile';
@@ -41,7 +40,7 @@ export default function FriendProfile({ publicId, account, mode, onBack, onCreat
   }
   const portrait = data?.portrait;
   const profile = portrait?.result.archetype;
-  return <div className="personal-space"><AtmosphereField intensity={0.34} /><div className="pp-page">
+  return <div className="personal-space"><div className="pp-page">
     <header className="pp-header"><button className="pp-text-button" onClick={onBack}><ArrowLeft size={16} />我的好友</button><span className="pp-brand">blur</span></header>
     {!account.registered ? <section className="pp-empty"><h1>先找回你自己的名字。</h1><p>创建或恢复身份后，才能读取好友画像。</p><button className="pp-primary" onClick={onCreate}>创建或恢复身份<ArrowRight size={15} /></button></section>
       : error || !data ? <section className="pp-empty"><h1>{error ? '暂时没能读到这份画像。' : '正在找回你们的连接…'}</h1><p role="status">{error}</p>{error && <button className="pp-outline" onClick={() => setRevision((v) => v + 1)}><RefreshCw size={14} />重新读取</button>}</section>

@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, useMotionValue } from 'framer-motion';
 import PageTransition from './components/PageTransition';
+import AppBackground from './components/AppBackground';
 import { nextPageRoute, pageKey } from './utils/pageTransitions';
 import Landing from './pages/Landing';
 import Test from './pages/Test';
@@ -15,13 +16,15 @@ import SharedProfile from './pages/SharedProfile';
 import Identity from './pages/Identity';
 import Invite from './pages/Invite';
 import FriendProfile from './pages/FriendProfile';
-import { generateResult } from './utils/blurEngine';
+import { generateResult, solveProfile } from './utils/blurEngine';
+import { buildPersonaSymbols, revealAt } from './utils/personaSymbols';
 import { questions } from './data/questions';
 import { getHistoryRecords, getAllHistoryRecords, saveHistoryRecord, removeLocalRecord } from './utils/historyStorage';
 import { flushPending, refreshCloudHistory, downloadRecord } from './utils/cloud';
 import { getAccountInfo, ensureLocalIdentity, updateAccountInfo } from './utils/identity';
 
 const LOADING_DURATION = 3500;
+const INITIAL_TEST_SYMBOLS = buildPersonaSymbols(solveProfile([]).field, revealAt(0));
 
 function readRoute() {
   const [screen, id] = window.location.hash.slice(1).split('/');
@@ -40,6 +43,11 @@ function readRoute() {
 
 export default function App() {
   const [route, setRoute] = useState(() => ({ ...readRoute(), direction: 1 }));
+  const [background, setBackground] = useState(() => ({ screen: route.screen, present: true }));
+  // One animation value drives both sibling layers, including the transparent
+  // boundary where wait-mode navigation replaces the foreground page.
+  const pageOpacity = useMotionValue(1);
+  const [testSymbols, setTestSymbols] = useState(INITIAL_TEST_SYMBOLS);
   const [records, setRecords] = useState(getHistoryRecords);
   const [account, setAccount] = useState(getAccountInfo);
   const [unsavedResult, setUnsavedResult] = useState(null);
@@ -49,6 +57,11 @@ export default function App() {
   const loadingTimer = useRef(null);
   const comparisonTarget = useRef(null);
   const accountId = useRef(account.id);
+
+  const syncBackground = useCallback((screen, present) => {
+    setBackground((previous) => previous.screen === screen && previous.present === present
+      ? previous : { screen, present });
+  }, []);
 
   const navigate = useCallback((screen, id) => {
     setRoute((previous) => nextPageRoute(previous, { screen, id }));
@@ -109,6 +122,7 @@ export default function App() {
     comparisonTarget.current = shareId;
     setComparisonRecordId(null);
     setUnsavedResult(null);
+    setTestSymbols(INITIAL_TEST_SYMBOLS);
     navigate('test');
   };
 
@@ -189,7 +203,7 @@ export default function App() {
     case 'together': content = <FriendProfile key={`${account.id}/${route.screen}/${route.id}`} publicId={route.id} account={account} mode={route.screen}
       onBack={() => navigate('me', 'friends')} onCreate={() => navigate('identity', `${route.screen}-${route.id}`)}
       onCompare={() => navigate('together', route.id)} onView={() => navigate('friend', route.id)} onMy={openMy} />; break;
-    case 'test': content = <Test onComplete={complete} />; break;
+    case 'test': content = <Test onComplete={complete} onSymbolsChange={setTestSymbols} />; break;
     case 'loading': content = <Loading />; break;
     case 'result': content = record?.result || unsavedResult
       ? <Result result={record?.result || unsavedResult} record={record} onRestart={home} onOpenMy={openMy} />
@@ -203,9 +217,10 @@ export default function App() {
     default: content = <Landing onStart={() => start()} onExplore={() => navigate('about')} onOpenMy={openMy} />;
   }
 
-  return <div className="min-h-[100svh] bg-blur-bg">
+  return <div className="relative isolate min-h-[100svh] bg-blur-bg">
+    <AppBackground screen={background.screen} present={background.present} testSymbols={testSymbols} opacity={pageOpacity} />
     <AnimatePresence mode="wait" custom={route.direction}>
-      <PageTransition key={pageKey(route)} direction={route.direction}>
+      <PageTransition key={pageKey(route)} direction={route.direction} screen={route.screen} onTransition={syncBackground} opacity={pageOpacity}>
         {content}
       </PageTransition>
     </AnimatePresence>

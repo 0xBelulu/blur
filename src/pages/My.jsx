@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { ArrowLeft, ArrowUpRight, ArrowRight, Check, ChevronRight, Fingerprint, LockKeyhole, Pencil, Users } from 'lucide-react';
-import AtmosphereField from '../components/AtmosphereField';
 import AccountPanel from '../components/AccountPanel';
 import ShareControls from '../components/ShareControls';
 import RecordBadges from '../components/RecordBadges';
@@ -40,7 +39,6 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
   };
   const settings = () => open('identity');
   return <div className="personal-space">
-    <AtmosphereField intensity={0.34} />
     <div className="pp-page">
       <header className="pp-header">
         <div className="pp-header-lead">

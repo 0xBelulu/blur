@@ -2,9 +2,6 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserRound, Sparkles } from "lucide-react";
 import GlassButton from "../components/GlassButton";
-import AtmosphereField from "../components/AtmosphereField";
-import OpticalStage from "../components/optical/OpticalStage";
-import { LANDING_PRESET } from "../components/optical/presets";
 
 const TIPS = [
   "如果你在读这句话，说明你确实在读。",
@@ -81,12 +78,6 @@ export default function Landing({ onStart, onExplore, onOpenMy }) {
 
   return (
     <div className="flex-1 flex flex-col md:flex-row items-center md:justify-center px-6 md:px-16 lg:px-24 pt-20 pb-12 md:py-16 min-h-[100svh] relative overflow-hidden max-w-6xl mx-auto w-full">
-      {/* ── 温润水彩漫染流光（与做题页共用） ── */}
-      <AtmosphereField />
-
-      {/* ── Optical 3D focus breathing space ── */}
-      <OpticalStage preset={LANDING_PRESET} />
-
       {/* Left — Brand */}
       <div className="relative z-10 w-full md:w-1/2 text-center md:text-left flex flex-col justify-start md:justify-center md:pr-8 lg:pr-16 mb-10 md:mb-0">
         <motion.div

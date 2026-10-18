@@ -63,7 +63,12 @@ export function createOpticalHost(source = opticalSource(), options = {}) {
       return { left: (window.innerWidth - width) / 2, top: (window.innerHeight - height) / 2, width, height };
     }
     animate(keyframes, timing) {
-      const animation = { keyframes, timing, startTime: now, cancelled: false, cancel() { this.cancelled = true; } };
+      const animation = {
+        keyframes, timing, startTime: now, cancelled: false, playState: 'running',
+        pause() { this.holdTime = now - this.startTime; this.playState = 'paused'; },
+        play() { this.startTime = now - this.holdTime; this.playState = 'running'; },
+        cancel() { this.cancelled = true; this.playState = 'idle'; },
+      };
       this.animations.push(animation);
       return animation;
     }
@@ -71,7 +76,8 @@ export function createOpticalHost(source = opticalSource(), options = {}) {
       const animation = this.animations.findLast((item) => !item.cancelled);
       if (!animation) return Math.max(0, Number(this.style.opacity));
       const { duration, delay = 0 } = animation.timing;
-      const progress = ((now - animation.startTime - delay) % duration) / duration;
+      const elapsed = animation.playState === 'paused' ? animation.holdTime : now - animation.startTime;
+      const progress = ((elapsed - delay) % duration) / duration;
       const frames = animation.keyframes;
       const next = frames.findIndex((frame) => frame.offset > progress);
       const index = next === -1 ? frames.length - 2 : Math.max(0, next - 1);

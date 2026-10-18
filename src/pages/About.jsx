@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowLeft, ArrowRight, ArrowUpRight, Hash, List, Sparkles } from "lucide-react";
-import AtmosphereField from "../components/AtmosphereField";
 import GlassButton from "../components/GlassButton";
 import OpticalStage from "../components/optical/OpticalStage";
 import { ABOUT_PRESET } from "../components/optical/presets";
@@ -270,8 +269,6 @@ export default function About({ onBack, onStart, onOpenArchetypes, onOpenTraits,
 
   return (
     <div className="flex-1 flex flex-col min-h-[100svh] relative overflow-hidden">
-      <AtmosphereField intensity={0.7} />
-
       {/* 滚动容器铺满整个窗口：滚轮在屏幕任意位置都有效，滚动条也落在窗口右缘 */}
       <main className="relative z-10 h-[100svh] w-full overflow-y-auto custom-scrollbar" onScroll={handleScroll}>
         {/* ── Header：吸顶，带阅读进度 ── */}

@@ -35,3 +35,20 @@ export const ABOUT_PRESET = {
   // 这一场只有 380px 高、十个符号，糊到 13.5px 就只剩色斑了
   maxBlur: 6.5,
 };
+
+// Shared full-viewport scenes. The embedded About field remains page content.
+export const PAGE_BACKGROUND_PRESETS = {
+  landing: { atmosphere: 1, optical: 'landing' },
+  test: { atmosphere: 1, optical: 'test' },
+  about: { atmosphere: 0.7 },
+  me: { atmosphere: 0.34 },
+  identity: { atmosphere: 0.34 },
+  invite: { atmosphere: 0.34 },
+  friend: { atmosphere: 0.34 },
+  together: { atmosphere: 0.34 },
+  archetypes: { atmosphere: 0, wash: 'catalog' },
+  traits: { atmosphere: 0, wash: 'catalog' },
+  questions: { atmosphere: 0, wash: 'catalog' },
+  loading: { atmosphere: 0, wash: 'loading' },
+  plain: { atmosphere: 0 },
+};

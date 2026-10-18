@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { nextPageRoute, pageKey, PAGE_VARIANTS } from '../src/utils/pageTransitions.js';
+import { nextPageRoute, pageKey, PAGE_VARIANTS, BACKGROUND_VARIANTS } from '../src/utils/pageTransitions.js';
 
 test('all three home actions slide forward, and returning home reverses the direction', () => {
   const home = { screen: 'landing', direction: 1 };
@@ -56,6 +56,18 @@ test('transition completion keeps numeric transform ownership so it cannot reset
   }
   assert.equal(center.x, 0);
   assert.equal(center.scale, 1);
-  assert.equal(center.transitionEnd.transform, undefined);
+  assert.equal(center.transitionEnd?.transform, undefined);
+  assert.equal(center.filter, 'blur(0px)');
   assert.equal(center.transitionEnd.filter, 'none');
+});
+
+test('page and persistent background both blur, while resting glass regains normal sampling', () => {
+  for (const direction of [-1, 1]) {
+    assert.equal(PAGE_VARIANTS.enter(direction).filter, BACKGROUND_VARIANTS.exit.filter);
+    assert.equal(PAGE_VARIANTS.exit(direction).filter, BACKGROUND_VARIANTS.exit.filter);
+    assert.notEqual(BACKGROUND_VARIANTS.exit.filter, BACKGROUND_VARIANTS.center.filter);
+  }
+  assert.equal(BACKGROUND_VARIANTS.center.filter, 'blur(0px)');
+  assert.equal(BACKGROUND_VARIANTS.center.transitionEnd, undefined);
+  assert.equal(PAGE_VARIANTS.center.transitionEnd.filter, 'none');
 });
