@@ -86,11 +86,13 @@
 .pp-friend-info{flex:1}.pp-friend h3{margin:0 0 6px;font-size:17px;font-weight:500;display:flex;align-items:center;gap:13px}
 .pp-friend h3 span{font-size:10px;font-weight:400;color:#8d7f73;border-left:1px solid var(--line);padding-left:13px}
 .pp-friend p{font-size:12px;margin:0 0 7px;color:#7f756d}.pp-friend small{font-size:10px;color:#9a8d81}
-.pp-dialog{padding:0;max-width:calc(100vw - 32px);width:470px;max-height:85svh;border:1px solid rgba(255,255,255,.8);border-radius:15px;background:#f7f5f2;color:var(--text);box-shadow:0 22px 90px rgba(69,57,50,.13);overscroll-behavior:contain}
-.pp-dialog::backdrop{background:rgba(64,54,49,.17);backdrop-filter:blur(7px)}
-.pp-dialog[open]{animation:pp-enter .22s ease}
-.pp-dialog-inner{padding:38px;position:relative}
-.pp-close{position:absolute;top:13px;right:13px;padding:6px;display:flex;border:0;background:transparent;color:#92867b!important;border-radius:50%}
+/* 全局 reset 会把 dialog 的 UA `margin:auto` 一起清掉，导致弹层贴在屏幕角落，这里显式恢复居中 */
+.pp-dialog{position:fixed;inset:0;margin:auto;display:none;flex-direction:column;padding:0;max-width:calc(100vw - 32px);width:470px;max-height:min(84svh,760px);border:1px solid rgba(255,255,255,.8);border-radius:15px;background:#f7f5f2;color:var(--text);box-shadow:0 22px 90px rgba(69,57,50,.13);overscroll-behavior:contain}
+.pp-dialog[open]{display:flex;animation:pp-dialog-in .26s cubic-bezier(.22,.61,.36,1) both}
+.pp-dialog::backdrop{background:rgba(64,54,49,.17);backdrop-filter:blur(7px);animation:pp-fade-in .26s ease both}
+.pp-dialog-inner{padding:38px;position:relative;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.pp-close{position:absolute;top:13px;right:13px;z-index:2;padding:6px;display:flex;border:0;background:rgba(247,245,242,.86);backdrop-filter:blur(6px);color:#92867b!important;border-radius:50%;transition:background .18s ease,color .18s ease}
+.pp-close:hover{background:rgba(119,106,95,.1);color:var(--text)!important}
 .pp-dialog h2{font-size:23px;font-weight:400;margin:10px 0 23px;line-height:1.6}
 .pp-dialog label{display:block;font-size:11px;margin:20px 0;color:var(--muted)}
 .pp-dialog input,.pp-dialog textarea{display:block;margin-top:9px;font:inherit;font-size:14px;color:var(--text);border:1px solid var(--line);background:rgba(255,255,255,.45);padding:12px 14px;width:100%;border-radius:6px;resize:vertical;outline-color:#9b8ec7;line-height:1.7}
@@ -111,6 +113,8 @@
 .pp-compare-art{display:flex;align-items:center;justify-content:center;gap:20px;padding:20px 0 12px}.pp-compare-art .pp-mark{width:92px;height:92px}.pp-compare-art>span{font-size:16px;color:#a19488}
 .pp-compare-names{text-align:center;font-size:18px;margin:0 0 30px}.pp-compare-names span{font-size:11px;margin:0 20px;color:var(--muted)}
 @keyframes pp-enter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pp-dialog-in{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes pp-fade-in{from{opacity:0}to{opacity:1}}
 @keyframes pp-panel-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pp-symbol-enter{from{opacity:0;filter:blur(4px);transform:translateY(3px)}to{opacity:.9;filter:blur(0);transform:translateY(0)}}
 @keyframes pp-breathe{from{transform:scale(.96) rotate(-4deg)}to{transform:scale(1.045) rotate(4deg)}}

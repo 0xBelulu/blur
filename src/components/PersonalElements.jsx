@@ -23,9 +23,10 @@ export function PersonalModal({ title, onClose, busy = false, children }) {
     return () => { node.close(); document.body.style.overflow = previous; };
   }, []);
   return <dialog ref={dialog} className="pp-dialog" aria-labelledby={label}
-    onCancel={(e) => { e.preventDefault(); if (!busy) onClose(); }}>
+    onCancel={(e) => { e.preventDefault(); if (!busy) onClose(); }}
+    onClick={(e) => { if (e.target === dialog.current && !busy) onClose(); }}>
+    <button className="pp-close" aria-label="关闭" disabled={busy} onClick={onClose}><X size={18} /></button>
     <div className="pp-dialog-inner">
-      <button className="pp-close" aria-label="关闭" disabled={busy} onClick={onClose}><X size={18} /></button>
       <h2 id={label}>{title}</h2>{children}
     </div>
   </dialog>;
