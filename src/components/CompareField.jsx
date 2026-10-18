@@ -71,7 +71,7 @@ export default function CompareField({ overlap }) {
       const leanX = (pointer.x - 0.5) * 2;
       const leanY = (pointer.y - 0.5) * 2;
 
-      const radius = Math.min(h * 0.4, w * 0.145);
+      const radius = Math.min(h * 0.42, w * 0.19);
       const cx = w / 2;
       const cy = h / 2;
 
