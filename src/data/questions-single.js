@@ -751,7 +751,7 @@ export const singleQuestions = [
     "options": [
       {
         "id": "a",
-        "text": "找人聊聊，在探讨碰撞里找思路",
+        "text": "长期孤立封闭，无法与外界建立真实连接",
         "dimensions": {
           "energySource": 0.75,
           "expressivity": 0.75,
@@ -766,7 +766,7 @@ export const singleQuestions = [
       },
       {
         "id": "b",
-        "text": "受不了悬着，必须立刻定出结论",
+        "text": "秩序崩溃边界被践踏，失去对生活的掌控感",
         "dimensions": {
           "boundaryClarity": 0.65,
           "closureTolerance": -0.42,
@@ -781,7 +781,7 @@ export const singleQuestions = [
       },
       {
         "id": "c",
-        "text": "先放在心里慢炖，等待水落石出",
+        "text": "感官钝化麻木，对周遭失去细腻敏锐的共情",
         "dimensions": {
           "sensorySensitivity": 1.1,
           "processingDepth": 0.9,
@@ -796,7 +796,7 @@ export const singleQuestions = [
       },
       {
         "id": "d",
-        "text": "觉得悬着挺好的，不用急着定死",
+        "text": "被困在死板模板中，失去探索新可能的自由",
         "dimensions": {
           "changeAffinity": 0.75,
           "closureTolerance": 0.65,
@@ -818,7 +818,7 @@ export const singleQuestions = [
     "options": [
       {
         "id": "a",
-        "text": "前排中间，方便跟讲者互动",
+        "text": "召集好友聚餐游玩，在热闹欢笑中释放活力",
         "dimensions": {
           "energySource": 0.75,
           "expressivity": 0.75,
@@ -833,7 +833,7 @@ export const singleQuestions = [
       },
       {
         "id": "b",
-        "text": "靠过道后排，进出方便有退路",
+        "text": "按规划高效完成事项，保持生活秩序与节奏",
         "dimensions": {
           "boundaryClarity": 0.65,
           "closureTolerance": -0.42,
@@ -848,7 +848,7 @@ export const singleQuestions = [
       },
       {
         "id": "c",
-        "text": "不起眼的角落，默默听完全程",
+        "text": "泡壶热茶沉浸阅读，看一部打动心灵的电影",
         "dimensions": {
           "processingDepth": 1.1,
           "sensorySensitivity": 0.8,
@@ -863,7 +863,7 @@ export const singleQuestions = [
       },
       {
         "id": "d",
-        "text": "哪儿顺眼坐哪儿，不挑位置",
+        "text": "睡到自然醒，跟随偶发的奇想随兴出发探索",
         "dimensions": {
           "changeAffinity": 0.75,
           "closureTolerance": 0.65,
@@ -1021,7 +1021,7 @@ export const singleQuestions = [
     "options": [
       {
         "id": "a",
-        "text": "喊大家一起想办法，人多力量大",
+        "text": "迈开大步迎着晚风，感受城市律动的活力",
         "dimensions": {
           "energySource": 0.75,
           "expressivity": 0.75,
@@ -1036,7 +1036,7 @@ export const singleQuestions = [
       },
       {
         "id": "b",
-        "text": "理清谁负责什么，建立规则止损",
+        "text": "保持专注与警觉，沿最高效安全的路线回家",
         "dimensions": {
           "boundaryClarity": 0.65,
           "closureTolerance": -0.42,
@@ -1051,7 +1051,7 @@ export const singleQuestions = [
       },
       {
         "id": "c",
-        "text": "先深呼吸稳住心态，别让情绪乱了",
+        "text": "放慢脚步细听风声虫鸣，任由思绪慢慢沉淀",
         "dimensions": {
           "energySource": -0.7,
           "sensorySensitivity": 1,
@@ -1067,7 +1067,7 @@ export const singleQuestions = [
       },
       {
         "id": "d",
-        "text": "换个反常的歪招，说不定能破局",
+        "text": "随心拐进未走过的暗巷，享受偶遇的新鲜感",
         "dimensions": {
           "changeAffinity": 0.75,
           "closureTolerance": 0.65,
@@ -1089,7 +1089,7 @@ export const singleQuestions = [
     "options": [
       {
         "id": "a",
-        "text": "在群里发消息看谁也被困住了",
+        "text": "暖意洋溢的客厅，随时为归来的伙伴敞开",
         "dimensions": {
           "energySource": 0.75,
           "expressivity": 0.75,
@@ -1104,7 +1104,7 @@ export const singleQuestions = [
       },
       {
         "id": "b",
-        "text": "淡定拿出准备好的伞，按原计划走",
+        "text": "坚固可靠的避风港，界限分明且整洁有序",
         "dimensions": {
           "boundaryClarity": 0.65,
           "closureTolerance": -0.42,
@@ -1119,7 +1119,7 @@ export const singleQuestions = [
       },
       {
         "id": "c",
-        "text": "站在窗前看雨发呆，很享受这声响",
+        "text": "温润安宁的摇篮，安放所有隐秘情绪与脆弱",
         "dimensions": {
           "sensorySensitivity": 0.9,
           "processingDepth": 0.8,
@@ -1134,7 +1134,7 @@ export const singleQuestions = [
       },
       {
         "id": "d",
-        "text": "冲进雨里踩水，觉得特别解压",
+        "text": "自由改造的工作坊，每次都能变换出新格局",
         "dimensions": {
           "changeAffinity": 0.75,
           "cognitiveRange": 0.75,
@@ -1157,7 +1157,7 @@ export const singleQuestions = [
     "options": [
       {
         "id": "a",
-        "text": "跟店员随便聊两句，或者观察客人",
+        "text": "与同频伙伴热烈探讨、彼此点燃激情的时刻",
         "dimensions": {
           "energySource": 0.75,
           "expressivity": 0.75,
@@ -1172,7 +1172,7 @@ export const singleQuestions = [
       },
       {
         "id": "b",
-        "text": "拿出电脑或手机处理一条待办",
+        "text": "排除外部杂音、专注推进并达成目标的一刻",
         "dimensions": {
           "boundaryClarity": 0.65,
           "closureTolerance": -0.42,
@@ -1187,7 +1187,7 @@ export const singleQuestions = [
       },
       {
         "id": "c",
-        "text": "看窗外发呆，听背景音乐的旋律",
+        "text": "沉浸在深刻创作与情感中，与内在深处对话",
         "dimensions": {
           "processingDepth": 1.1,
           "sensorySensitivity": 0.9,
@@ -1202,7 +1202,7 @@ export const singleQuestions = [
       },
       {
         "id": "d",
-        "text": "翻看店里的奇怪书刊或周边小物",
+        "text": "卸下所有既定标签，毫无拘束尝试新事物时",
         "dimensions": {
           "changeAffinity": 0.75,
           "cognitiveRange": 0.75,
@@ -1225,7 +1225,7 @@ export const singleQuestions = [
     "options": [
       {
         "id": "a",
-        "text": "黄金年代的先锋沙龙，夜夜高朋满座",
+        "text": "主动发起好友聚会或运动，畅快流汗玩乐",
         "dimensions": {
           "energySource": 0.75,
           "expressivity": 0.75,
@@ -1240,7 +1240,7 @@ export const singleQuestions = [
       },
       {
         "id": "b",
-        "text": "古希腊哲人学院，讨论纯粹的秩序真相",
+        "text": "对照计划清单，把积压的重点事项逐一推进",
         "dimensions": {
           "boundaryClarity": 0.65,
           "closureTolerance": -0.42,
@@ -1255,7 +1255,7 @@ export const singleQuestions = [
       },
       {
         "id": "c",
-        "text": "隐居深山的无名草庐，听雨烹茶",
+        "text": "找个安静角落深潜阅读，沉淀当下的心绪",
         "dimensions": {
           "processingDepth": 1.1,
           "temporalDepth": 0.8,
@@ -1270,7 +1270,7 @@ export const singleQuestions = [
       },
       {
         "id": "d",
-        "text": "几百年后的未知星际，看外星文明",
+        "text": "不设固定日程，顺应灵感指引随时换个玩法",
         "dimensions": {
           "changeAffinity": 0.75,
           "closureTolerance": 0.65,
@@ -1292,7 +1292,7 @@ export const singleQuestions = [
     "options": [
       {
         "id": "a",
-        "text": "拍拍对方肩膀，直接给暖意和鼓励",
+        "text": "充满对话与冒险的故事，奔跑交流热烈鲜活",
         "dimensions": {
           "energySource": 0.75,
           "expressivity": 0.75,
@@ -1307,7 +1307,7 @@ export const singleQuestions = [
       },
       {
         "id": "b",
-        "text": "帮他拆解问题核心，给出解决建议",
+        "text": "逻辑清晰的解谜推进，结构严谨且步步为营",
         "dimensions": {
           "boundaryClarity": 0.65,
           "closureTolerance": -0.42,
@@ -1323,7 +1323,7 @@ export const singleQuestions = [
       },
       {
         "id": "c",
-        "text": "安静听着，感同身受地陪对方难过",
+        "text": "情绪幽微饱满的镜头，醒来仍觉余味绵长",
         "dimensions": {
           "energySource": -0.7,
           "sensorySensitivity": 1,
@@ -1339,7 +1339,7 @@ export const singleQuestions = [
       },
       {
         "id": "d",
-        "text": "换个轻松的角度安慰，帮他把心放宽",
+        "text": "超现实奇幻拼贴，充满不可思议的情节转折",
         "dimensions": {
           "changeAffinity": 0.75,
           "cognitiveRange": 0.75,
@@ -1497,7 +1497,7 @@ export const singleQuestions = [
     "options": [
       {
         "id": "a",
-        "text": "边走边和身边的朋友天南海北胡侃",
+        "text": "热闹温馨的夜晚街市，人们洋溢着烟火笑意",
         "dimensions": {
           "energySource": 0.75,
           "expressivity": 0.75,
@@ -1512,7 +1512,7 @@ export const singleQuestions = [
       },
       {
         "id": "b",
-        "text": "沿着熟悉的固定路线，步速稳定高效",
+        "text": "井井有条的书房，分类整齐且桌面一尘不染",
         "dimensions": {
           "boundaryClarity": 0.65,
           "closureTolerance": -0.42,
@@ -1527,7 +1527,7 @@ export const singleQuestions = [
       },
       {
         "id": "c",
-        "text": "塞着耳机慢慢溜达，闻闻空气的味道",
+        "text": "窗外细细雨打芭蕉，室内一灯如豆温暖宁静",
         "dimensions": {
           "sensorySensitivity": 1,
           "temporalDepth": 0.8,
@@ -1542,7 +1542,7 @@ export const singleQuestions = [
       },
       {
         "id": "d",
-        "text": "故意钻进没去过的胡同里探险",
+        "text": "辽阔无垠的原野，道路在前方蜿蜒伸向天际",
         "dimensions": {
           "changeAffinity": 0.75,
           "cognitiveRange": 0.75,
@@ -1700,7 +1700,7 @@ export const singleQuestions = [
     "options": [
       {
         "id": "a",
-        "text": "当面直说，有话摊开聊清楚",
+        "text": "大方表达真实感受，主动招呼大家改善环境",
         "dimensions": {
           "expressivity": 0.75,
           "energySource": 0.75,
@@ -1715,7 +1715,7 @@ export const singleQuestions = [
       },
       {
         "id": "b",
-        "text": "摆事实讲证据，谁在理听谁的",
+        "text": "建立物理隔绝或干预，快速恢复掌控与秩序",
         "dimensions": {
           "boundaryClarity": 0.65,
           "closureTolerance": -0.42,
@@ -1730,7 +1730,7 @@ export const singleQuestions = [
       },
       {
         "id": "c",
-        "text": "不想起冲突，先沉默听对方说",
+        "text": "敏锐感知身心变化，在静默中慢慢适应调和",
         "dimensions": {
           "energySource": -0.7,
           "sensorySensitivity": 1.1,
@@ -1746,7 +1746,7 @@ export const singleQuestions = [
       },
       {
         "id": "d",
-        "text": "无所谓对错，觉得各有各的道理",
+        "text": "把突变视作新刺激，随遇而安自然享受变化",
         "dimensions": {
           "changeAffinity": 0.75,
           "closureTolerance": 0.65,
@@ -1768,7 +1768,7 @@ export const singleQuestions = [
     "options": [
       {
         "id": "a",
-        "text": "能和朋友联络的通讯设备",
+        "text": "坦率直陈想法，主动面对面沟通寻求共识",
         "dimensions": {
           "expressivity": 0.75,
           "energySource": 0.75,
@@ -1783,7 +1783,7 @@ export const singleQuestions = [
       },
       {
         "id": "b",
-        "text": "一把精准好用的工具刀",
+        "text": "摆事实讲原则，守住客观底线与清晰逻辑",
         "dimensions": {
           "boundaryClarity": 0.65,
           "closureTolerance": -0.42,
@@ -1798,7 +1798,7 @@ export const singleQuestions = [
       },
       {
         "id": "c",
-        "text": "一本翻了很多遍的旧书",
+        "text": "换位体察情绪症结，寻找兼顾感受的方案",
         "dimensions": {
           "energySource": -0.7,
           "sensorySensitivity": 1,
@@ -1814,7 +1814,7 @@ export const singleQuestions = [
       },
       {
         "id": "d",
-        "text": "一块不断变色的万花筒",
+        "text": "跳出二元对立，提出跳脱框架的第三条路径",
         "dimensions": {
           "cognitiveRange": 0.75,
           "changeAffinity": 0.75,
@@ -1836,7 +1836,7 @@ export const singleQuestions = [
     "options": [
       {
         "id": "a",
-        "text": "攒个局小聚一下，喝点小酒",
+        "text": "与他人热烈头脑风暴，在交谈碰撞中迸发",
         "dimensions": {
           "energySource": 0.75,
           "expressivity": 0.75,
@@ -1851,7 +1851,7 @@ export const singleQuestions = [
       },
       {
         "id": "b",
-        "text": "把房间收拾得极其利落整洁",
+        "text": "沿着严密逻辑推演，一步步搭建出清晰框架",
         "dimensions": {
           "boundaryClarity": 0.65,
           "closureTolerance": -0.42,
@@ -1867,7 +1867,7 @@ export const singleQuestions = [
       },
       {
         "id": "c",
-        "text": "洗个热水澡，听着白噪音看书",
+        "text": "经过长久酝酿沉淀，在直觉中如泉水般涌出",
         "dimensions": {
           "energySource": -0.7,
           "processingDepth": 1.1,
@@ -1883,7 +1883,7 @@ export const singleQuestions = [
       },
       {
         "id": "d",
-        "text": "熬夜通宵看一部冷门小众电影",
+        "text": "跨界跳跃偶然联想，灵光一闪突然冒出",
         "dimensions": {
           "cognitiveRange": 0.75,
           "changeAffinity": 0.75,
@@ -1973,7 +1973,7 @@ export const singleQuestions = [
     "options": [
       {
         "id": "a",
-        "text": "炽热耀眼、能在黑暗中引路的明灯",
+        "text": "晴空万里阳光普照，万物充满向外蓬勃生机",
         "dimensions": {
           "energySource": 0.75,
           "expressivity": 0.75,
@@ -1988,7 +1988,7 @@ export const singleQuestions = [
       },
       {
         "id": "b",
-        "text": "坚固锋利、棱角分明的秩序之刃",
+        "text": "清冽霜晨空气通透，一切轮廓分明秩序井然",
         "dimensions": {
           "boundaryClarity": 0.65,
           "closureTolerance": -0.42,
@@ -2003,7 +2003,7 @@ export const singleQuestions = [
       },
       {
         "id": "c",
-        "text": "深不可测、能化解一切冲撞的软甲",
+        "text": "暮色沉沉细雨绵绵，天地笼罩在静谧温柔中",
         "dimensions": {
           "sensorySensitivity": 1,
           "temporalDepth": 0.9,
@@ -2018,7 +2018,7 @@ export const singleQuestions = [
       },
       {
         "id": "d",
-        "text": "随心变幻形态、不可捉摸的流体",
+        "text": "阵雨初歇彩虹横贯，风向与天色随时变换",
         "dimensions": {
           "changeAffinity": 0.75,
           "cognitiveRange": 0.75,
@@ -2448,7 +2448,7 @@ export const singleQuestions = [
     "options": [
       {
         "id": "a",
-        "text": "彼此毫无保留的坦诚与热烈分享",
+        "text": "破晓升起的朝阳，温暖明亮且极富感染力",
         "dimensions": {
           "energySource": 0.75,
           "expressivity": 0.75,
@@ -2463,7 +2463,7 @@ export const singleQuestions = [
       },
       {
         "id": "b",
-        "text": "互相尊重边界与言出必行的信诺",
+        "text": "结构清晰的折射晶体，棱角分明且坚不可摧",
         "dimensions": {
           "boundaryClarity": 0.65,
           "closureTolerance": -0.42,
@@ -2478,7 +2478,7 @@ export const singleQuestions = [
       },
       {
         "id": "c",
-        "text": "心照不宣的默契与深层灵魂理解",
+        "text": "林间静谧深潭，看似澄澈平静却深不见底",
         "dimensions": {
           "processingDepth": 1.1,
           "sensorySensitivity": 0.9,
@@ -2493,7 +2493,7 @@ export const singleQuestions = [
       },
       {
         "id": "d",
-        "text": "在一起总有新鲜感，永远不无聊",
+        "text": "穿行云海的自由纸鸢，随风向轻盈起伏变幻",
         "dimensions": {
           "changeAffinity": 0.75,
           "cognitiveRange": 0.75,
