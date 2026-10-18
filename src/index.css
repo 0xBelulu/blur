@@ -44,6 +44,33 @@ body {
   flex-direction: column;
 }
 
+/* Composite balanced monochrome dither after the blurred atmosphere layers.
+   The opaque, isolated backdrop keeps overlay neutral and away from page content. */
+.atmosphere-field {
+  background-color: var(--color-blur-bg);
+  isolation: isolate;
+}
+
+.atmosphere-dither {
+  background-repeat: repeat;
+  background-size: 128px 128px;
+  mix-blend-mode: overlay;
+  opacity: 0.12;
+}
+
+/* Keep the grain near one physical pixel on high-density phone displays. */
+@media (min-resolution: 2dppx) {
+  .atmosphere-dither { background-size: 64px 64px; }
+}
+
+@media (min-resolution: 3dppx) {
+  .atmosphere-dither { background-size: 42.666667px 42.666667px; }
+}
+
+@media (min-resolution: 4dppx) {
+  .atmosphere-dither { background-size: 32px 32px; }
+}
+
 .glass {
   background: var(--color-blur-glass);
   backdrop-filter: blur(20px) saturate(140%);

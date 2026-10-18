@@ -39,7 +39,11 @@ function readRoute() {
 
 const pageVariants = {
   enter: (direction) => ({ opacity: 0, x: direction > 0 ? 60 : -60, scale: 0.97, filter: 'blur(2px)' }),
-  center: { opacity: 1, x: 0, scale: 1, filter: 'blur(0px)' },
+  center: {
+    opacity: 1, x: 0, scale: 1, filter: 'blur(0px)',
+    // Release the full-page filter after the transition, including on mobile GPUs.
+    transitionEnd: { filter: 'none' },
+  },
   exit: (direction) => ({ opacity: 0, x: direction > 0 ? -60 : 60, scale: 0.97, filter: 'blur(2px)' }),
 };
 
@@ -214,7 +218,7 @@ export default function App() {
     <AnimatePresence mode="wait" custom={direction}>
       <motion.div key={pageKey(route)} custom={direction} variants={pageVariants}
         initial={reduceMotion ? false : 'enter'} animate="center" exit={reduceMotion ? undefined : 'exit'} transition={{ duration: reduceMotion ? 0 : 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
-        style={{ willChange: 'filter, transform, opacity', contain: 'layout style paint' }}>
+        style={{ contain: 'layout style paint' }}>
         {content}
       </motion.div>
     </AnimatePresence>
