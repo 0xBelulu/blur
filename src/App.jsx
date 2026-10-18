@@ -43,6 +43,10 @@ const pageVariants = {
   exit: (direction) => ({ opacity: 0, x: direction > 0 ? -60 : 60, scale: 0.97, filter: 'blur(2px)' }),
 };
 
+// `me` keeps one key across its sub-tabs: switching a panel is not a page change,
+// so it must not replay the full-page blur/slide transition.
+const pageKey = (route) => (route.screen === 'me' ? 'me' : `${route.screen}/${route.id || ''}`);
+
 export default function App() {
   const reduceMotion = useReducedMotion();
   const [route, setRoute] = useState(readRoute);
@@ -101,7 +105,7 @@ export default function App() {
     ensureLocalIdentity().then(refreshCloudHistory).then(() => { if (active) setNotice(''); })
       .catch(() => { if (active) setNotice('暂时无法核实云端状态。新画像仍只保存在本机，不会自动上传。'); });
     return () => { active = false; };
-  }, [route.screen, route.id]);
+  }, [route.screen]);
 
   const home = () => {
     clearTimeout(loadingTimer.current);
@@ -208,7 +212,7 @@ export default function App() {
 
   return <div className="min-h-[100svh] bg-blur-bg">
     <AnimatePresence mode="wait" custom={direction}>
-      <motion.div key={`${route.screen}/${route.id || ''}`} custom={direction} variants={pageVariants}
+      <motion.div key={pageKey(route)} custom={direction} variants={pageVariants}
         initial={reduceMotion ? false : 'enter'} animate="center" exit={reduceMotion ? undefined : 'exit'} transition={{ duration: reduceMotion ? 0 : 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
         style={{ willChange: 'filter, transform, opacity', contain: 'layout style paint' }}>
         {content}

@@ -30,13 +30,13 @@ export default function Friends({ account, onCreate, onFriend, onBackup }) {
     await friendAction(`/friends/${c.id}${accept ? '/accept' : ''}`, accept ? 'POST' : 'DELETE');
     setModal(null); reload();
   });
-  if (!account.registered) return <section className="pp-empty pp-enter">
+  if (!account.registered) return <section className="pp-empty">
     <PortraitMark /><h2>把朋友留在这里。</h2><p>起个名字，拿到自己的好友码。无需邮箱或密码。</p>
     <button className="pp-primary" onClick={onCreate}>创建我的身份<ArrowRight size={16} /></button>
   </section>;
   const friends = (connections || []).filter((c) => c.status === 'accepted');
   const pending = (connections || []).filter((c) => c.status === 'pending');
-  return <section className="pp-friends pp-enter">
+  return <section className="pp-friends">
     <div className="pp-section-head"><div><h2>好友</h2><p>下次再来，还能找到彼此。</p></div><button className="pp-outline" onClick={() => { setMessage(''); setModal('find'); }}><Plus size={14} />添加好友</button></div>
     <div className="pp-invite-strip"><div><small>我的好友码</small><strong>{friendCode(account.friendCode) || '核实身份后显示'}</strong></div>
       <div className="pp-row-actions"><button className="pp-text-button" disabled={!account.friendCode || busy} onClick={() => run(async () => { await navigator.clipboard.writeText(friendCode(account.friendCode)); setMessage('好友码已复制'); })}><Copy size={13} />复制</button>
