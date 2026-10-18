@@ -37,15 +37,17 @@
 - **App.jsx** — state machine (`landing → test → loading → result`), all state lives here, pages receive callbacks via props. No routing library. Uses `AnimatePresence mode="wait"` with `custom=direction` for slide transitions. Loading has a hardcoded **3.5s `setTimeout`**.
 - **Test.jsx two-phase flow**: first ~10 questions required with progress bar, then "已获得基本画像" transition, then optional explore phase (~62 more questions) that can be ended anytime.
 - **Question bank**: ~72 questions across 3 data files re-exported from `src/data/questions.js`: `questions-single.js` (40, 4-choice), `questions-scale.js` (16, Likert 1-5), `questions-rank.js` (16, rank 4). ~60/20/20 split. All UI text is Chinese.
+- **src/pages/About.jsx** — the explore page: editorial sections plus an embedded `OpticalStage` (`scope="container"`, `ABOUT_PRESET`, `ARCHETYPE_SYMBOLS`) whose `onFocusChange` drives the archetype readout. Interior scrolls inside `h-[100svh]`.
 - **src/data/tags.js** & **src/data/archetypeProfiles.js** — 54 trait tags in 10 archetype groups, 10 archetype profiles (with 10-D vectors and narrative sub-sections `innerWorld`/`inRelation`/`hiddenSide`), 10 dimension configs (`src/data/dimensions.js`).
 - **src/utils/blurEngine.js** — `generateResult(answers)` calculates 10-dimensional user vector from weighted responses, normalizes cosine similarities against 10 archetype profiles, picks top 5 tags, determines primary + secondary archetype, computes suppressed traits, and returns `dimensionScores`, `userVector`, `similarities`. Exports `DIMENSION_PAIRS`.
 - **Components** (11): `ArchetypeProfileChart`, `AtmosphereField` (watercolor gradient wash), `BlurCard`, `DimensionMeters`, `DraggableTabs`, `GlassButton`, `ProgressBar`, `TraitRadar` (SVG), `TraitSpace2D` (interactive 2D canvas vector space), `TraitWeightChart`.
 - **src/components/optical/** — shared optical background, split into engine / shell / presets:
   - `useOpticalField.js` — physics only (camera, focus plane, parallax, gyro, tap-to-focus, RAF). No DOM; writes transform/filter/opacity into passed refs.
-  - `OpticalStage.jsx` — render shell (container, stardust, symbols, reticle). Calls the hook.
-  - `symbols.js` — `SPATIAL_SYMBOLS` (Landing's 14) + `STARDUST_PARTICLES`.
-  - `presets.js` — `LANDING_PRESET` / `TEST_PRESET`. **Per-page differences belong here**, not in the engine.
-  - `focusMode`: `"pointer"` (Landing, focus follows cursor/gyro) vs `"persona"` (test page, focus plane pinned, clarity driven by each symbol's `z`).
+  - `OpticalStage.jsx` — render shell (container, stardust, symbols, reticle). Calls the hook. `scope="container"` embeds the field in the nearest positioned parent instead of the viewport; `symbolClassName` and `onFocusChange` are optional.
+  - `symbols.js` — `SPATIAL_SYMBOLS` (Landing's 14) + `STARDUST_PARTICLES`. `src/data/archetypeField.js` holds the 10 archetype symbols for the explore page, same shape and same `id` keys as `archetypeProfiles`.
+  - `presets.js` — `LANDING_PRESET` / `TEST_PRESET` / `ABOUT_PRESET`. **Per-page differences belong here**, not in the engine. `maxBlur` caps defocus (a 360px-tall field can't use the full-viewport 13.5px); `minBlur` raises it.
+  - `focusMode`: `"pointer"` (Landing + explore page, focus follows cursor/gyro) vs `"persona"` (test page, focus plane pinned, clarity driven by each symbol's `z`).
+  - `onFocusChange(item | null)` fires only when the focused symbol changes, so pages can render a readout without per-frame React renders. `scope="container"` ignores pointer input outside the container and normalizes parallax to it.
 - **src/index.css** — `@theme` custom color tokens (`--color-blur-*`), glass morphism classes (`.glass`, `.glass-strong`), gradient border (`.prism-shift`), animation utilities (`animate-float`, `animate-pulse-glow`, `animate-drift`, `animate-breathe*`), custom range input (`.blur-slider`), custom scrollbar.
 
 ## Conventions

@@ -5,7 +5,15 @@ import { SPATIAL_SYMBOLS, STARDUST_PARTICLES } from "./symbols";
  * 光学场的渲染壳：容器、光尘、符号、对焦准星。
  * 所有物理交给 useOpticalField，所有差异交给 preset。
  */
-export default function OpticalStage({ preset = {}, symbols, stardust }) {
+export default function OpticalStage({
+  preset = {},
+  symbols,
+  stardust,
+  scope = "viewport",
+  className = "",
+  symbolClassName = "text-2xl md:text-3xl lg:text-[2rem]",
+  onFocusChange,
+}) {
   const symbolList = symbols || preset.symbols || SPATIAL_SYMBOLS;
   const dustList = stardust || preset.stardust || STARDUST_PARTICLES;
 
@@ -17,14 +25,19 @@ export default function OpticalStage({ preset = {}, symbols, stardust }) {
       focusZ: preset.focusZ,
       opacityCap: preset.opacityCap,
       minBlur: preset.minBlur,
+      maxBlur: preset.maxBlur,
+      scope,
+      onFocusChange,
     });
 
+  // "viewport" 铺满整屏（Landing / 做题页）；"container" 只铺满最近的有定位的父级（探索页）
+  const position = scope === "container" ? "absolute" : "fixed";
+
   return (
-    <>
+    <div className={`${position} inset-0 pointer-events-none ${className}`} aria-hidden="true">
       <div
         ref={containerRef}
-        className="optical-stage fixed inset-0 pointer-events-none overflow-hidden will-change-transform"
-        aria-hidden="true"
+        className="optical-stage absolute inset-0 overflow-hidden pointer-events-none will-change-transform"
       >
         {/* 丁达尔微光光尘 (充盈空间立体微粒感) */}
         {dustList.map((dust, j) => (
@@ -65,7 +78,7 @@ export default function OpticalStage({ preset = {}, symbols, stardust }) {
             {/* 纯粹悬浮 Emoji (自身产生真实光学景深弥散与锐度) */}
             <span
               ref={(node) => { elementsRef.current[i] = node; }}
-              className="text-2xl md:text-3xl lg:text-[2rem] block transform-gpu cursor-default"
+              className={`${symbolClassName} block transform-gpu cursor-default`}
               style={{
                 opacity: 0.1,
                 filter: "blur(6px)",
@@ -84,8 +97,7 @@ export default function OpticalStage({ preset = {}, symbols, stardust }) {
       {/* 极简光学对焦框 (Tap-to-Focus Reticle)：与 Emoji 共享容器坐标系，渲染时补偿相机呼吸缩放 */}
       <div
         ref={reticleRef}
-        className="fixed top-0 left-0 pointer-events-none w-14 h-14 will-change-transform"
-        aria-hidden="true"
+        className="absolute top-0 left-0 pointer-events-none w-14 h-14 will-change-transform"
         style={{
           opacity: 0,
           transform: "translate(-50%, -50%) scale(1.4)",
@@ -99,6 +111,6 @@ export default function OpticalStage({ preset = {}, symbols, stardust }) {
         {/* 中心微弱对焦点 */}
         <div className="absolute inset-0 m-auto w-1 h-1 rounded-full bg-blur-accent/70" />
       </div>
-    </>
+    </div>
   );
 }

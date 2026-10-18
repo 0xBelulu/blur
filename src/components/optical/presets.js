@@ -22,3 +22,16 @@ export const TEST_PRESET = {
   opacityCap: 0.5,
   minBlur: 1.5,
 };
+
+/**
+ * 探索页：一段嵌入在页面里的光学场（scope="container"）。
+ * 仍然是指针对焦，但符号是十种原型，需要保持可读，所以不压透明度。
+ */
+export const ABOUT_PRESET = {
+  focusMode: "pointer",
+  focusZ: 0.5,
+  opacityCap: 1,
+  minBlur: 0,
+  // 这一场只有 380px 高、十个符号，糊到 13.5px 就只剩色斑了
+  maxBlur: 6.5,
+};

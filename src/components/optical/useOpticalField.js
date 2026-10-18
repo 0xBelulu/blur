@@ -41,10 +41,18 @@ export function useOpticalField({
   focusZ = 0.5,
   opacityCap = 1,
   minBlur = 0,
+  // 失焦上限：整屏场可以糊到 13.5px；缩小到一块区域时要收窄，否则符号会糊成色块
+  maxBlur = 13.5,
+  scope = "viewport",
+  onFocusChange,
 }) {
   const symbolList = symbols || SPATIAL_SYMBOLS;
   const symbolsRef = useRef(symbolList);
-  const focusConfigRef = useRef({ focusMode, focusZ, opacityCap, minBlur });
+  const focusConfigRef = useRef({ focusMode, focusZ, opacityCap, minBlur, maxBlur });
+  // "viewport" 覆盖整屏（Landing / 做题页）；"container" 只作用于容器矩形（探索页的嵌入场）。
+  // 只影响指针归一化与命中判定，物理公式完全一致。
+  const scopeRef = useRef(scope);
+  const onFocusChangeRef = useRef(onFocusChange);
   const stardustRef = useRef(stardust || STARDUST_PARTICLES);
   // Cache DOM values as well as the existing blur/opacity thresholds.
   // Unchanged values don't need to cross the JS/DOM boundary again.
@@ -55,8 +63,16 @@ export function useOpticalField({
   }, [symbolList]);
 
   useEffect(() => {
-    focusConfigRef.current = { focusMode, focusZ, opacityCap, minBlur };
-  }, [focusMode, focusZ, opacityCap, minBlur]);
+    focusConfigRef.current = { focusMode, focusZ, opacityCap, minBlur, maxBlur };
+  }, [focusMode, focusZ, opacityCap, minBlur, maxBlur]);
+
+  useEffect(() => {
+    scopeRef.current = scope;
+  }, [scope]);
+
+  useEffect(() => {
+    onFocusChangeRef.current = onFocusChange;
+  }, [onFocusChange]);
 
   const containerRef = useRef(null);
   const elementsRef = useRef([]);
@@ -122,6 +138,8 @@ export function useOpticalField({
     gyroPermissionDenied: false,
     activeFocusedId: null,
     lastFocusTime: 0,
+    // 已向外部回传的对焦符号 id，用于只在目标变化时通知（不逐帧驱动 React）
+    emittedFocusId: undefined,
     currentPositions: [], // 记录每个符号实时的容器内像素坐标，用于精准点按命中
     // 点按对焦框 (Tap-to-Focus Reticle)：坐标一律使用容器坐标系
     reticle: {
@@ -175,6 +193,14 @@ export function useOpticalField({
       state.reticle.scale = 1.35;
       state.reticle.active = true;
       state.reticle.timestamp = performance.now();
+    };
+
+    // 对焦对象变化时才通知页面（用于渲染"当前对焦的是哪一枚"这类读数）
+    const emitFocus = (item) => {
+      const nextId = item?.id ?? null;
+      if (state.emittedFocusId === nextId) return;
+      state.emittedFocusId = nextId;
+      onFocusChangeRef.current?.(item ?? null);
     };
     // 采样容器真实布局尺寸（Emoji 百分比坐标的基准，也是所有对焦坐标的基准）
     const measureContainer = () => {
@@ -243,6 +269,7 @@ export function useOpticalField({
       triggerReticle(local.x, local.y);
       // 对焦框持续跟随该符号的浮动、视差与陀螺仪位移，始终严密框住元素
       state.reticle.trackIndex = i;
+      emitFocus(item);
 
       if (state.gyroActive) {
         state.baseBeta = state.rawBeta;
@@ -292,8 +319,22 @@ export function useOpticalField({
 
       state.mouseX = clientX;
       state.mouseY = clientY;
-      state.mouseNormalizedX = (clientX / (window.innerWidth || 1)) * 2 - 1;
-      state.mouseNormalizedY = (clientY / (window.innerHeight || 1)) * 2 - 1;
+
+      if (scopeRef.current === "container") {
+        // 嵌入场：视差与对焦都只看容器内的相对位置，指针跑出容器就交还焦点
+        const point = toContainerPoint(clientX, clientY);
+        const { w, h } = sizeRef.current;
+        if (w && h && (point.x < -48 || point.y < -48 || point.x > w + 48 || point.y > h + 48)) {
+          emitFocus(null);
+          return;
+        }
+        state.mouseNormalizedX = w ? Math.max(-1, Math.min(1, (point.x / w) * 2 - 1)) : 0;
+        state.mouseNormalizedY = h ? Math.max(-1, Math.min(1, (point.y / h) * 2 - 1)) : 0;
+      } else {
+        state.mouseNormalizedX = (clientX / (window.innerWidth || 1)) * 2 - 1;
+        state.mouseNormalizedY = (clientY / (window.innerHeight || 1)) * 2 - 1;
+      }
+
       state.hasInteracted = true;
       state.lastInteractionTime = performance.now();
     };
@@ -317,6 +358,13 @@ export function useOpticalField({
 
       // 触点换算到容器坐标系后测距，避免动态视口/缩放带来的错位
       const point = toContainerPoint(clientX, clientY);
+
+      // 嵌入场：容器外的点按不属于这个场，交给页面自己的交互
+      if (scopeRef.current === "container") {
+        const { w, h } = sizeRef.current;
+        if (w && h && (point.x < 0 || point.y < 0 || point.x > w || point.y > h)) return;
+      }
+
       const hit = focusOnClosest(point);
       if (!hit) {
         triggerReticle(point.x, point.y);
@@ -361,6 +409,7 @@ export function useOpticalField({
       state.mouseY = -9999;
       state.mouseNormalizedX = 0;
       state.mouseNormalizedY = 0;
+      emitFocus(null);
     };
 
     // 窗口失焦：只暂停“活动”状态，保留指针最后位置
@@ -514,7 +563,8 @@ export function useOpticalField({
         }
 
         const FOCUS_RADIUS = 240;
-        if (closestItem && closestDist < FOCUS_RADIUS * FOCUS_RADIUS) {
+        const inRange = Boolean(closestItem) && closestDist < FOCUS_RADIUS * FOCUS_RADIUS;
+        if (inRange) {
           const attractWeight = 1 - Math.sqrt(closestDist) / FOCUS_RADIUS;
           state.targetZ = closestItem.z * attractWeight + 0.5 * (1 - attractWeight);
         } else {
@@ -522,6 +572,12 @@ export function useOpticalField({
           const depthInfluence = (pointer.y / (h || height)) * 0.4 + 0.3;
           state.targetZ = depthInfluence;
         }
+
+        // 对焦读数：点按锁定的符号优先，其次是指针最近的那一枚
+        const lockedItem = state.activeFocusedId
+          ? symbolsRef.current.find((item) => item.id === state.activeFocusedId)
+          : null;
+        emitFocus(lockedItem || (inRange ? closestItem : null));
       } else if (!state.activeFocusedId) {
         // 放空状态（未点按或无鼠标活动）：悠长自然的深呼吸漫游
         // 锁定有效期内则保持 targetZ 停在被点击的符号上，不做漫游
@@ -597,11 +653,11 @@ export function useOpticalField({
         // 严格根据同一个 zi 和当前焦平面 focusZ 计算光学虚化
         const deltaZ = Math.abs(zi - state.focusZ);
         const coc = deltaZ / (zi * 0.82 + 0.2); // 前景虚化稍快于后景
-        const blurPx = Math.min(13.5, Math.pow(Math.min(1, coc / 0.52), 1.25) * 13.5);
-        const defocus = Math.min(1, blurPx / 11);
+        const { opacityCap: cap, minBlur: blurFloor, maxBlur: blurCeiling } = focusConfigRef.current;
+        const blurPx = Math.min(blurCeiling, Math.pow(Math.min(1, coc / 0.52), 1.25) * blurCeiling);
+        const defocus = Math.min(1, blurPx / (blurCeiling * 0.82));
 
         // C. 清晰度与尺寸响应 (适度提升漫染透光基底，失焦如宣纸浮墨，合焦如发光水晶)
-        const { opacityCap: cap, minBlur: blurFloor } = focusConfigRef.current;
         const isFocused = state.activeFocusedId === item.id || blurPx < 0.9;
         const targetOpacity = isFocused ? 0.98 : 0.16 + (1 - defocus) * 0.72;
         const itemScale = isFocused ? 1.22 : 0.93 + (1 - defocus) * 0.22;

@@ -173,7 +173,7 @@ export default function App() {
   const record = records.find((item) => item.id === route.id);
   let content;
   switch (route.screen) {
-    case 'about': content = <About onBack={home} onOpenArchetypes={() => navigate('archetypes')} onOpenTraits={() => navigate('traits')} onOpenQuestions={() => navigate('questions')} />; break;
+    case 'about': content = <About onBack={home} onStart={() => start()} onOpenArchetypes={() => navigate('archetypes')} onOpenTraits={() => navigate('traits')} onOpenQuestions={() => navigate('questions')} />; break;
     case 'archetypes': content = <Archetypes onBack={() => navigate('about')} />; break;
     case 'traits': content = <Traits onBack={() => navigate('about')} />; break;
     case 'questions': content = <Questions onBack={() => navigate('about')} />; break;

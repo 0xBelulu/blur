@@ -264,6 +264,16 @@ input[type="range"].blur-slider::-moz-range-thumb {
   animation: gentle-breath 5.5s ease-in-out infinite;
 }
 
+/* 探索页的镜头刻度：极慢自转，只动 transform */
+@keyframes slow-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-slow-spin {
+  animation: slow-spin 120s linear infinite;
+}
+
 @keyframes fade-in-up {
   from {
     opacity: 0;
