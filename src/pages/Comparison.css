@@ -13,17 +13,6 @@
   position: relative;
 }
 
-/* 纸纹：极淡的一层，去掉屏幕的塑料感 */
-.cmp-page::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-  opacity: 0.026;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
 .cmp-micro {
   font-size: 9.5px;
   letter-spacing: 0.28em;
@@ -100,17 +89,6 @@
 /* ── 首屏：没有卡片边界，只有光 ─────────────────────────────── */
 .cmp-hero { position: relative; padding: 4px 0 0; }
 
-.cmp-hero::before {
-  content: '';
-  position: absolute;
-  inset: -60px -40px 40px;
-  pointer-events: none;
-  background:
-    radial-gradient(46% 60% at 26% 34%, rgba(151, 130, 191, 0.13), transparent 70%),
-    radial-gradient(44% 58% at 76% 62%, rgba(83, 145, 163, 0.11), transparent 70%);
-  filter: blur(6px);
-}
-
 .cmp-hero-head {
   position: relative;
   display: flex;
@@ -178,7 +156,7 @@
 .cmp-field {
   position: relative;
   width: 100%;
-  height: 344px;
+  height: 330px;
   cursor: crosshair;
   touch-action: pan-y;
 }
@@ -199,27 +177,23 @@
 .cmp-stage-k {
   font-size: 9.5px;
   letter-spacing: 0.3em;
-  color: #8b83a8;
-  text-shadow: 0 0 18px rgba(255, 255, 255, 0.95);
+  color: #8b8fa8;
 }
 
 .cmp-stage-v {
-  font-size: 76px;
+  font-size: 74px;
   font-weight: 200;
   line-height: 1;
   letter-spacing: -0.055em;
-  color: #5e6488;
+  color: #46424e;
   font-variant-numeric: tabular-nums;
-  text-shadow:
-    0 0 32px rgba(255, 255, 255, 0.95),
-    0 0 12px rgba(255, 255, 255, 0.85);
 }
 .cmp-stage-v em {
   font-style: normal;
-  font-size: 20px;
+  font-size: 19px;
   letter-spacing: 0;
-  margin-left: 2px;
-  opacity: 0.6;
+  margin-left: 3px;
+  opacity: 0.45;
 }
 
 /* ── 首屏数据 ───────────────────────────────────────────────── */
