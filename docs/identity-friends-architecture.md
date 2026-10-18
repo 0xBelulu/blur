@@ -1,6 +1,6 @@
 # Blur：个人空间与好友对比
 
-本轮范围：完善个人记录、个人 profile、显式身份创建、好友关系和双人对比。现已接入正式页面和 API，`0003_people.sql` 已通过本地 D1 迁移；尚未部署或迁移线上数据库。`design/profile-preview.html` 保留为隔离的视觉样张，不连接真实身份或数据。实际接口及状态约定见 [identity-friends-api.md](identity-friends-api.md)。
+本轮范围：完善个人记录、个人 profile、显式身份创建、好友关系和双人对比。现已接入正式页面和 API，`0003_people.sql` 已通过本地及生产 D1 迁移；生产迁移于 2026-10-18 补齐，并验证线上账户与好友相关接口。`design/profile-preview.html` 保留为隔离的视觉样张，不连接真实身份或数据。实际接口及状态约定见 [identity-friends-api.md](identity-friends-api.md)，发布与本次故障记录见 [backend.md](backend.md)。
 
 ## 产品边界
 

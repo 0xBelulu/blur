@@ -16,6 +16,15 @@
 | `npm run preview` | Preview production build |
 | `$env:LAN="0"; npm run dev` | Opt out of LAN debug. HTTPS + LAN is currently ON by default via `LAN_DEBUG_DEFAULT` in `vite.config.js` (temporary, for mobile gyro testing); `LAN=1` forces it on |
 
+## Cloudflare / D1 migrations and releases
+- Frontend and Pages Functions deploy separately from D1 schema changes. **`npm run build`, Git pushes, and Pages deployments do not apply D1 migrations.** `npm run db:migrate:local` updates only the local database.
+- Any change that adds or uses database columns, tables, or indexes must include a versioned SQL migration in `migrations/`. Review its compatibility with the currently deployed code; preserve existing accounts, snapshots, shares, and permissions.
+- Before a release that depends on a migration, run `npx wrangler d1 migrations list blur --remote` against the intended production database. For compatible additive migrations, apply `npm run db:migrate:remote` **before deploying the dependent code**, then confirm no required migrations remain. If the migration cannot coexist with the old code, define the rollout order explicitly before release.
+- A local migration or passing local tests is **not evidence of production readiness**. If remote migration or verification was not performed, state that explicitly in the handoff and identify the remaining release step. Never report the production feature as ready based only on a local test.
+- After a schema-dependent release or production migration, verify the actual production API, including a write and subsequent read for the affected feature. Use an isolated temporary identity when needed, clean up only its test data, and do not expose credentials or inspect unrelated user data.
+- For production API 503s that do not occur locally, first check the `DB` binding and pending remote migrations. The API intentionally returns a generic 503 for unhandled database errors; the browser stack trace alone does not identify the cause. Do not add automatic DDL/schema repair to request handlers or put production migration credentials into frontend builds.
+- Incident recorded 2026-10-18: the new account/friend code was deployed while production still lacked `0003_people.sql`. Account registration and existing-account reads returned 503. Applying that migration to the production `blur` D1 restored registration, account reads, friend lists, and portrait settings. Deployment details: [docs/backend.md](docs/backend.md).
+
 ## Scripts (calibration & audit)
 | Script | Purpose |
 |--------|---------|

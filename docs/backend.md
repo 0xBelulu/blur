@@ -50,11 +50,21 @@ npm run test:runtime -- http://127.0.0.1:18788
 当前 `wrangler.jsonc` 已配置 `blur` 数据库及 `DB` 绑定。不要重新创建线上数据库，也不要修改为 Wrangler 示例中的其他绑定名。
 
 1. 确认 `npx wrangler login` 已登录自己的 Cloudflare 账户。
-2. **先执行 `npm run db:migrate:remote`，再推送新版代码。** `0002_accounts.sql` 新增身份表和画像本机 ID，保留旧画像、旧分享与匿名身份；旧版服务仍兼容迁移后的表。
+2. 运行 `npx wrangler d1 migrations list blur --remote` 检查待执行迁移。**先执行 `npm run db:migrate:remote`，确认所需迁移均已应用，再推送依赖新结构的代码。** `0002_accounts.sql` 新增身份表和画像本机 ID；`0003_people.sql` 新增公开用户标识、好友码、简介、展示画像与好友关系表。两者保留旧画像、旧分享与匿名身份，旧版服务仍兼容迁移后的表。
 3. 推送 GitHub。Pages 保持构建命令 `npm run build`、输出目录 `dist`；Git 集成同时编译根目录 `functions/`。
 4. 在 Pages 项目 Bindings 检查 `DB` 指向目标 D1。预览环境若需写入，应使用单独的测试 D1。
 
 新环境先创建自己的 D1，将 ID 写入配置后执行所有迁移。Git 构建不会自动执行 D1 迁移；后续新增迁移仍需先手动应用。
+
+本地与生产迁移相互独立：`npm run db:migrate:local`、构建成功和本地接口通过，均不能证明生产库已更新。发布后需验证实际生产 API 的写入与随后读取；使用临时身份时清理其测试数据。迁移本身若不兼容旧代码，需要另行安排发布顺序，不能直接沿用“先迁移”的增量发布步骤。参见 [Cloudflare D1 迁移说明](https://developers.cloudflare.com/d1/reference/migrations/)。
+
+### 2026-10-18：账户接口 503
+
+现象：本地注册正常，生产 `POST /api/account` 和已有身份的 `GET /api/account` 返回 503。生产代码已使用新账户字段，生产 D1 却仍有 `0003_people.sql` 待执行。本地执行过该迁移没有更新生产库。
+
+处理：通过远程迁移列表确认缺项，应用 `0003_people.sql`，随后用独立临时身份验证线上注册、账户读取、好友列表和展示画像设置，均返回 200；验证未上传画像，临时账户已清理。无需为此重新部署代码。
+
+以后出现“本地正常、线上新功能 503”时，先核对 `DB` 绑定和远程迁移状态。不要仅凭浏览器中的压缩脚本堆栈归因，也不要将自动建表放入请求处理器。发布要求已写入根目录 [AGENTS.md](../AGENTS.md)。
 
 `public/_routes.json` 限定只有 `/api/*` 调用函数。`#view/<标识>`、`#compare/<标识>`、`#me` 都先加载静态首页；旧 `#history` 入口仍打开“我的”。保留静态页面独立运行的结构。
 
