@@ -184,7 +184,21 @@ const GYRO_FRESH_MS = 2000;
 // 鼠标接管窗口：鼠标最近活动过时优先由鼠标驱动视差（鼠标 + 陀螺仪混合设备）
 const MOUSE_TAKEOVER_MS = 4000;
 
-export default function OpticalFocusSpace() {
+/**
+ * 光学对焦背景（Landing / 做题页共用）
+ *
+ * symbols 可选：不传则用 Landing 的固定 14 个空间符号；
+ * 做题页传入由实时解算结果生成的符号表，渲染与交互逻辑完全一致。
+ * 符号表变化时只换 emoji 字形与归属，不重跑 effect（位置、视差、陀螺仪状态全部保持）。
+ */
+export default function OpticalFocusSpace({ symbols }) {
+  const symbolList = symbols || SPATIAL_SYMBOLS;
+  const symbolsRef = useRef(symbolList);
+
+  useEffect(() => {
+    symbolsRef.current = symbolList;
+  }, [symbolList]);
+
   const containerRef = useRef(null);
   const elementsRef = useRef([]);
   const wrappersRef = useRef([]);
@@ -358,8 +372,8 @@ export default function OpticalFocusSpace() {
       let closestDist = Infinity;
       let closestIdx = -1;
 
-      for (let i = 0; i < SPATIAL_SYMBOLS.length; i++) {
-        const item = SPATIAL_SYMBOLS[i];
+      for (let i = 0; i < symbolsRef.current.length; i++) {
+        const item = symbolsRef.current[i];
         if (isMobile && item.mobileHidden) continue;
 
         const pos = state.currentPositions[i];
@@ -373,7 +387,7 @@ export default function OpticalFocusSpace() {
       }
 
       if (closestIdx !== -1 && closestDist < 280) {
-        focusOnSymbol(SPATIAL_SYMBOLS[closestIdx], closestIdx);
+        focusOnSymbol(symbolsRef.current[closestIdx], closestIdx);
         return true;
       }
       return false;
@@ -491,8 +505,8 @@ export default function OpticalFocusSpace() {
     // 动态屏幕自适应布局（桌面宽屏 vs 移动狭窄竖屏）
     const updateResponsiveLayout = () => {
       const isMobile = window.innerWidth < 768;
-      for (let i = 0; i < SPATIAL_SYMBOLS.length; i++) {
-        const item = SPATIAL_SYMBOLS[i];
+      for (let i = 0; i < symbolsRef.current.length; i++) {
+        const item = symbolsRef.current[i];
         const wrapper = wrappersRef.current[i];
         if (!wrapper) continue;
         const x = isMobile && item.mobileX !== undefined ? item.mobileX : item.x;
@@ -589,8 +603,8 @@ export default function OpticalFocusSpace() {
         let closestDist = Infinity;
         let closestItem = null;
 
-        for (let i = 0; i < SPATIAL_SYMBOLS.length; i++) {
-          const item = SPATIAL_SYMBOLS[i];
+        for (let i = 0; i < symbolsRef.current.length; i++) {
+          const item = symbolsRef.current[i];
           const pos = state.currentPositions[i];
           if (!pos) continue;
 
@@ -638,8 +652,8 @@ export default function OpticalFocusSpace() {
 
           // 对焦框跟随目标符号：与 Emoji 使用同一套位移公式，且补上相机呼吸缩放
           const trackIdx = state.reticle.trackIndex;
-          if (trackIdx >= 0 && trackIdx < SPATIAL_SYMBOLS.length) {
-            const tracked = SPATIAL_SYMBOLS[trackIdx];
+          if (trackIdx >= 0 && trackIdx < symbolsRef.current.length) {
+            const tracked = symbolsRef.current[trackIdx];
             if (!(isMobile && tracked.mobileHidden)) {
               const local = symbolLocalPos(tracked, now);
               reticleX = cw / 2 + (local.x - cw / 2) * breathingScale;
@@ -659,8 +673,8 @@ export default function OpticalFocusSpace() {
       }
 
       // 5. 核心统一物理场：由每个符号唯一的空间深度 Z_i 严格统领视差与弥散圆
-      for (let i = 0; i < SPATIAL_SYMBOLS.length; i++) {
-        const item = SPATIAL_SYMBOLS[i];
+      for (let i = 0; i < symbolsRef.current.length; i++) {
+        const item = symbolsRef.current[i];
         const el = elementsRef.current[i];
         if (!el) continue;
 
@@ -780,9 +794,9 @@ export default function OpticalFocusSpace() {
           />
         ))}
 
-        {SPATIAL_SYMBOLS.map((item, i) => (
+        {symbolList.map((item, i) => (
           <div
-            key={item.id}
+            key={i}
             ref={(node) => { wrappersRef.current[i] = node; }}
             className="absolute select-none flex items-center justify-center will-change-transform cursor-pointer pointer-events-auto p-4 touch-manipulation group"
             style={{
@@ -808,7 +822,10 @@ export default function OpticalFocusSpace() {
                 textShadow: "0 2px 10px rgba(0,0,0,0.04)",
               }}
             >
-              {item.symbol}
+              {/* 归属变化时字形淡入，避免直接跳字 */}
+              <span key={item.symbol} className="glyph-swap block">
+                {item.symbol}
+              </span>
             </span>
           </div>
         ))}

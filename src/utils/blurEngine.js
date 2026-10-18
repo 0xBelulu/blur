@@ -369,14 +369,63 @@ export const DIMENSION_PAIRS = [
   { key: "emotion-closure", xKey: "emotionalLatency", yKey: "closureTolerance", label: "反应·模糊" },
 ];
 
-export function generateResult(answers, questions = defaultQuestions) {
+/**
+ * 置信度曲线：作答越少，越不该表现得"算出了什么"
+ * 0 题 → 0；10 题（基本画像）→ 0.71；30 题 → 0.98
+ */
+const CONFIDENCE_DECAY = 8;
+
+function confidenceFromCount(count) {
+  if (!count || count <= 0) return 0;
+  return 1 - Math.exp(-count / CONFIDENCE_DECAY);
+}
+
+/**
+ * 解算核心（唯一真相源）
+ *
+ * 所有需要"当前这份答案指向哪些原型"的地方都必须走这里，
+ * 不要另写一份评分逻辑。目前有两个消费者：
+ *   1. generateResult —— 出结果页
+ *   2. 做题页的漂浮 emoji 场 —— 需要随时可解的中间态
+ *
+ * 返回的 field 按 ARCHETYPE_PROFILES 的固定顺序排列（不是按概率排序），
+ * 这样渲染层可以用固定槽位映射，权重变化时不会发生符号跳变。
+ */
+export function solveProfile(answers, questions = defaultQuestions) {
   const rawDims = accumulateDimensions(answers, questions);
   const userVector = normalizeDimensions(rawDims);
+  const answeredCount = normalizeAnswers(answers).filter(Boolean).length;
+  const core = determineArchetype(userVector);
+  const confidence = confidenceFromCount(answeredCount);
+
+  const probByKey = {};
+  for (const item of core.archetypeProbabilities) probByKey[item.key] = item.prob;
+
+  const keys = Object.keys(ARCHETYPE_PROFILES);
+  const uniform = 1 / keys.length;
+
+  // 低置信度时向均匀分布回退：没答几题就别假装已经看出你是谁
+  const field = keys.map((key) => {
+    const prob = probByKey[key] ?? 0;
+    const profile = ARCHETYPE_PROFILES[key];
+    return {
+      key,
+      title: profile?.title ?? "",
+      symbol: profile?.symbol ?? "·",
+      prob,
+      weight: confidence * prob + (1 - confidence) * uniform,
+    };
+  });
+
+  return { userVector, answeredCount, confidence, core, field };
+}
+
+export function generateResult(answers, questions = defaultQuestions) {
+  const { userVector, core } = solveProfile(answers, questions);
+
+  const { key: archetypeKey, archetype, secondaryArchetype, similarities, archetypeProbabilities } = core;
 
   const dimensionScores = computeDimensionScores(userVector);
-
-  const { key: archetypeKey, archetype, secondaryArchetype, similarities, archetypeProbabilities } =
-    determineArchetype(userVector);
 
   const suppressedTraits = determineSuppressedTraits(archetypeKey, userVector);
 
