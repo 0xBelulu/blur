@@ -1,33 +1,27 @@
 import {
-  getAllHistoryRecords, updateHistoryRecord, deleteHistoryRecord, mergeCloudRecords,
+  CLOUD_SESSION, getAllHistoryRecords, updateHistoryRecord, deleteHistoryRecord,
+  mergeCloudRecords, withoutCloud, switchHistoryIdentity,
 } from './historyStorage.js';
+import {
+  getIdentityToken, identityId, ensureLocalIdentity, getAccountInfo, updateAccountInfo,
+  formatRecoveryKey, parseRecoveryKey, adoptIdentity,
+} from './identity.js';
 
-const IDENTITY_KEY = 'blur.identity.v1';
-const inFlight = new Map();
+const operations = new Map();
 
-function identity() {
-  let token = localStorage.getItem(IDENTITY_KEY);
-  if (!token) {
-    token = Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) => b.toString(16).padStart(2, '0')).join('');
-    localStorage.setItem(IDENTITY_KEY, token);
-  }
-  return token;
-}
-
-export async function api(path, { method = 'GET', body, publicAccess = false, signal } = {}) {
+export async function api(path, { method = 'GET', body, publicAccess = false, signal, token } = {}) {
   let response;
-  try { response = await fetch(`/api${path}`, {
-    method, signal: signal || AbortSignal.timeout(8000), cache: 'no-store',
-    headers: {
-      ...(publicAccess ? {} : { Authorization: `Bearer ${identity()}` }),
-      ...(body ? { 'Content-Type': 'application/json' } : {}),
-    },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  }); } catch {
-    throw new Error('连接云端失败，本机画像仍可正常使用，请稍后重试');
-  }
+  try {
+    response = await fetch(`/api${path}`, {
+      method, signal: signal || AbortSignal.timeout(8000), cache: 'no-store',
+      headers: {
+        ...(publicAccess ? {} : { Authorization: `Bearer ${token || getIdentityToken(true)}` }),
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    });
+  } catch { throw new Error('连接云端失败，本机画像仍可正常使用，请稍后重试'); }
   const data = await response.json().catch(() => null);
-  // A static-only deployment may answer an unknown API path with index.html (200).
   if (!response.ok || !data) {
     const error = new Error(data?.message || '云端暂不可用，本机画像仍可正常使用');
     error.status = response.status;
@@ -38,67 +32,222 @@ export async function api(path, { method = 'GET', body, publicAccess = false, si
 }
 
 function current(id) { return getAllHistoryRecords().find((record) => record.id === id); }
-
-export function syncRecord(record) {
-  if (inFlight.has(record.id)) return inFlight.get(record.id);
-  const task = (async () => {
-    if (current(record.id)?.deletedAt) return;
-    updateHistoryRecord(record.id, { syncStatus: 'pending' });
-    const saved = await api(`/records/${record.id}`, { method: 'PUT', body: {
-      createdAt: record.createdAt, engineVersion: record.engineVersion,
-      questionVersion: record.questionVersion, answers: record.answers, result: record.result,
-    } });
-    updateHistoryRecord(record.id, { syncStatus: 'synced', shareId: saved.shareId, nickname: saved.nickname });
-    return saved;
-  })().finally(() => inFlight.delete(record.id));
-  inFlight.set(record.id, task);
-  return task;
-}
-
-export async function publishRecord(record, nickname) {
-  if (record.pendingAction) throw new Error('请先完成待处理的云端操作');
-  if (record.syncStatus !== 'synced') await syncRecord(record);
-  const saved = await api(`/records/${record.id}/share`, { method: 'POST', body: { nickname } });
-  updateHistoryRecord(record.id, { shareId: saved.shareId, nickname: saved.nickname, syncStatus: 'synced' });
+function write(record, changes) {
+  const saved = updateHistoryRecord(record.id, { ...changes, cloudRevision: (current(record.id)?.cloudRevision || 0) + 1 });
+  if (!saved) throw new Error('无法保存本机操作状态，请检查浏览器存储空间');
   return saved;
 }
-
-export async function revokeShare(record) {
-  updateHistoryRecord(record.id, { pendingAction: 'revoke' });
-  await api(`/records/${record.id}/share`, { method: 'DELETE' }).catch((error) => {
-    if (error.status !== 404) throw error;
-  });
-  updateHistoryRecord(record.id, { shareId: null, pendingAction: null });
+function verified(changes = {}) {
+  return { ...changes, cloudSession: CLOUD_SESSION, lastVerifiedAt: Date.now() };
+}
+async function context() {
+  const account = await ensureLocalIdentity();
+  return { token: getIdentityToken(), id: account.id };
+}
+function assertIdentity(ctx) {
+  if (getIdentityToken() !== ctx.token) throw new Error('身份已切换，请刷新云端状态后再操作');
+}
+function owned(record, ctx) {
+  if (!record) throw new Error('这份本机记录已不存在');
+  if (record.cloudOwner && record.cloudOwner !== ctx.id) throw new Error('这份云端副本属于另一个身份，请先恢复对应身份');
+  return record;
 }
 
-export async function removeRecord(record) {
-  if (record.syncStatus === 'local' || !record.syncStatus) {
-    deleteHistoryRecord(record.id);
-    return;
-  }
-  // Retain a local tombstone until the server confirms deletion.
-  updateHistoryRecord(record.id, { deletedAt: Date.now(), pendingAction: 'delete' });
-  await inFlight.get(record.id)?.catch(() => {});
-  await api(`/records/${record.id}`, { method: 'DELETE' }).catch((error) => {
-    if (error.status !== 404) throw error;
+function recordOperation(record, action, callback) {
+  const previous = operations.get(record.id);
+  if (previous?.action === action) return previous.promise;
+  const promise = (async () => {
+    if (previous) await previous.promise.catch(() => {});
+    const ctx = await context();
+    return callback(owned(current(record.id), ctx), ctx);
+  })().finally(() => { if (operations.get(record.id)?.promise === promise) operations.delete(record.id); });
+  operations.set(record.id, { action, promise });
+  return promise;
+}
+
+export function syncRecord(record) {
+  return recordOperation(record, 'sync', async (local, ctx) => {
+    if (local.pendingAction) throw new Error('请先完成待处理的云端操作');
+    if (!local.localPresent || !local.result) throw new Error('请先将画像保存到本机');
+    const cloudId = local.cloudId || crypto.randomUUID();
+    write(local, { cloudId, cloudOwner: ctx.id, syncStatus: 'pending', cloudSession: null });
+    try {
+      const saved = await api(`/records/${cloudId}`, { token: ctx.token, method: 'PUT', body: {
+        localId: local.id, createdAt: local.createdAt, engineVersion: local.engineVersion,
+        questionVersion: local.questionVersion, answers: local.answers, result: local.result,
+        accountNickname: getAccountInfo().nickname || '',
+      } });
+      assertIdentity(ctx);
+      write(local, verified({ cloudId: saved.cloudId, cloudOwner: ctx.id, syncStatus: 'synced', shareId: saved.shareId, nickname: saved.nickname }));
+      updateAccountInfo({ registered: true });
+      return saved;
+    } catch (error) {
+      if (getIdentityToken() === ctx.token && current(local.id)) {
+        write(local, error.status === 404 ? withoutCloud(current(local.id)) : { syncStatus: 'failed', cloudSession: null });
+      }
+      throw error;
+    }
   });
-  deleteHistoryRecord(record.id);
+}
+
+export function publishRecord(record, nickname) {
+  return recordOperation(record, 'publish', async (local, ctx) => {
+    if (local.pendingAction && local.pendingAction !== 'publish') throw new Error('请先完成待处理的云端操作');
+    if (!local.cloudId || local.syncStatus !== 'synced') throw new Error('请先同步到云端，再开启分享');
+    write(local, { pendingAction: 'publish', cloudSession: null });
+    let saved;
+    try { saved = await api(`/records/${local.cloudId}/share`, { token: ctx.token, method: 'POST', body: { nickname } }); }
+    catch (error) {
+      if (getIdentityToken() === ctx.token) write(local, { cloudSession: null });
+      throw error;
+    }
+    assertIdentity(ctx);
+    write(local, verified({ shareId: saved.shareId, nickname: saved.nickname, pendingAction: null }));
+    return saved;
+  });
+}
+
+export function revokeShare(record) {
+  return recordOperation(record, 'revoke', async (local, ctx) => {
+    if (!local.cloudId) return;
+    write(local, { pendingAction: 'revoke', cloudSession: null });
+    let missing = false;
+    await api(`/records/${local.cloudId}/share`, { token: ctx.token, method: 'DELETE' }).catch((error) => {
+      if (error.status !== 404) throw error;
+      missing = true;
+    });
+    assertIdentity(ctx);
+    if (missing) forgetCloud(current(local.id));
+    else write(local, verified({ shareId: null, pendingAction: null }));
+  });
+}
+
+function forgetCloud(record) {
+  if (record.localPresent && !record.deletedAt) write(record, withoutCloud(record));
+  else if (!deleteHistoryRecord(record.id)) throw new Error('云端操作已完成，但本机状态未保存，请重新核实');
+}
+
+export function removeCloudCopy(record) {
+  return recordOperation(record, 'delete-cloud', async (local, ctx) => {
+    if (!local.cloudId) return;
+    write(local, { pendingAction: 'delete-cloud', cloudSession: null });
+    if (!local.localPresent && !local.deletedAt) {
+      // A recovered summary is not a backup. Persist the full snapshot before deleting it remotely.
+      let saved;
+      try { saved = await api(`/records/${local.cloudId}`, { token: ctx.token }); }
+      catch (error) {
+        if (error.status === 404) { assertIdentity(ctx); forgetCloud(current(local.id)); }
+        throw error;
+      }
+      assertIdentity(ctx);
+      write(local, { ...saved, id: local.id, localPresent: true, cloudOwner: ctx.id });
+    }
+    await api(`/records/${local.cloudId}`, { token: ctx.token, method: 'DELETE' }).catch((error) => {
+      if (error.status !== 404) throw error;
+    });
+    assertIdentity(ctx);
+    forgetCloud(current(local.id));
+  });
+}
+
+export function downloadRecord(record) {
+  return recordOperation(record, 'download', async (local, ctx) => {
+    if (!local.cloudId) throw new Error('这份记录没有云端副本');
+    const saved = await api(`/records/${local.cloudId}`, { token: ctx.token });
+    assertIdentity(ctx);
+    const result = write(local, verified({ ...saved, id: local.id, localPresent: true, cloudOwner: ctx.id, syncStatus: 'synced' }));
+    return result;
+  });
 }
 
 export async function flushPending() {
-  // Stop after a network failure instead of issuing one failing request per record.
+  // Explicit retries of prior deletion/revocation only. Never upload a portrait here.
   for (const record of getAllHistoryRecords()) {
-    if (record.deletedAt) await removeRecord(record);
+    if (record.pendingAction === 'delete-cloud' || record.deletedAt) await removeCloudCopy(record);
     else if (record.pendingAction === 'revoke') await revokeShare(record);
-    else if (record.syncStatus === 'pending') await syncRecord(record);
   }
 }
 
 export async function refreshCloudHistory() {
-  if (!localStorage.getItem(IDENTITY_KEY)) return;
-  await flushPending();
-  const { records } = await api('/records');
-  mergeCloudRecords(records);
+  const token = getIdentityToken();
+  if (!token) return;
+  const owner = await identityId(token);
+  const revisions = new Map(getAllHistoryRecords().map((record) => [record.id, record.cloudRevision || 0]));
+  try {
+    let account;
+    try { account = await api('/account', { token }); } catch (error) {
+      if (error.status !== 404) throw error;
+      account = { id: owner, registered: false, nickname: getAccountInfo().nickname || '' };
+    }
+    const records = account.registered === false ? [] : (await api('/records?summary=1', { token })).records;
+    assertIdentity({ token });
+    mergeCloudRecords(records, owner, revisions);
+    updateAccountInfo({ ...account, registered: account.registered !== false, lastVerifiedAt: Date.now(), checkStatus: 'verified' });
+  } catch (error) {
+    if (getIdentityToken() === token) {
+      for (const record of getAllHistoryRecords()) {
+        if (record.cloudId && (!record.cloudOwner || record.cloudOwner === owner)) updateHistoryRecord(record.id, { cloudSession: null });
+      }
+      updateAccountInfo({ checkStatus: 'unavailable' });
+    }
+    throw error;
+  }
+}
+
+export async function saveNickname(nickname) {
+  const clean = nickname.trim();
+  if (clean.length > 24) throw new Error('昵称最多 24 个字');
+  await ensureLocalIdentity();
+  if (getAccountInfo().registered) {
+    const ctx = await context();
+    const account = await api('/account', { token: ctx.token, method: 'POST', body: { nickname: clean } });
+    assertIdentity(ctx);
+    updateAccountInfo({ ...account, registered: true });
+  } else updateAccountInfo({ nickname: clean });
+}
+
+export async function exportRecoveryKey() {
+  const ctx = await context();
+  let account;
+  try { account = await api('/account', { token: ctx.token }); }
+  catch (error) {
+    if (error.status !== 404) throw error;
+    account = await api('/account', { token: ctx.token, method: 'POST', body: { nickname: getAccountInfo().nickname || '' } });
+  }
+  assertIdentity(ctx);
+  updateAccountInfo({ ...account, registered: true });
+  return formatRecoveryKey(ctx.token);
+}
+
+export async function restoreIdentity(key) {
+  if (operations.size || getAllHistoryRecords().some((record) => record.pendingAction || record.deletedAt)) {
+    throw new Error('请先完成正在进行或待确认的云端操作，再恢复其他身份');
+  }
+  const originalToken = getIdentityToken();
+  const token = parseRecoveryKey(key);
+  const account = await api('/account', { token });
+  const { records } = await api('/records?summary=1', { token });
+  // Verify everything before switching. Recovery never uploads this device's portraits.
+  if (getIdentityToken() === token) { await refreshCloudHistory(); return; }
+  if (getIdentityToken() !== originalToken || operations.size || getAllHistoryRecords().some((record) => record.pendingAction || record.deletedAt)) {
+    throw new Error('身份或云端操作已变化，请完成后重新恢复');
+  }
+  const keys = ['blur.history.v1', 'blur.identity.v1', 'blur.account.v1'];
+  const before = keys.map((key) => localStorage.getItem(key));
+  try {
+    if (!switchHistoryIdentity()) throw new Error('本机存储无法更新，身份尚未切换');
+    mergeCloudRecords(records, account.id);
+    adoptIdentity(token, account);
+  } catch (error) {
+    // localStorage has no multi-key transaction; restore the original values on write failure.
+    keys.forEach((key, index) => {
+      if (before[index] === null) localStorage.removeItem(key);
+      else localStorage.setItem(key, before[index]);
+    });
+    window.dispatchEvent?.(new Event('blur-history-change'));
+    window.dispatchEvent?.(new Event('blur-account-change'));
+    throw error;
+  }
 }
 
 export function shareUrl(shareId) {

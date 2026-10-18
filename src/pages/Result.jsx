@@ -23,7 +23,7 @@ const tabContentVariants = {
   exit: { opacity: 0, y: -8 },
 };
 
-export default function Result({ result, onRestart, record, publicView = false, onCompare }) {
+export default function Result({ result, onRestart, record, publicView = false, onCompare, onOpenMy }) {
   const [activeTab, setActiveTab] = useState("cloud");
   const [activePairIndex, setActivePairIndex] = useState(0);
   const [hoveredArchetype, setHoveredArchetype] = useState(null);
@@ -621,6 +621,7 @@ export default function Result({ result, onRestart, record, publicView = false, 
           {!publicView && !record && <p role="status" className="text-xs text-blur-text-muted">本机存储空间不足，本次画像暂未存档。</p>}
           <div className="mt-4 flex flex-wrap items-center justify-center md:justify-start gap-3">
             {publicView && <GlassButton onClick={onCompare}>和 ta 对比</GlassButton>}
+            {!publicView && onOpenMy && <GlassButton variant="secondary" onClick={onOpenMy}>我的画像与身份</GlassButton>}
             <GlassButton variant="ghost" onClick={onRestart}>
               <span className="flex items-center gap-2">
                 <RotateCcw size={14} />

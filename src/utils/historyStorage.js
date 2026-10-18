@@ -1,66 +1,37 @@
-import { ENGINE_VERSION, QUESTION_VERSION } from "../../shared/profile.js";
-const STORAGE_KEY = "blur.history.v1";
+import { ENGINE_VERSION, QUESTION_VERSION } from '../../shared/profile.js';
 
-function canUseStorage() {
-  try { return typeof window !== "undefined" && typeof window.localStorage !== "undefined"; }
-  catch { return false; }
+const STORAGE_KEY = 'blur.history.v1';
+export const CLOUD_SESSION = crypto.randomUUID();
+
+function normalize(record) {
+  if (record.localPresent !== undefined) return record;
+  const hadCloudRequest = ['synced', 'pending'].includes(record.syncStatus) || record.shareId;
+  return {
+    ...record, localPresent: true, cloudId: hadCloudRequest ? record.id : null,
+    syncStatus: record.syncStatus === 'pending' ? 'failed' : record.syncStatus || 'local',
+    preview: { title: record.result?.archetype?.title, symbol: record.result?.archetype?.symbol },
+  };
 }
 
 function readRecords() {
-  if (!canUseStorage()) return [];
-
   try {
-    const parsed = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "[]");
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function safeClone(data) {
-  try {
-    if (typeof structuredClone === "function") {
-      return structuredClone(data);
-    }
-  } catch {
-    /* fallback to JSON serialization */
-  }
-  return JSON.parse(JSON.stringify(data));
+    if (typeof window === 'undefined') return [];
+    const records = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || '[]');
+    return Array.isArray(records) ? records.map(normalize) : [];
+  } catch { return []; }
 }
 
 function writeRecords(records) {
-  if (!canUseStorage()) return false;
-
-  if (records.length === 0) {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, "[]");
-      window.dispatchEvent?.(new Event("blur-history-change"));
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  let current = records;
-  while (current.length > 0) {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
-      window.dispatchEvent?.(new Event("blur-history-change"));
-      return true;
-    } catch {
-      // Evict cached cloud records only, never pending uploads or deletions.
-      const removable = current.findLastIndex((record, index) => index > 0 &&
-        record.syncStatus === "synced" && !record.pendingAction && !record.deletedAt);
-      if (removable < 0) return false;
-      current = current.filter((_, index) => index !== removable);
-    }
-  }
-  return false;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    window.dispatchEvent?.(new Event('blur-history-change'));
+    return true;
+  } catch { return false; }
 }
 
 export function getHistoryRecords() {
   return readRecords().filter((record) => !record.deletedAt)
-    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    .sort((a, b) => b.createdAt - a.createdAt);
 }
 
 export function getAllHistoryRecords() { return readRecords(); }
@@ -73,42 +44,79 @@ export function updateHistoryRecord(id, changes) {
   return writeRecords(records) ? record : null;
 }
 
-export function mergeCloudRecords(records) {
-  const local = readRecords();
-  const ids = new Set(local.map((record) => record.id));
-  const remote = new Map(records.map((record) => [record.id, record]));
-  const merged = local.map((record) => {
-    if (record.deletedAt || record.pendingAction || record.syncStatus === "pending" || !remote.has(record.id)) return record;
-    return { ...remote.get(record.id), syncStatus: "synced" };
-  });
-  return writeRecords([...merged, ...records.filter((record) => !ids.has(record.id))
-    .map((record) => ({ ...record, syncStatus: "synced" }))]);
-}
-
-export function saveHistoryRecord(answers, result, syncStatus = "local") {
+export function saveHistoryRecord(answers, result) {
   const record = {
-    id: crypto.randomUUID(),
-    createdAt: Date.now(),
-    engineVersion: ENGINE_VERSION,
-    questionVersion: QUESTION_VERSION,
-    answers: safeClone(answers),
-    result: safeClone(result),
+    id: crypto.randomUUID(), createdAt: Date.now(),
+    engineVersion: ENGINE_VERSION, questionVersion: QUESTION_VERSION,
+    answers: structuredClone(answers), result: structuredClone(result),
     answerCount: Object.keys(answers).length,
-    syncStatus,
+    preview: { title: result.archetype?.title, symbol: result.archetype?.symbol },
+    localPresent: true, cloudId: null, syncStatus: 'local',
   };
-
-  const previous = readRecords();
-  // Keep pending work even when the normal local archive reaches its limit.
-  const mustKeep = (item) => item.syncStatus === "pending" || item.pendingAction || item.deletedAt;
-  const records = [record, ...previous.filter(mustKeep), ...previous.filter((item) => !mustKeep(item)).slice(0, 29)];
-  return writeRecords(records) ? record : null;
+  // Never silently discard a local-only portrait to make room for another one.
+  return writeRecords([record, ...readRecords()]) ? record : null;
 }
 
 export function deleteHistoryRecord(id) {
   return writeRecords(readRecords().filter((record) => record.id !== id));
 }
 
-export function clearHistoryRecords() {
-  return writeRecords([]);
+export function clearHistoryRecords() { return writeRecords([]); }
+
+export function withoutCloud(record) {
+  return {
+    ...record, cloudId: null, cloudOwner: null, shareId: null, nickname: '',
+    syncStatus: 'local', pendingAction: null, cloudSession: null, lastVerifiedAt: null,
+    cloudRevision: (record.cloudRevision || 0) + 1,
+  };
 }
 
+export function removeLocalRecord(id) {
+  const records = readRecords();
+  const record = records.find((item) => item.id === id);
+  if (!record) return true;
+  if (record.pendingAction) throw new Error('请先完成待处理的云端操作，再删除本机记录');
+  if (record.cloudId && record.syncStatus !== 'synced') throw new Error('同步尚未确认，请先核实或移除云端副本，再删除本机画像');
+  const next = record.cloudId ? records.map((item) => item.id === id
+    ? { ...item, localPresent: false, answers: undefined, result: undefined } : item)
+    : records.filter((item) => item.id !== id);
+  if (!writeRecords(next)) throw new Error('无法更新本机存储，请稍后重试');
+  return true;
+}
+
+export function switchHistoryIdentity() {
+  const local = readRecords().filter((record) => record.localPresent && !record.deletedAt);
+  return writeRecords(local.map(withoutCloud));
+}
+
+export function mergeCloudRecords(remote, owner, revisions = new Map()) {
+  const local = readRecords();
+  const seen = new Set();
+  const protectedIds = new Set([...revisions].filter(([id, revision]) => {
+    const record = local.find((item) => item.id === id);
+    return !record || (record.cloudRevision || 0) !== revision;
+  }).map(([id]) => id));
+  if (revisions.size) {
+    for (const record of local) if (!revisions.has(record.id)) protectedIds.add(record.id);
+  }
+  const byCloud = new Map(remote.map((record) => [record.cloudId, record]));
+  const byLocal = new Map(remote.map((record) => [record.id, record]));
+  const merged = local.flatMap((record) => {
+    if (record.cloudOwner && record.cloudOwner !== owner) return [record];
+    const cloud = byCloud.get(record.cloudId) || byLocal.get(record.id);
+    if (cloud) seen.add(cloud.cloudId);
+    if (protectedIds.has(record.id) || (record.pendingAction && record.pendingAction !== 'publish') || record.deletedAt) return [record];
+    if (cloud) return [{ ...record, cloudId: cloud.cloudId, cloudOwner: owner,
+      nickname: cloud.nickname, shareId: cloud.shareId, syncStatus: 'synced', pendingAction: null,
+      cloudSession: CLOUD_SESSION, lastVerifiedAt: Date.now() }];
+    if (record.cloudId) return record.localPresent ? [withoutCloud(record)] : [];
+    return [record];
+  });
+  for (const cloud of remote) {
+    if (!seen.has(cloud.cloudId) && !protectedIds.has(cloud.id)) {
+      merged.push({ ...cloud, localPresent: false, cloudOwner: owner, syncStatus: 'synced',
+        cloudSession: CLOUD_SESSION, lastVerifiedAt: Date.now() });
+    }
+  }
+  if (!writeRecords(merged)) throw new Error('本机存储空间不足，云端记录尚未写入列表');
+}

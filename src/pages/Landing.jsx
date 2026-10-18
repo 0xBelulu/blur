@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Archive, Sparkles } from "lucide-react";
+import { UserRound, Sparkles } from "lucide-react";
 import GlassButton from "../components/GlassButton";
 import OpticalFocusSpace from "../components/OpticalFocusSpace";
 
@@ -8,7 +8,7 @@ const TIPS = [
   "如果你在读这句话，说明你确实在读。",
   "本测试不对结果负责，但对你负责。",
   "世界上有两种人：一种做完了这个测试，另一种还没做。",
-  "你的答案不会被记录，就像你的梦一样。",
+  "画像先留在本机，是否同步由你决定。",
   "如果感到困惑，那正是我们想要的。",
   "这不是一个人格测试，这是十次深呼吸。",
   "越模糊，越真实。—— 没人说过",
@@ -32,7 +32,7 @@ function useRotatingTip(interval = 4000) {
   return TIPS[index];
 }
 
-export default function Landing({ onStart, onExplore, onOpenHistory }) {
+export default function Landing({ onStart, onExplore, onOpenMy }) {
   const tip = useRotatingTip(4200);
 
   const actions = [
@@ -51,10 +51,10 @@ export default function Landing({ onStart, onExplore, onOpenHistory }) {
       className: "text-sm gap-1.5 animate-fade-in-up delay-1100",
     },
     {
-      label: "查看历史画像",
-      icon: Archive,
+      label: "我的 · 画像与身份",
+      icon: UserRound,
       variant: "primary",
-      onClick: onOpenHistory,
+      onClick: onOpenMy,
       className: "text-sm gap-1.5 animate-fade-in-up delay-1300",
     },
   ];

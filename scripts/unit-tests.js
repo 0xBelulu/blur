@@ -252,14 +252,14 @@ test("historyStorage can save, retrieve, delete, and clear records", () => {
   assertEqual(getHistoryRecords().length, 0, "Should have 0 records after clear");
 });
 
-test("historyStorage bounds records to maximum of 30", () => {
+test("historyStorage retains local-only records beyond 30", () => {
   clearHistoryRecords();
   const mockResult = { archetype: { title: "晶体", symbol: "💎" } };
   for (let i = 0; i < 35; i++) {
     saveHistoryRecord([{ questionId: i, value: 4 }], mockResult);
   }
   const records = getHistoryRecords();
-  assertEqual(records.length, 30, "Records must be capped at 30 items");
+  assertEqual(records.length, 35, "Local-only records must not be silently discarded");
 });
 
 /* ── Summary ─────────────────────────────────────────────────────────────── */

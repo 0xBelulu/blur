@@ -8,24 +8,26 @@ import About from './pages/About';
 import Archetypes from './pages/Archetypes';
 import Traits from './pages/Traits';
 import Questions from './pages/Questions';
-import History from './pages/History';
+import My from './pages/My';
 import SharedProfile from './pages/SharedProfile';
 import { generateResult } from './utils/blurEngine';
 import { questions } from './data/questions';
-import { getHistoryRecords, getAllHistoryRecords, saveHistoryRecord } from './utils/historyStorage';
-import { syncRecord, flushPending, refreshCloudHistory, removeRecord } from './utils/cloud';
+import { getHistoryRecords, getAllHistoryRecords, saveHistoryRecord, removeLocalRecord } from './utils/historyStorage';
+import { flushPending, refreshCloudHistory, downloadRecord } from './utils/cloud';
+import { getAccountInfo, ensureLocalIdentity } from './utils/identity';
 
 const LOADING_DURATION = 3500;
-const pages = ['landing', 'about', 'archetypes', 'traits', 'questions', 'history', 'test', 'loading', 'result', 'view', 'compare'];
+const pages = ['landing', 'about', 'archetypes', 'traits', 'questions', 'me', 'test', 'loading', 'result', 'view', 'compare'];
 
 function readRoute() {
   const [screen, id] = window.location.hash.slice(1).split('/');
   if (['view', 'compare'].includes(screen)) {
     return /^[a-f0-9]{32}$/.test(id || '') ? { screen, id } : { screen: 'landing' };
   }
-  if (screen === 'result') return getHistoryRecords().some((record) => record.id === id)
-    ? { screen, id } : { screen: 'history' };
-  return { screen: ['about', 'archetypes', 'traits', 'questions', 'history'].includes(screen) ? screen : 'landing' };
+  if (screen === 'result') return getHistoryRecords().some((record) => record.id === id && record.localPresent)
+    ? { screen, id } : { screen: 'me' };
+  if (screen === 'history') return { screen: 'me' };
+  return { screen: ['about', 'archetypes', 'traits', 'questions', 'me'].includes(screen) ? screen : 'landing' };
 }
 
 const pageVariants = {
@@ -38,6 +40,7 @@ export default function App() {
   const [route, setRoute] = useState(readRoute);
   const [direction, setDirection] = useState(1);
   const [records, setRecords] = useState(getHistoryRecords);
+  const [account, setAccount] = useState(getAccountInfo);
   const [unsavedResult, setUnsavedResult] = useState(null);
   const [notice, setNotice] = useState('');
   const [peer, setPeer] = useState(null);
@@ -53,33 +56,31 @@ export default function App() {
   }, [route.screen]);
 
   useEffect(() => {
-    const changed = () => setRecords(getHistoryRecords());
+    const changed = () => { setRecords(getHistoryRecords()); setAccount(getAccountInfo()); };
     const back = () => {
       clearTimeout(loadingTimer.current);
       setRoute(readRoute());
     };
-    const retry = () => { flushPending().catch(() => {}); };
     window.addEventListener('blur-history-change', changed);
+    window.addEventListener('blur-account-change', changed);
     window.addEventListener('storage', changed);
     window.addEventListener('popstate', back);
     window.addEventListener('hashchange', back);
-    window.addEventListener('online', retry);
-    retry();
     return () => {
       clearTimeout(loadingTimer.current);
       window.removeEventListener('blur-history-change', changed);
+      window.removeEventListener('blur-account-change', changed);
       window.removeEventListener('storage', changed);
       window.removeEventListener('popstate', back);
       window.removeEventListener('hashchange', back);
-      window.removeEventListener('online', retry);
     };
   }, []);
 
   useEffect(() => {
-    if (route.screen !== 'history') return;
+    if (route.screen !== 'me') return;
     let active = true;
-    refreshCloudHistory().then(() => { if (active) setNotice(''); })
-      .catch(() => { if (active) setNotice('云端暂不可用，正在显示本机历史。'); });
+    ensureLocalIdentity().then(refreshCloudHistory).then(() => { if (active) setNotice(''); })
+      .catch(() => { if (active) setNotice('暂时无法核实云端状态。新画像仍只保存在本机，不会自动上传。'); });
     return () => { active = false; };
   }, [route.screen]);
 
@@ -101,7 +102,7 @@ export default function App() {
     clearTimeout(loadingTimer.current);
     loadingTimer.current = setTimeout(() => {
       const result = generateResult(answers, questions);
-      const saved = saveHistoryRecord(answers, result, 'pending');
+      const saved = saveHistoryRecord(answers, result);
       const target = comparisonTarget.current;
       comparisonTarget.current = null;
       if (!saved) {
@@ -110,27 +111,42 @@ export default function App() {
         navigate('result');
         return;
       }
-      syncRecord(saved).catch(() => {});
       if (target) { setComparisonRecordId(saved.id); navigate('compare', target); }
       else navigate('result', saved.id);
     }, LOADING_DURATION);
   };
 
-  const openHistory = () => {
-    navigate('history');
+  const openMy = () => {
+    navigate('me');
   };
-  const remove = async (id) => {
-    const record = records.find((item) => item.id === id);
-    try { await removeRecord(record); setNotice(''); }
-    catch { setNotice('本机记录已隐藏，云端删除待确认；公开链接可能仍可访问。恢复连接后会重试。'); }
+  const openRecord = async (item) => {
+    try {
+      if (!item.localPresent) await downloadRecord(item);
+      setNotice(''); navigate('result', item.id);
+    } catch (error) { setNotice(error.message); }
   };
-  const clear = async () => {
-    let pending = false;
+  const removeLocal = (id) => {
+    try { removeLocalRecord(id); setNotice('本机画像已删除，云端副本与分享状态不变'); }
+    catch (error) { setNotice(error.message); }
+  };
+  const clearLocal = () => {
+    let failed = false;
     for (const record of records) {
-      try { await removeRecord(record); } catch { pending = true; }
+      if (record.localPresent) { try { removeLocalRecord(record.id); } catch { failed = true; } }
     }
-    setNotice(pending ? '部分云端删除待确认，公开链接可能仍可访问。' : '');
+    setNotice(failed ? '部分记录有待确认操作或本机存储无法更新，尚未清除。云端副本与分享状态不变。' : '本机画像已清空，云端副本与分享状态不变');
   };
+  const refresh = async () => {
+    try { await refreshCloudHistory(); setNotice('云端状态已核实'); }
+    catch (error) { setNotice(error.message); }
+  };
+  const retryPending = async () => {
+    try { await flushPending(); await refreshCloudHistory(); setNotice('待处理操作已完成'); }
+    catch (error) { setNotice(error.message); }
+  };
+  const myPage = <My records={records} account={account} notice={notice} onBack={home} onOpen={openRecord}
+    onDeleteLocal={removeLocal} onClearLocal={clearLocal} onRefresh={refresh} onRetryPending={retryPending}
+    pendingLegacy={getAllHistoryRecords().filter((item) => item.deletedAt).length} />;
   const record = records.find((item) => item.id === route.id);
   let content;
   switch (route.screen) {
@@ -138,22 +154,19 @@ export default function App() {
     case 'archetypes': content = <Archetypes onBack={() => navigate('about')} />; break;
     case 'traits': content = <Traits onBack={() => navigate('about')} />; break;
     case 'questions': content = <Questions onBack={() => navigate('about')} />; break;
-    case 'history': content = <History records={records} notice={notice}
-      pendingDeletes={getAllHistoryRecords().filter((item) => item.deletedAt).length}
-      onRetry={() => refreshCloudHistory().then(() => setNotice('同步完成')).catch((error) => setNotice(error.message))}
-      onBack={home} onOpen={(item) => navigate('result', item.id)} onDelete={remove} onClear={clear} />; break;
+    case 'me': content = myPage; break;
     case 'test': content = <Test onComplete={complete} />; break;
     case 'loading': content = <Loading />; break;
-    case 'result': content = record || unsavedResult
-      ? <Result result={record?.result || unsavedResult} record={record} onRestart={home} />
-      : <History records={records} onBack={home} onOpen={(item) => navigate('result', item.id)} onDelete={remove} onClear={clear} />; break;
+    case 'result': content = record?.result || unsavedResult
+      ? <Result result={record?.result || unsavedResult} record={record} onRestart={home} onOpenMy={openMy} />
+      : myPage; break;
     case 'view':
     case 'compare': content = <SharedProfile shareId={route.id} mode={route.screen} records={records} selectedRecordId={comparisonRecordId}
       cached={peer?.shareId === route.id ? peer.profile : null}
       onLoaded={(profile) => setPeer({ shareId: route.id, profile })}
       onHome={home} onCompare={() => { setComparisonRecordId(null); navigate('compare', route.id); }} onView={() => navigate('view', route.id)}
       onStart={() => start(route.id)} />; break;
-    default: content = <Landing onStart={() => start()} onExplore={() => navigate('about')} onOpenHistory={openHistory} />;
+    default: content = <Landing onStart={() => start()} onExplore={() => navigate('about')} onOpenMy={openMy} />;
   }
 
   return <div className="min-h-[100svh] bg-blur-bg">

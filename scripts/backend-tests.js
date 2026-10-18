@@ -6,15 +6,18 @@ import { handleRequest } from '../server/api.js';
 import { generateResult } from '../src/utils/blurEngine.js';
 import { questions } from '../src/data/questions.js';
 import { publicResult, ENGINE_VERSION, QUESTION_VERSION, canCompare } from '../shared/profile.js';
-import { getHistoryRecords, getAllHistoryRecords, saveHistoryRecord, updateHistoryRecord } from '../src/utils/historyStorage.js';
-import { syncRecord, publishRecord, revokeShare, removeRecord, flushPending, refreshCloudHistory } from '../src/utils/cloud.js';
+import { getHistoryRecords, getAllHistoryRecords, saveHistoryRecord, updateHistoryRecord, removeLocalRecord, CLOUD_SESSION } from '../src/utils/historyStorage.js';
+import { syncRecord, publishRecord, revokeShare, removeCloudCopy, flushPending, refreshCloudHistory, downloadRecord, saveNickname, exportRecoveryKey, restoreIdentity } from '../src/utils/cloud.js';
+import { getIdentityToken, getAccountInfo, formatRecoveryKey, identityId } from '../src/utils/identity.js';
+import { recordStatus } from '../src/utils/recordStatus.js';
 
 // Execute production SQL against real SQLite through the small D1 statement API.
-function database(t) {
+function database(t, legacy = false) {
   const sqlite = new DatabaseSync(':memory:');
   sqlite.exec(readFileSync(new URL('../migrations/0001_profiles.sql', import.meta.url), 'utf8'));
+  if (!legacy) sqlite.exec(readFileSync(new URL('../migrations/0002_accounts.sql', import.meta.url), 'utf8'));
   t.after(() => sqlite.close());
-  return { prepare(sql) {
+  return { sqlite, prepare(sql) {
     const statement = sqlite.prepare(sql);
     return { bind(...args) {
       return {
@@ -123,99 +126,345 @@ test('comparison uses signed vector differences and checks both versions', async
 function browser(t, db) {
   const storage = new Map();
   const old = { window: globalThis.window, localStorage: globalThis.localStorage, fetch: globalThis.fetch };
-  const localStorage = { getItem: (key) => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) };
+  let rejectWrite;
+  const localStorage = {
+    getItem: (key) => storage.get(key) ?? null,
+    setItem(key, value) {
+      if (rejectWrite?.(key, value)) { rejectWrite = null; throw new Error('storage full'); }
+      storage.set(key, value);
+    },
+    removeItem: (key) => storage.delete(key),
+  };
   globalThis.localStorage = localStorage;
   globalThis.window = { localStorage, dispatchEvent() {} };
   let online = true;
+  const requests = [];
   globalThis.fetch = async (path, options) => {
+    requests.push({ path, method: options.method });
     if (!online) throw new TypeError('offline');
     return handleRequest(new Request(new URL(path, 'https://blur.test'), options), { DB: db });
   };
   t.after(() => { Object.assign(globalThis, old); });
-  return { offline: () => { online = false; }, online: () => { online = true; } };
+  return { storage, requests, failWrite: (predicate) => { rejectWrite = predicate; },
+    offline: () => { online = false; }, online: () => { online = true; } };
 }
 
-test('offline save remains local and reconnect syncs exactly one snapshot', async (t) => {
+test('saving and reconnecting never create identity or upload without explicit consent', async (t) => {
   const db = database(t);
   const connection = browser(t, db);
   connection.offline();
-  const saved = saveHistoryRecord(answers, result, 'pending');
-  await assert.rejects(syncRecord(saved));
-  assert.equal(getHistoryRecords()[0].syncStatus, 'pending');
+  const saved = saveHistoryRecord(answers, result);
+  assert.equal(getIdentityToken(), null);
+  await assert.rejects(publishRecord(saved, '我'), /先同步/);
+  assert.equal(getHistoryRecords()[0].syncStatus, 'local');
   assert.deepEqual(getHistoryRecords()[0].result.userVector, result.userVector);
   connection.online();
   await flushPending();
   await refreshCloudHistory();
-  assert.equal(getHistoryRecords().length, 1);
-  assert.equal(getHistoryRecords()[0].syncStatus, 'synced');
+  assert.ok(connection.requests.every((request) => request.method === 'GET'));
+  assert.equal((await call(db, '/records', 'GET', undefined, getIdentityToken())).data.records.length, 0);
 });
 
-test('offline revocation stays pending until confirmed; failed deletes keep tombstones', async (t) => {
+test('explicit sync is private and idempotent; offline retries require another explicit action', async (t) => {
   const db = database(t);
   const connection = browser(t, db);
-  const saved = saveHistoryRecord(answers, result, 'pending');
+  const saved = saveHistoryRecord(answers, result);
+  connection.offline();
+  await assert.rejects(syncRecord(saved));
+  assert.equal(getHistoryRecords()[0].syncStatus, 'failed');
+  assert.throws(() => removeLocalRecord(saved.id), /同步尚未确认/);
+  const cloudId = getHistoryRecords()[0].cloudId;
+  connection.online();
+  await flushPending();
+  assert.equal(connection.requests.filter((request) => request.method === 'PUT').length, 1);
+  const first = syncRecord(saved);
+  assert.equal(first, syncRecord(saved));
+  await first;
+  await refreshCloudHistory();
+  assert.equal(getHistoryRecords().length, 1);
+  assert.equal(getHistoryRecords()[0].syncStatus, 'synced');
+  assert.equal(getHistoryRecords()[0].cloudId, cloudId);
+  assert.notEqual(saved.id, cloudId);
+  assert.equal(getHistoryRecords()[0].shareId, null);
+  assert.equal(recordStatus(getHistoryRecords()[0]).storage, '本机 + 云端');
+});
+
+test('offline revocation and cloud deletion remain pending until explicitly retried', async (t) => {
+  const db = database(t);
+  const connection = browser(t, db);
+  const saved = saveHistoryRecord(answers, result);
+  await syncRecord(saved);
   await publishRecord(saved, '我');
   const published = getHistoryRecords()[0];
   connection.offline();
   await assert.rejects(revokeShare(published));
   assert.equal(getHistoryRecords()[0].pendingAction, 'revoke');
   assert.equal(getHistoryRecords()[0].shareId, published.shareId);
+  assert.equal(recordStatus(getHistoryRecords()[0]).sharing, '停止分享待确认');
   connection.online();
   await flushPending();
   assert.equal(getHistoryRecords()[0].shareId, null);
   connection.offline();
-  await assert.rejects(removeRecord(getHistoryRecords()[0]));
-  assert.equal(getHistoryRecords().length, 0);
-  assert.equal(getAllHistoryRecords().length, 1);
+  await assert.rejects(removeCloudCopy(getHistoryRecords()[0]));
+  assert.equal(getHistoryRecords()[0].pendingAction, 'delete-cloud');
+  assert.deepEqual(getHistoryRecords()[0].answers, answers);
   connection.online();
   await flushPending();
   await refreshCloudHistory();
-  assert.equal(getAllHistoryRecords().length, 0);
+  assert.equal(getAllHistoryRecords().length, 1);
+  assert.equal(getHistoryRecords()[0].cloudId, null);
+  assert.equal(getHistoryRecords()[0].localPresent, true);
 });
 
-test('concurrent retries share one in-flight upload and preserve pending deletion', async (t) => {
+test('cloud deletion keeps local data; resync uses a new id and old links stay dead', async (t) => {
   const db = database(t);
   browser(t, db);
-  const saved = saveHistoryRecord(answers, result, 'pending');
-  const a = syncRecord(saved);
-  const b = syncRecord(saved);
-  assert.equal(a, b);
-  updateHistoryRecord(saved.id, { deletedAt: Date.now(), pendingAction: 'delete' });
-  await a;
-  assert.equal(getHistoryRecords().length, 0);
-  await flushPending();
-  assert.equal(getAllHistoryRecords().length, 0);
+  const saved = saveHistoryRecord(answers, result);
+  await syncRecord(saved);
+  const first = await publishRecord(saved, '我');
+  await removeCloudCopy(saved);
+  assert.deepEqual(getHistoryRecords()[0].result, result);
+  assert.equal((await call(db, `/shares/${first.shareId}`)).status, 404);
+  await syncRecord(saved);
+  const second = await publishRecord(saved, '我');
+  assert.notEqual(first.cloudId, second.cloudId);
+  assert.notEqual(first.shareId, second.shareId);
+  assert.equal((await call(db, `/records/${first.cloudId}`, 'PUT', { ...record, localId: 'late-retry' }, getIdentityToken())).status, 404);
+  assert.equal((await call(db, `/shares/${first.shareId}`)).status, 404);
 });
 
 test('history refresh recovers a share whose publish response was lost', async (t) => {
   const db = database(t);
   browser(t, db);
-  const saved = saveHistoryRecord(answers, result, 'pending');
-  await publishRecord(saved, '我');
+  const saved = saveHistoryRecord(answers, result);
+  await syncRecord(saved);
+  const send = globalThis.fetch;
+  globalThis.fetch = async (path, options) => {
+    const response = await send(path, options);
+    if (options.method === 'POST' && path.endsWith('/share')) throw new TypeError('lost response');
+    return response;
+  };
+  await assert.rejects(publishRecord(saved, '我'));
+  assert.equal(recordStatus(getHistoryRecords()[0]).sharing, '开启分享待确认');
+  globalThis.fetch = send;
+  await refreshCloudHistory();
   const shareId = getHistoryRecords()[0].shareId;
   updateHistoryRecord(saved.id, { shareId: null });
   await refreshCloudHistory();
   assert.equal(getHistoryRecords()[0].shareId, shareId);
 });
 
-test('local archive pressure keeps uploads, revocations and deletions pending', async (t) => {
+test('legacy pending uploads are visible but never automatically retried', async (t) => {
   const db = database(t);
-  browser(t, db);
-  const pending = saveHistoryRecord(answers, result, 'pending');
-  const revoking = saveHistoryRecord(answers, result, 'synced');
-  updateHistoryRecord(revoking.id, { pendingAction: 'revoke' });
-  const deleting = saveHistoryRecord(answers, result, 'synced');
-  updateHistoryRecord(deleting.id, { deletedAt: Date.now(), pendingAction: 'delete' });
-  for (let i = 0; i < 35; i++) saveHistoryRecord(answers, result);
-  const all = getAllHistoryRecords();
-  for (const id of [pending.id, revoking.id, deleting.id]) assert.ok(all.some((record) => record.id === id));
+  const connection = browser(t, db);
+  connection.storage.set('blur.history.v1', JSON.stringify([{ ...record, id: 'legacy', syncStatus: 'pending' }]));
+  assert.equal(getHistoryRecords()[0].syncStatus, 'failed');
+  await flushPending();
+  assert.equal(connection.requests.length, 0);
+  assert.deepEqual(getHistoryRecords()[0].result, result);
 });
 
 test('static SPA fallback must not be mistaken for successful cloud storage', async (t) => {
   const db = database(t);
   browser(t, db);
   globalThis.fetch = async () => new Response('<html>static frontend</html>', { status: 200 });
-  const saved = saveHistoryRecord(answers, result, 'pending');
+  const saved = saveHistoryRecord(answers, result);
   await assert.rejects(syncRecord(saved), /云端暂不可用/);
-  assert.equal(getHistoryRecords()[0].syncStatus, 'pending');
+  assert.equal(getHistoryRecords()[0].syncStatus, 'failed');
+});
+
+test('local deletion leaves a private cloud summary and preserves sharing', async (t) => {
+  const db = database(t);
+  browser(t, db);
+  const saved = saveHistoryRecord(answers, result);
+  await syncRecord(saved);
+  const shared = await publishRecord(saved, '我');
+  removeLocalRecord(saved.id);
+  const summary = getHistoryRecords()[0];
+  assert.equal(summary.localPresent, false);
+  assert.equal(summary.result, undefined);
+  assert.equal((await call(db, `/shares/${shared.shareId}`)).status, 200);
+  const list = (await call(db, '/records?summary=1', 'GET', undefined, getIdentityToken())).data.records;
+  assert.equal(list[0].result, undefined);
+  assert.equal(list[0].answers, undefined);
+  assert.equal(list[0].preview.title, result.archetype.title);
+  assert.equal((await call(db, `/records/${summary.cloudId}`, 'GET', undefined, bob)).status, 404);
+  await downloadRecord(summary);
+  assert.deepEqual(getHistoryRecords()[0].result.userVector, result.userVector);
+});
+
+test('removing a cloud-only portrait downloads and saves it before remote deletion', async (t) => {
+  const db = database(t);
+  const connection = browser(t, db);
+  const saved = saveHistoryRecord(answers, result);
+  await syncRecord(saved);
+  const cloudId = getHistoryRecords()[0].cloudId;
+  removeLocalRecord(saved.id);
+  connection.failWrite((key, value) => key === 'blur.history.v1' && value.includes('"localPresent":true'));
+  await assert.rejects(removeCloudCopy(saved), /本机操作状态/);
+  assert.equal((await call(db, `/records/${cloudId}`, 'GET', undefined, getIdentityToken())).status, 200);
+  await removeCloudCopy(saved);
+  assert.equal(getHistoryRecords()[0].cloudId, null);
+  assert.deepEqual(getHistoryRecords()[0].answers, answers);
+  assert.equal((await call(db, `/records/${cloudId}`, 'GET', undefined, getIdentityToken())).status, 404);
+});
+
+test('failed verification shows uncertainty and a remote deletion is reconciled without reuploading', async (t) => {
+  const db = database(t);
+  const connection = browser(t, db);
+  const saved = saveHistoryRecord(answers, result);
+  await syncRecord(saved);
+  await publishRecord(saved, '我');
+  const cloudId = getHistoryRecords()[0].cloudId;
+  connection.offline();
+  await assert.rejects(refreshCloudHistory());
+  assert.equal(recordStatus(getHistoryRecords()[0]).storage, '云端状态待核实');
+  assert.equal(recordStatus(getHistoryRecords()[0]).sharing, '上次确认分享中');
+  connection.online();
+  await call(db, `/records/${cloudId}`, 'DELETE', undefined, getIdentityToken());
+  await refreshCloudHistory();
+  assert.equal(getHistoryRecords()[0].cloudId, null);
+  assert.deepEqual(getHistoryRecords()[0].result, result);
+  assert.equal(connection.requests.filter((request) => request.method === 'PUT').length, 1);
+});
+
+test('a stale cloud id can be explicitly synced again after deletion elsewhere', async (t) => {
+  const db = database(t);
+  browser(t, db);
+  const saved = saveHistoryRecord(answers, result);
+  await syncRecord(saved);
+  const cloudId = getHistoryRecords()[0].cloudId;
+  await call(db, `/records/${cloudId}`, 'DELETE', undefined, getIdentityToken());
+  await assert.rejects(syncRecord(saved));
+  assert.equal(getHistoryRecords()[0].cloudId, null);
+  await syncRecord(saved);
+  assert.notEqual(getHistoryRecords()[0].cloudId, cloudId);
+});
+
+test('nickname and optional recovery identity can exist without uploading any portraits', async (t) => {
+  const db = database(t);
+  const connection = browser(t, db);
+  saveHistoryRecord(answers, result);
+  await saveNickname('小林');
+  assert.equal(connection.requests.length, 0);
+  const key = await exportRecoveryKey();
+  assert.ok(key.startsWith('BLUR-'));
+  assert.equal(getAccountInfo().nickname, '小林');
+  assert.equal((await call(db, '/records', 'GET', undefined, getIdentityToken())).data.records.length, 0);
+  await saveNickname('新昵称');
+  assert.equal((await call(db, '/account', 'GET', undefined, getIdentityToken())).data.nickname, '新昵称');
+});
+
+test('first sync persists the guest nickname but does not publish it', async (t) => {
+  const db = database(t);
+  browser(t, db);
+  await saveNickname('小林');
+  await syncRecord(saveHistoryRecord(answers, result));
+  await refreshCloudHistory();
+  assert.equal(getAccountInfo().nickname, '小林');
+  assert.equal(getHistoryRecords()[0].shareId, null);
+});
+
+test('cross-device recovery lists summaries, keeps device-local portraits and never uploads them', async (t) => {
+  const db = database(t);
+  const connection = browser(t, db);
+  const original = saveHistoryRecord(answers, result);
+  await syncRecord(original);
+  await publishRecord(original, '我');
+  const key = await exportRecoveryKey();
+  const originalToken = getIdentityToken();
+  connection.storage.clear();
+  const deviceLocal = saveHistoryRecord(answers, result);
+  const beforeWrites = connection.requests.filter((request) => request.method !== 'GET').length;
+  await restoreIdentity(key);
+  assert.equal(getIdentityToken(), originalToken);
+  assert.equal(connection.requests.filter((request) => request.method !== 'GET').length, beforeWrites);
+  const recovered = getHistoryRecords().find((item) => item.id === original.id);
+  assert.equal(recovered.localPresent, false);
+  assert.equal(recovered.result, undefined);
+  assert.equal(recovered.cloudSession, CLOUD_SESSION);
+  assert.equal(getHistoryRecords().find((item) => item.id === deviceLocal.id).cloudId, null);
+  await downloadRecord(recovered);
+  assert.deepEqual(getHistoryRecords().find((item) => item.id === original.id).answers, answers);
+});
+
+test('invalid, unknown and offline recovery leave the current identity and records untouched', async (t) => {
+  const db = database(t);
+  const connection = browser(t, db);
+  await saveNickname('本机用户');
+  saveHistoryRecord(answers, result);
+  const before = [...connection.storage];
+  await assert.rejects(restoreIdentity('broken'), /格式/);
+  await assert.rejects(restoreIdentity(formatRecoveryKey(bob)), /没有云端存档/);
+  connection.offline();
+  await assert.rejects(restoreIdentity(formatRecoveryKey(alice)));
+  assert.deepEqual([...connection.storage], before);
+});
+
+test('storage failure during identity switching rolls back both identity and local history', async (t) => {
+  const db = database(t);
+  const connection = browser(t, db);
+  await call(db, '/records/existing', 'PUT', record);
+  await saveNickname('原身份');
+  saveHistoryRecord(answers, result);
+  const before = new Map(connection.storage);
+  connection.failWrite((key) => key === 'blur.account.v1');
+  await assert.rejects(restoreIdentity(formatRecoveryKey(alice)), /storage full/);
+  assert.deepEqual(new Map(connection.storage), before);
+});
+
+test('pending mutations block identity switching and stale refresh cannot undo a newer deletion', async (t) => {
+  const db = database(t);
+  const connection = browser(t, db);
+  const saved = saveHistoryRecord(answers, result);
+  await syncRecord(saved);
+  const send = globalThis.fetch;
+  let release;
+  let reached;
+  const held = new Promise((resolve) => { reached = resolve; });
+  globalThis.fetch = async (path, options) => {
+    const response = await send(path, options);
+    if (path.includes('?summary')) {
+      reached();
+      await new Promise((resolve) => { release = resolve; });
+    }
+    return response;
+  };
+  const refresh = refreshCloudHistory();
+  await held;
+  await removeCloudCopy(saved);
+  release();
+  await refresh;
+  assert.equal(getHistoryRecords()[0].cloudId, null);
+  connection.offline();
+  await syncRecord(saved).catch(() => {});
+  updateHistoryRecord(saved.id, { pendingAction: 'revoke' });
+  await assert.rejects(restoreIdentity(formatRecoveryKey(bob)), /待确认/);
+});
+
+test('additive migration preserves legacy portraits, share links and anonymous ownership', async (t) => {
+  const db = database(t, true);
+  const owner = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(alice));
+  const ownerHash = Buffer.from(owner).toString('hex');
+  const shareId = 'c'.repeat(32);
+  db.sqlite.prepare(`INSERT INTO profiles (id, owner_hash, created_at, engine_version, question_version,
+    answer_count, answers_json, result_json, share_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run('legacy', ownerHash, record.createdAt, ENGINE_VERSION, QUESTION_VERSION, 10, JSON.stringify(answers), JSON.stringify(result), shareId);
+  db.sqlite.exec(readFileSync(new URL('../migrations/0002_accounts.sql', import.meta.url), 'utf8'));
+  assert.equal((await call(db, '/account')).data.id, await identityId(alice));
+  assert.equal((await call(db, '/records?summary=1')).data.records[0].id, 'legacy');
+  assert.equal((await call(db, `/shares/${shareId}`)).status, 200);
+  assert.equal((await call(db, '/records/legacy')).data.cloudId, 'legacy');
+  db.sqlite.prepare('UPDATE profiles SET local_id = NULL WHERE id = ?').run('legacy');
+  assert.equal((await call(db, '/records/legacy', 'PUT', record)).status, 200);
+});
+
+test('duplicate cloud uploads of one local portrait collapse to one active snapshot', async (t) => {
+  const db = database(t);
+  const first = await call(db, '/records/cloud-a', 'PUT', { ...record, localId: 'local-a' });
+  const retry = await call(db, '/records/cloud-b', 'PUT', { ...record, localId: 'local-a' });
+  assert.equal(first.data.cloudId, retry.data.cloudId);
+  assert.equal((await call(db, '/records')).data.records.length, 1);
+  await call(db, '/records/cloud-a', 'DELETE');
+  assert.equal((await call(db, '/records/cloud-b', 'PUT', { ...record, localId: 'local-a' })).status, 200);
 });
