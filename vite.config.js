@@ -18,6 +18,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), ...(lanDebug ? [basicSsl()] : [])],
   server: {
     host: lanDebug,
+    proxy: { '/api': 'http://127.0.0.1:18788' },
   },
   build: {
     rollupOptions: {

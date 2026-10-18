@@ -1,4 +1,10 @@
-# React + Vite
+# Blur
+
+React 19 + Vite 8 性格测试。后端使用 Cloudflare Pages Functions + D1，支持匿名云端存档、可撤销分享和双人对比；无后端时仍可测试并查看本机画像。
+
+开发、部署与控制台排查见 [后端说明](docs/backend.md)。运行 `npm test`、`npm run lint`、`npm run build` 完成验证。
+
+## Vite 模板参考
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

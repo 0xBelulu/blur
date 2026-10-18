@@ -17,6 +17,8 @@ export default function TraitSpace2D({
   onHoverArchetype,
   showUser = true,
   onClickArchetype,
+  participants = [],
+  userLabel = "你",
 }) {
   const canvasRef = useRef(null);
   const animRef = useRef(null);
@@ -26,6 +28,8 @@ export default function TraitSpace2D({
   const onClickRef = useRef(onClickArchetype);
   const userVectorRef = useRef(userVector);
   const showUserRef = useRef(showUser);
+  const participantsRef = useRef(participants);
+  const userLabelRef = useRef(userLabel);
   const frameCountRef = useRef(0);
   const idleRef = useRef(false);
 
@@ -40,6 +44,11 @@ export default function TraitSpace2D({
   useEffect(() => {
     showUserRef.current = showUser;
   }, [showUser]);
+
+  useEffect(() => {
+    participantsRef.current = participants;
+    userLabelRef.current = userLabel;
+  }, [participants, userLabel]);
 
   useEffect(() => {
     userVectorRef.current = userVector;
@@ -278,6 +287,30 @@ export default function TraitSpace2D({
 
       const upos = toScreen(ux, uy, eased);
 
+      participantsRef.current.forEach((participant) => {
+        const pos = toScreen(participant.vector[xKey] || 0, participant.vector[yKey] || 0, eased);
+        ctx.beginPath();
+        ctx.moveTo(upos.x, upos.y);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.strokeStyle = "rgba(143,181,196,0.45)";
+        ctx.setLineDash([4, 4]);
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, 9, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(143,181,196,0.35)";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(92,141,159,0.95)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.font = "bold 12px system-ui,-apple-system,sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.fillStyle = "rgba(65,111,128,0.95)";
+        ctx.fillText(participant.label, pos.x, pos.y + 14, 100);
+      });
+
       if (showUserRef.current) {
         const pulse = 0.75 + Math.sin(elapsed * 0.0018) * 0.25;
 
@@ -307,7 +340,7 @@ export default function TraitSpace2D({
         ctx.font = "bold 12px system-ui,-apple-system,sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "bottom";
-        ctx.fillText("你", upos.x, upos.y - ds - 6);
+        ctx.fillText(userLabelRef.current, upos.x, upos.y - ds - 6);
       }
 
       animRef.current = requestAnimationFrame(draw);
@@ -330,7 +363,9 @@ export default function TraitSpace2D({
       aria-label="人格坐标可视化"
       style={{
         width: `${width}px`,
-        height: `${height}px`,
+        maxWidth: "100%",
+        height: "auto",
+        aspectRatio: "1 / 1",
         cursor: "default",
         touchAction: "none",
       }}

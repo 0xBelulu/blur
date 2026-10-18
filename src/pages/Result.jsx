@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RotateCcw, Zap, HeartHandshake, ArrowRightLeft, Share2, Check } from "lucide-react";
+import { RotateCcw, Zap, HeartHandshake, ArrowRightLeft } from "lucide-react";
 import TraitSpace2D from "../components/TraitSpace2D";
 import GlassButton from "../components/GlassButton";
 import { DIMENSION_PAIRS, determineSuppressedTraits } from "../utils/blurEngine";
-import { ARCHETYPE_PROFILES } from "../data/archetypeProfiles";
 import TraitRadar from "../components/TraitRadar";
 import DimensionMeters from "../components/DimensionMeters";
 import ProgressBar from "../components/ProgressBar";
 import DraggableTabs from "../components/DraggableTabs";
+import ShareControls from "../components/ShareControls";
 
 const TABS = [
   { key: "cloud", label: "画像" },
@@ -23,11 +23,10 @@ const tabContentVariants = {
   exit: { opacity: 0, y: -8 },
 };
 
-export default function Result({ result, onRestart }) {
+export default function Result({ result, onRestart, record, publicView = false, onCompare }) {
   const [activeTab, setActiveTab] = useState("cloud");
   const [activePairIndex, setActivePairIndex] = useState(0);
   const [hoveredArchetype, setHoveredArchetype] = useState(null);
-  const [copied, setCopied] = useState(false);
 
   const {
     archetypeKey,
@@ -43,9 +42,10 @@ export default function Result({ result, onRestart }) {
   } = result;
 
   const [selectedKey, setSelectedKey] = useState(archetypeKey || "mist");
-  const activeArchetype = ARCHETYPE_PROFILES[selectedKey] || archetype;
+  const activeArchetype = similarities.find((item) => item.key === selectedKey)?.profile || archetype;
   const activeNarrative = activeArchetype.narrative;
-  const activeSuppressed = determineSuppressedTraits(selectedKey, userVector);
+  const activeSuppressed = selectedKey === archetypeKey && result.suppressedTraits
+    ? result.suppressedTraits : determineSuppressedTraits(selectedKey, userVector);
 
   const [vectorSize, setVectorSize] = useState(() =>
     typeof window !== "undefined" && window.innerWidth >= 768 ? 420 : 320
@@ -76,34 +76,6 @@ export default function Result({ result, onRestart }) {
   const pct2 = top2 ? Math.round(softScale(top2.prob)) : 0;
   const isDual =
     isDualResonance || (top2 && (Math.abs(top1.prob - top2.prob) <= 0.08 || Math.abs(pct1 - pct2) <= 8));
-
-  const handleShare = async () => {
-    const mainTagNames = tagDetails.map((t) => t.text).join(" · ");
-    const summary = `【Blur 人格画像】\n原型：${activeArchetype.symbol} ${activeArchetype.title}${activeArchetype.roleBadge ? ` (${activeArchetype.roleBadge})` : ""}\n核心配方：${mainTagNames}\n“${activeArchetype.subtitle}”\n探寻属于你的不精确画像`;
-
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({
-          title: `Blur 人格画像 · ${activeArchetype.title}`,
-          text: summary,
-          url: window.location.href,
-        });
-        return;
-      } catch {
-        /* fallback to clipboard */
-      }
-    }
-
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      try {
-        await navigator.clipboard.writeText(summary);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2200);
-      } catch {
-        /* silent */
-      }
-    }
-  };
 
   return (
     <div className="flex-1 flex flex-col md:flex-row md:items-start md:justify-center gap-6 md:gap-10 px-6 py-8 md:py-12 max-w-5xl mx-auto w-full overflow-y-auto">
@@ -645,15 +617,10 @@ export default function Result({ result, onRestart }) {
           transition={{ delay: 1.0 }}
           className="mt-auto pt-8 w-full"
         >
-          <div className="flex items-center justify-center md:justify-start gap-3">
-            <GlassButton
-              variant="secondary"
-              onClick={handleShare}
-              className="flex items-center gap-1.5 text-xs"
-            >
-              {copied ? <Check size={14} className="text-blur-accent" /> : <Share2 size={14} />}
-              <span>{copied ? "已复制画像" : "分享画像"}</span>
-            </GlassButton>
+          {!publicView && record && <ShareControls record={record} />}
+          {!publicView && !record && <p role="status" className="text-xs text-blur-text-muted">本机存储空间不足，本次画像暂未存档。</p>}
+          <div className="mt-4 flex flex-wrap items-center justify-center md:justify-start gap-3">
+            {publicView && <GlassButton onClick={onCompare}>和 ta 对比</GlassButton>}
             <GlassButton variant="ghost" onClick={onRestart}>
               <span className="flex items-center gap-2">
                 <RotateCcw size={14} />
