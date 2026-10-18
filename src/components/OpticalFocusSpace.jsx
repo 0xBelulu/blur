@@ -191,13 +191,27 @@ const MOUSE_TAKEOVER_MS = 4000;
  * 做题页传入由实时解算结果生成的符号表，渲染与交互逻辑完全一致。
  * 符号表变化时只换 emoji 字形与归属，不重跑 effect（位置、视差、陀螺仪状态全部保持）。
  */
-export default function OpticalFocusSpace({ symbols }) {
+export default function OpticalFocusSpace({
+  symbols,
+  // "pointer"：焦平面跟随指针/陀螺仪（Landing 的原始行为）
+  // "persona"：焦平面钉在固定景深上，由符号自身的 z 决定谁清楚谁糊（做题页）
+  focusMode = "pointer",
+  focusZ = 0.5,
+  // 做题页需要压低上限，避免 emoji 盖过题干
+  opacityCap = 1,
+  minBlur = 0,
+}) {
   const symbolList = symbols || SPATIAL_SYMBOLS;
   const symbolsRef = useRef(symbolList);
+  const focusConfigRef = useRef({ focusMode, focusZ, opacityCap, minBlur });
 
   useEffect(() => {
     symbolsRef.current = symbolList;
   }, [symbolList]);
+
+  useEffect(() => {
+    focusConfigRef.current = { focusMode, focusZ, opacityCap, minBlur };
+  }, [focusMode, focusZ, opacityCap, minBlur]);
 
   const containerRef = useRef(null);
   const elementsRef = useRef([]);
@@ -596,7 +610,11 @@ export default function OpticalFocusSpace({ symbols }) {
         state.activeFocusedId = null;
       }
 
-      if (!isMobile && !isIdle) {
+      if (focusConfigRef.current.focusMode === "persona") {
+        // 焦平面钉死：清晰度只由每个符号自己的 z 决定，不再跟着指针跑
+        const t = now * 0.0004;
+        state.targetZ = focusConfigRef.current.focusZ + Math.sin(t) * 0.015;
+      } else if (!isMobile && !isIdle) {
         // 电脑端鼠标移动 hover 时，柔和吸附到指针最近的符号（锁定期间同样生效）
         // 指针先换算到容器坐标系，与 currentPositions 严格同坐标系测距
         const pointer = toContainerPoint(state.mouseX, state.mouseY);
@@ -707,18 +725,23 @@ export default function OpticalFocusSpace({ symbols }) {
         const defocus = Math.min(1, blurPx / 11);
 
         // C. 清晰度与尺寸响应 (适度提升漫染透光基底，失焦如宣纸浮墨，合焦如发光水晶)
+        const { opacityCap: cap, minBlur: blurFloor } = focusConfigRef.current;
         const isFocused = state.activeFocusedId === item.id || blurPx < 0.9;
         const targetOpacity = isFocused ? 0.98 : 0.16 + (1 - defocus) * 0.72;
         const itemScale = isFocused ? 1.22 : 0.93 + (1 - defocus) * 0.22;
 
+        // 做题页把上限压下来：emoji 是背景，不能盖过题干
+        const renderBlur = Math.max(blurFloor, blurPx);
+        const renderOpacity = Math.min(cap, targetOpacity);
+
         // 更新 Emoji DOM 样式 (合焦时带有晶莹透镜微光 Bloom，告别干瘪生硬)
         el.style.transform = `translate3d(${(offset.driftX + offset.parallaxX).toFixed(1)}px, ${(offset.driftY + offset.parallaxY).toFixed(1)}px, 0) scale(${itemScale.toFixed(3)})`;
-        if (isFocused) {
+        if (isFocused && blurFloor === 0) {
           el.style.filter = "blur(0px) drop-shadow(0 0 14px rgba(155,142,199,0.5)) drop-shadow(0 0 24px rgba(196,165,137,0.35))";
         } else {
-          el.style.filter = `blur(${blurPx.toFixed(1)}px)`;
+          el.style.filter = `blur(${renderBlur.toFixed(1)}px)`;
         }
-        el.style.opacity = targetOpacity.toFixed(3);
+        el.style.opacity = renderOpacity.toFixed(3);
       }
 
       // 6. 丁达尔微光星尘视差与呼吸流转

@@ -4,9 +4,10 @@ import { ChevronLeft, ChevronRight, Eye, Sparkles } from "lucide-react";
 import { questions } from "../data/questions";
 import BlurCard from "../components/BlurCard";
 import GlassButton from "../components/GlassButton";
+import AtmosphereField from "../components/AtmosphereField";
 import OpticalFocusSpace from "../components/OpticalFocusSpace";
 import { solveProfile } from "../utils/blurEngine";
-import { buildPersonaSymbols } from "../utils/personaSymbols";
+import { buildPersonaSymbols, revealAt, PERSONA_FOCAL_Z } from "../utils/personaSymbols";
 
 const REQUIRED_COUNT = 10;
 
@@ -79,7 +80,10 @@ export default function Test({ onComplete }) {
 
   // 实时解算：背景 emoji 场的权重直接来自答案，与结果页共用同一套算法
   const profile = useMemo(() => solveProfile(answers), [answers]);
-  const symbols = useMemo(() => buildPersonaSymbols(profile.field), [profile]);
+  const symbols = useMemo(
+    () => buildPersonaSymbols(profile.field, revealAt(profile.answeredCount)),
+    [profile],
+  );
 
   const restoreState = (answer, question) => {
     if (!answer || !question) {
@@ -303,9 +307,16 @@ export default function Test({ onComplete }) {
 
   return (
     <>
-      <OpticalFocusSpace symbols={symbols} />
+      <AtmosphereField />
+      <OpticalFocusSpace
+        symbols={symbols}
+        focusMode="persona"
+        focusZ={PERSONA_FOCAL_Z}
+        opacityCap={0.5}
+        minBlur={1.5}
+      />
 
-      <div className="relative z-10 flex-1 flex flex-col px-6 py-8 max-w-lg mx-auto w-full">
+      <div className="relative z-10 flex-1 flex flex-col px-6 py-8 min-h-[100svh] max-w-lg mx-auto w-full">
 
         {/* 进度与特征捕捉提示 */}
         {!isTransition && (

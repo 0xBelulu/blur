@@ -29,6 +29,33 @@ const SLOT_LAYOUT = [
   { x: 46, y: 26, z: 0.9, driftSpeed: 0.55, phase: 0.9 },
 ];
 
+/** 做题页的焦平面。z 落在这附近的符号最清楚，越远越糊 */
+export const PERSONA_FOCAL_Z = 0.4;
+
+/** 权重拉开的景深幅度：低权重符号被推到焦平面两侧多远 */
+const DEFOCUS_SPREAD = 0.5;
+
+/**
+ * 显影曲线：决定"画面里到底有多少 emoji 存在"。
+ *
+ * 第 REVEAL_FROM 题之前完全不显影（只剩 AtmosphereField 的水彩底光），
+ * 第 REVEAL_TO 题（≈ 基本画像就绪之前）完全显影。
+ *
+ * 机制：显影度低 → 所有符号被整体推离焦平面 → 弥散圆公式给出 11~13px 模糊
+ * → 不透明度落到 0.16 下限 → 视觉上消失。这是刻意的，不是副作用。
+ */
+export const REVEAL_FROM = 1;
+export const REVEAL_TO = 8;
+
+export function revealAt(answeredCount) {
+  const t = Math.min(
+    1,
+    Math.max(0, (answeredCount - REVEAL_FROM) / (REVEAL_TO - REVEAL_FROM)),
+  );
+  // smoothstep，避免第 3 题突然冒出一片
+  return t * t * (3 - 2 * t);
+}
+
 /**
  * 最大余数法：把 20 个槽位按权重分给 10 个原型，保证总和恰好等于槽位数
  *
@@ -57,11 +84,12 @@ function allocateSlots(field, total) {
   return counts;
 }
 
-export function buildPersonaSymbols(field) {
+export function buildPersonaSymbols(field, reveal = 1) {
   if (!field || field.length === 0) return [];
 
   const total = SLOT_LAYOUT.length;
   const counts = allocateSlots(field, total);
+  const maxWeight = Math.max(...field.map((item) => item.weight), 0.0001);
 
   // 轮转展开：A B C … J A B …，让同一原型的多个槽位在画面上散开而不是挤在一起
   const expanded = [];
@@ -72,14 +100,26 @@ export function buildPersonaSymbols(field) {
     });
   }
 
+  // 还没显影时整体把符号推离焦平面，画面保持弥散
+  const undecided = (1 - reveal) * 0.45;
+
   return SLOT_LAYOUT.map((slot, i) => {
     const arch = expanded[i] || field[i % field.length];
+    const relative = arch.weight / maxWeight;
+
+    // 权重决定景深：高权重落在焦平面上（清楚），低权重被推向两侧（糊）
+    const side = slot.z > 0.5 ? 1 : -1;
+    const depth =
+      PERSONA_FOCAL_Z +
+      ((1 - relative) * DEFOCUS_SPREAD + undecided) * side +
+      (slot.z - 0.5) * 0.1;
+
     return {
       id: `slot-${i}`,
       symbol: arch.symbol,
       x: slot.x,
       y: slot.y,
-      z: slot.z,
+      z: Math.max(0.16, Math.min(0.92, depth)),
       driftSpeed: slot.driftSpeed,
       phase: slot.phase,
     };
