@@ -19,6 +19,8 @@ export default function TraitSpace2D({
   onClickArchetype,
   participants = [],
   userLabel = "你",
+  showArchetypes = true,
+  userColor = [74, 69, 64],
 }) {
   const canvasRef = useRef(null);
   const animRef = useRef(null);
@@ -30,6 +32,7 @@ export default function TraitSpace2D({
   const showUserRef = useRef(showUser);
   const participantsRef = useRef(participants);
   const userLabelRef = useRef(userLabel);
+  const userColorRef = useRef(userColor);
   const frameCountRef = useRef(0);
   const idleRef = useRef(false);
 
@@ -48,7 +51,8 @@ export default function TraitSpace2D({
   useEffect(() => {
     participantsRef.current = participants;
     userLabelRef.current = userLabel;
-  }, [participants, userLabel]);
+    userColorRef.current = userColor;
+  }, [participants, userLabel, userColor]);
 
   useEffect(() => {
     userVectorRef.current = userVector;
@@ -76,7 +80,7 @@ export default function TraitSpace2D({
       return { x: cx + x * scale, y: cy - y * scale };
     };
 
-    const archetypes = Object.entries(ARCHETYPE_PROFILES).map(([key, profile]) => ({
+    const archetypes = (showArchetypes ? Object.entries(ARCHETYPE_PROFILES) : []).map(([key, profile]) => ({
       key,
       label: profile.title,
       color: profile.color,
@@ -286,28 +290,30 @@ export default function TraitSpace2D({
       });
 
       const upos = toScreen(ux, uy, eased);
+      const ownColor = userColorRef.current;
 
       participantsRef.current.forEach((participant) => {
+        const color = participant.color || [92, 141, 159];
         const pos = toScreen(participant.vector[xKey] || 0, participant.vector[yKey] || 0, eased);
         ctx.beginPath();
         ctx.moveTo(upos.x, upos.y);
         ctx.lineTo(pos.x, pos.y);
-        ctx.strokeStyle = "rgba(143,181,196,0.45)";
+        ctx.strokeStyle = rgba(color, 0.4);
         ctx.setLineDash([4, 4]);
         ctx.lineWidth = 1;
         ctx.stroke();
         ctx.setLineDash([]);
         ctx.beginPath();
         ctx.arc(pos.x, pos.y, 9, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(143,181,196,0.35)";
+        ctx.fillStyle = rgba(color, 0.15);
         ctx.fill();
-        ctx.strokeStyle = "rgba(92,141,159,0.95)";
+        ctx.strokeStyle = rgba(color, 0.95);
         ctx.lineWidth = 2;
         ctx.stroke();
         ctx.font = "bold 12px system-ui,-apple-system,sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
-        ctx.fillStyle = "rgba(65,111,128,0.95)";
+        ctx.fillStyle = rgba(color, 1);
         ctx.fillText(participant.label, pos.x, pos.y + 14, 100);
       });
 
@@ -315,7 +321,7 @@ export default function TraitSpace2D({
         const pulse = 0.75 + Math.sin(elapsed * 0.0018) * 0.25;
 
         const glow = ctx.createRadialGradient(upos.x, upos.y, 0, upos.x, upos.y, 24);
-        glow.addColorStop(0, `rgba(74,69,64,${0.25 * pulse})`);
+        glow.addColorStop(0, rgba(ownColor, 0.25 * pulse));
         glow.addColorStop(0.4, `rgba(155,142,199,${0.18 * pulse})`);
         glow.addColorStop(1, "rgba(155,142,199,0)");
         ctx.beginPath();
@@ -330,13 +336,13 @@ export default function TraitSpace2D({
         ctx.lineTo(upos.x, upos.y + ds);
         ctx.lineTo(upos.x - ds, upos.y);
         ctx.closePath();
-        ctx.fillStyle = `rgba(74,69,64,${0.85})`;
+        ctx.fillStyle = rgba(ownColor, 0.9);
         ctx.fill();
         ctx.strokeStyle = "rgba(155,142,199,0.8)";
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
-        ctx.fillStyle = `rgba(74,69,64,${0.95 * pulse})`;
+        ctx.fillStyle = rgba(ownColor, 1);
         ctx.font = "bold 12px system-ui,-apple-system,sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "bottom";
@@ -354,7 +360,7 @@ export default function TraitSpace2D({
       canvas.removeEventListener("pointerleave", handlePointerLeave);
       canvas.removeEventListener("click", handleClick);
     };
-  }, [width, height, xKey, yKey]);
+  }, [width, height, xKey, yKey, showArchetypes]);
 
   return (
     <canvas

@@ -1,0 +1,138 @@
+.comparison-page {
+  --comparison-mine: #9782bf;
+  --comparison-theirs: #5391a3;
+}
+
+.comparison-ink-mine { color: var(--comparison-mine); }
+.comparison-ink-theirs { color: var(--comparison-theirs); }
+
+.comparison-back { transition: transform 180ms ease, background 180ms ease; }
+.comparison-back:hover { transform: translateX(-2px); background: rgba(255, 255, 255, 0.65); }
+
+.comparison-portraits {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 5% 5%, rgba(151, 130, 191, 0.11), transparent 55%),
+    radial-gradient(ellipse at 95% 95%, rgba(83, 145, 163, 0.10), transparent 55%),
+    rgba(255, 255, 255, 0.3);
+}
+
+.comparison-portrait-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 3rem;
+  padding: 1.75rem 2rem;
+}
+
+.comparison-person { display: flex; align-items: center; gap: 1.1rem; min-width: 0; }
+.comparison-person--theirs { padding-left: 1.5rem; }
+.comparison-person-label { font-size: 11px; color: var(--comparison-mine); }
+.comparison-person--theirs .comparison-person-label { color: var(--comparison-theirs); }
+
+.comparison-avatar {
+  width: 76px;
+  height: 84px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-size: 36px;
+  border-radius: 23px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: linear-gradient(145deg, rgba(255,255,255,0.85), rgba(151,130,191,0.12));
+  box-shadow: 0 6px 18px rgba(151,130,191,0.07), inset 0 1px 0 white;
+}
+.comparison-person--theirs .comparison-avatar {
+  background: linear-gradient(145deg, rgba(255,255,255,0.85), rgba(83,145,163,0.12));
+  box-shadow: 0 6px 18px rgba(83,145,163,0.07), inset 0 1px 0 white;
+}
+
+.comparison-between {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--color-blur-border);
+  background: rgba(255,255,255,0.6);
+  color: var(--color-blur-text-light);
+}
+
+.comparison-portrait-caption {
+  border-top: 1px solid rgba(200,195,190,0.25);
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 11px;
+  color: var(--color-blur-text-muted);
+  background: rgba(255,255,255,0.2);
+}
+
+.comparison-insight {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 1.2rem 1.4rem;
+  border: 1px solid rgba(151,130,191,0.17);
+  border-radius: 22px;
+  background: linear-gradient(120deg, rgba(151,130,191,0.07), rgba(255,255,255,0.3));
+}
+.comparison-insight--different {
+  border-color: rgba(83,145,163,0.17);
+  background: linear-gradient(120deg, rgba(83,145,163,0.07), rgba(255,255,255,0.3));
+}
+.comparison-insight-icon { color: var(--comparison-mine); padding-top: 2px; }
+.comparison-insight--different .comparison-insight-icon { color: var(--comparison-theirs); }
+
+.comparison-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  color: var(--color-blur-text-muted);
+}
+.comparison-view-number { font-size: 11px; color: var(--color-blur-text-muted); font-variant-numeric: tabular-nums; padding-top: 2px; }
+.comparison-map { background: rgba(255,255,255,0.32); }
+.comparison-map-canvas { display: flex; justify-content: center; padding: 0 0.5rem; }
+.comparison-map-legend { display: flex; justify-content: center; flex-wrap: wrap; gap: 0.65rem 1.5rem; font-size: 11px; padding: 0 1.25rem 1.25rem; }
+.comparison-map-legend > span { display: flex; align-items: center; gap: 0.5rem; min-width: 0; overflow-wrap: anywhere; }
+.comparison-mark { display: inline-block; width: 7px; height: 7px; flex-shrink: 0; }
+.comparison-mark--mine { background: var(--comparison-mine); transform: rotate(45deg); }
+.comparison-mark--theirs { border: 1.5px solid var(--comparison-theirs); border-radius: 50%; width: 8px; height: 8px; }
+
+.comparison-spectrum { background: rgba(255,255,255,0.32); }
+.comparison-sort { display: flex; gap: 3px; border-radius: 12px; padding: 3px; width: fit-content; background: rgba(200,195,190,0.13); }
+.comparison-sort button { border: 1px solid transparent; border-radius: 9px; padding: 6px 13px; font-size: 10px; cursor: pointer; color: var(--color-blur-text-muted); transition: background 180ms, box-shadow 180ms; }
+.comparison-sort .is-selected { color: var(--color-blur-text); background: rgba(255,255,255,0.75); border-color: rgba(255,255,255,0.9); box-shadow: 0 1px 4px rgba(74,69,64,0.06); }
+.comparison-dimension { display: block; width: 100%; text-align: left; padding: 12px; border-radius: 14px; border: 1px solid transparent; cursor: pointer; transition: background 180ms, border-color 180ms; }
+.comparison-dimension + .comparison-dimension { margin-top: 2px; }
+.comparison-dimension:hover { background: rgba(255,255,255,0.5); }
+.comparison-dimension.is-active { border-color: rgba(151,130,191,0.16); background: rgba(151,130,191,0.045); }
+.comparison-track { display: block; width: 100%; height: auto; min-height: 32px; overflow: visible; }
+.comparison-expand { border-top: 1px solid rgba(200,195,190,0.25); margin-top: 10px; transition: background 180ms; }
+.comparison-expand:hover { background: rgba(255,255,255,0.4); }
+.comparison-footer { border-top: 1px solid rgba(200,195,190,0.3); }
+.comparison-page button:focus-visible { outline: 2px solid var(--comparison-mine); outline-offset: 3px; }
+
+@media (max-width: 639px) {
+  .comparison-portrait-grid { gap: 1.5rem; padding: 1.25rem; align-items: start; }
+  .comparison-person { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+  .comparison-person--theirs { padding-left: 0.5rem; }
+  .comparison-avatar { width: 54px; height: 60px; border-radius: 18px; font-size: 27px; }
+  .comparison-between { top: 49px; width: 28px; height: 28px; }
+  .comparison-portrait-caption { padding: 0.7rem 1rem; font-size: 10px; }
+  .comparison-insight { padding: 1rem 1.1rem; border-radius: 20px; }
+  .comparison-map-canvas { padding: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .comparison-page *, .comparison-page *::before, .comparison-page *::after { transition: none !important; }
+}
