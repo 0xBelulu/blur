@@ -2,7 +2,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 
 /* 问卷入口。留空时页面依然完整，只是显示「准备中」而不是一个点不开的链接。 */
-const SURVEY_URL = "https://v.wjx.cn/vm/htOh3D6.aspx#";
+const SURVEY_URL = "https://v.wjx.cn/vm/h46RF76.aspx#";
 
 const EASE = [0.22, 1, 0.36, 1];
 const TITLE_CLASS = "text-[2.3rem] leading-[1.1] tracking-tight font-medium md:text-[3.6rem]";

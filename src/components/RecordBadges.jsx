@@ -1,17 +1,17 @@
-import { Cloud, HardDrive, Link2 } from 'lucide-react';
 import { recordStatus } from '../utils/recordStatus';
 
+// 记录状态用一行注脚表达，而不是彩色胶囊：
+// 圆点区分「在哪」「是否分享」，文字随页面灰调，只有待确认状态才略微偏暖。
 export default function RecordBadges({ record }) {
   const status = recordStatus(record);
-  const tone = status.tone === 'pending' ? 'bg-amber-50 text-amber-800 border-amber-200/70'
-    : status.tone === 'cloud' ? 'bg-sky-50/70 text-sky-800 border-sky-200/60'
-      : 'bg-white/50 text-blur-text-muted border-blur-border';
-  return <div className="flex flex-wrap gap-2 text-[11px]">
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${tone}`}>
-      {record.cloudId ? <Cloud size={12} /> : <HardDrive size={12} />}{status.storage}
+  const shared = Boolean(record.shareId) || record.pendingAction === 'publish';
+  return <span className="pp-record-status" data-tone={status.tone}>
+    <span className="pp-record-status-item">
+      <i data-dot={record.cloudId ? 'cloud' : 'local'} aria-hidden="true" />{status.storage}
     </span>
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${record.shareId ? 'bg-purple-50 text-purple-800 border-purple-200/60' : 'bg-white/30 text-blur-text-muted border-blur-border/60'}`}>
-      <Link2 size={12} />{status.sharing}
+    <span className="pp-record-status-sep" aria-hidden="true">·</span>
+    <span className="pp-record-status-item" data-shared={shared ? 'true' : 'false'}>
+      {shared && <i data-dot="share" aria-hidden="true" />}{status.sharing}
     </span>
-  </div>;
+  </span>;
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ArrowRight, Check } from 'lucide-react';
+import { PortraitMark } from './PersonalElements';
 import { friendAction, readPeople } from '../utils/people';
 import { getIdentityToken } from '../utils/identity';
 
@@ -8,6 +9,7 @@ function parseCode(value) {
   return (fromLink || value).replaceAll('-', '').trim().toUpperCase();
 }
 
+// 添加朋友是「我的好友码」的另一半，直接摆在页面上，不再藏进弹窗。
 export default function FriendFinder({ initialCode = '', onChanged }) {
   const [code, setCode] = useState(initialCode);
   const [person, setPerson] = useState(null);
@@ -23,12 +25,16 @@ export default function FriendFinder({ initialCode = '', onChanged }) {
     } catch (error) { setMessage(error.message); }
     finally { setBusy(false); }
   };
-  return <div>
+  return <div className="pp-finder">
     <form onSubmit={lookup}>
-      <label>朋友的好友码或邀请链接<input value={code} disabled={busy} onChange={(e) => { setCode(e.target.value); setPerson(null); setSent(false); }} autoCapitalize="off" autoComplete="off" spellCheck={false} placeholder="例如 ABCD-EF01-2345" required /></label>
-      <button className="pp-outline" disabled={busy || !code.trim()}>{busy ? '正在查找…' : '看看是谁'}<ArrowRight size={14} /></button>
+      <input aria-label="朋友的好友码或邀请链接" value={code} disabled={busy}
+        onChange={(e) => { setCode(e.target.value); setPerson(null); setSent(false); }}
+        autoCapitalize="off" autoComplete="off" spellCheck={false} placeholder="粘贴好友码或邀请链接" required />
+      <button className="pp-outline" disabled={busy || !code.trim()}>{busy ? '查找中…' : '查找'}<ArrowRight size={14} /></button>
     </form>
-    {person && <div className="pp-found"><h3>{person.nickname || '还没起名字'}</h3><p>{person.bio || '还没写介绍。'}</p>
+    {!person && !message && <p className="pp-finder-hint">12 位好友码，或整条邀请链接，都可以。</p>}
+    {person && <div className="pp-found">
+      <div className="pp-found-person"><PortraitMark /><div><h3>{person.nickname || '还没起名字'}</h3><p>{person.bio || '还没写介绍。'}</p></div></div>
       {!sent && <button className="pp-primary" disabled={busy} onClick={async () => {
         const token = getIdentityToken(); setBusy(true); setMessage('');
         try {
@@ -39,9 +45,8 @@ export default function FriendFinder({ initialCode = '', onChanged }) {
         } catch (error) { setMessage(error.message); }
         finally { setBusy(false); }
       }}>{person.requireFriendApproval ? '发出好友申请' : '添加为好友'}<ArrowRight size={14} /></button>}
-      {sent && <span className="pp-text-button"><Check size={14} />已确认</span>}
+      {sent && <p className="pp-finder-done"><Check size={13} />已送出</p>}
     </div>}
     {message && <p role="status" className="pp-status">{message}</p>}
-    <p className="pp-helper">好友码和邀请链接就是朋友留给你的邀请。默认直接成为好友；如果对方开启了好友确认，则需要等待回应。彼此只能看到主动展示的画像。</p>
   </div>;
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, ArrowUpRight, ArrowRight, Check, ChevronRight, Settings as SettingsIcon, LockKeyhole, Pencil, Users } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, ArrowRight, Check, ChevronRight, Settings as SettingsIcon, LockKeyhole, Pencil, RefreshCw, Users } from 'lucide-react';
 import AccountPanel from '../components/AccountPanel';
 import ShareControls from '../components/ShareControls';
 import RecordBadges from '../components/RecordBadges';
@@ -77,7 +77,7 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
               <div className="pp-portrait-foot">
                 <button className="pp-text-button" onClick={settings}>
                   {account.resultVisibility !== 'private' ? <Users size={14} /> : <LockKeyhole size={14} />}
-                  {account.resultVisibility !== 'private' ? '好友可见' : '仅我可见'} · 权限管理<ChevronRight size={12} />
+                  {account.resultVisibility !== 'private' ? '好友可见' : '仅我可见'} · 可见范围<ChevronRight size={12} />
                 </button><span>新记录会留下来，展示哪一份由你决定。</span>
               </div>
             </> : <section className="pp-empty">
@@ -95,22 +95,26 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
             <footer className="pp-page-footer"><p>人会变化，每一次都算数。</p><button className="pp-text-button" onClick={onStartTest}>再认识自己一次<ArrowRight size={14} /></button></footer>
           </>}
           {tab === 'history' && <section className="pp-history">
-            <div className="pp-section-head"><div><h2>过去的记录</h2><p>每一份，都是当时的自己。</p></div><button className="pp-text-button" disabled={busy} onClick={() => run(onRefresh)}>核实云端状态</button></div>
-            <div className="pp-filters" role="group" aria-label="筛选记录">{[['all', '全部'], ['local', '仅本机'], ['cloud', '云端'], ['shared', '公开']].map(([key, label]) => <button key={key} aria-pressed={filter === key} onClick={() => setFilter(key)}>{label}</button>)}</div>
-            {displayed.map((r) => <article key={r.id} className="pp-record">
+            <div className="pp-section-head"><div><h2>过去的记录</h2><p>每一份，都是当时的自己。</p></div>
+              <button className="pp-text-button" disabled={busy} onClick={() => run(onRefresh)}><RefreshCw size={12} />刷新</button></div>
+            <div className="pp-filters" role="group" aria-label="筛选记录">{[['all', '全部'], ['local', '仅本机'], ['cloud', '云端'], ['shared', '已分享']].map(([key, label]) => <button key={key} aria-pressed={filter === key} onClick={() => setFilter(key)}>{label}</button>)}</div>
+            {displayed.map((r) => <article key={r.id} className="pp-record" data-current={selected?.id === r.id ? 'true' : undefined}>
               <span className="pp-record-date">{date(r)}</span><span className="pp-past-symbol" style={{ '--ink': (recordArchetype(r)?.color || [180, 185, 195]).join(',') }}>{recordArchetype(r)?.symbol || '◌'}</span>
-              <div className="pp-record-info"><h3>{recordArchetype(r)?.title || '画像'}{selected?.id === r.id && <small>正在展示</small>}</h3><p>{r.answerCount} 题</p><RecordBadges record={r} /></div>
+              <div className="pp-record-info">
+                <h3>{recordArchetype(r)?.title || '画像'}{selected?.id === r.id && <small>正在展示</small>}</h3>
+                <p className="pp-record-meta"><span>{r.answerCount} 题</span><RecordBadges record={r} /></p>
+              </div>
               <div className="pp-row-actions"><button className="pp-text-button" onClick={() => onOpen(r)}>回看<ArrowUpRight size={13} /></button><button className="pp-text-button" onClick={() => open('record', r.id)}>管理</button></div>
             </article>)}
             {!displayed.length && <p className="pp-history-note">这里还没有记录。{!records.length ? '完成一次测试，就会留下第一份。' : '换个筛选看看。'}</p>}
-            <p className="pp-history-note">展示结果沿用「权限管理」中的可见范围。其他记录的同步和删除，可以在每份记录的「管理」中操作。</p>
+            <p className="pp-history-note">展示结果按「设置」里的可见范围同步；每份记录的同步、分享与删除，在自己的「管理」里操作。</p>
             <div className="pp-row-actions"><button className="pp-outline" onClick={onStartTest}>再测一次<ArrowRight size={14} /></button>
               {(pendingLegacy > 0 || records.some((r) => r.pendingAction)) && <button className="pp-text-button" disabled={busy} onClick={() => run(onRetryPending)}>重试待处理操作</button>}
               {records.some((r) => r.localPresent) && <button className="pp-text-button" onClick={() => open('clear')}>清空本机记录</button>}</div>
           </section>}
           {tab === 'friends' && <Friends key={account.id || 'guest'} account={account} onCreate={onCreateIdentity} onFriend={onFriend} onBackup={() => open('backup')} onSettings={settings} />}
           {tab === 'settings' && <Settings key={account.id || 'guest'} account={account} records={records} pendingLegacy={pendingLegacy}
-            onCreate={onCreateIdentity} onAccount={() => open('identity')} onBackup={() => open('backup')}
+            onCreate={onCreateIdentity} onAccount={() => open('identity')} onBackup={() => open('backup')} onEditProfile={() => open('edit')}
             onChoosePortrait={() => records.length ? open('choose') : onTab('profile')}
             onClearLocal={() => open('clear')} onRefresh={onRefresh} onRetryPending={onRetryPending} />}
         </div>

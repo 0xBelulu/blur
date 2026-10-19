@@ -125,14 +125,13 @@ try {
   }));
   for (const text of ['我的画像', '设置', '现在，我用这份画像介绍自己', '新记录会留下来', '过去的记录', '好友']) assert.ok(myPage.includes(text), text);
   const settings = renderToStaticMarkup(React.createElement(My, { tab: 'settings', records: [], account: myAccount }));
-  for (const text of ['权限管理', '测试结果', '仅我可见', '好友可见', '公开可见', '暂未开放', '身份与备份', '记录与存储', '添加好友需要我确认', '已有分享链接', '保存恢复密钥']) assert.ok(settings.includes(text), text);
-  assert.match(settings, /role="radio" aria-checked="true"[^>]*>.*?好友可见/);
+  for (const text of ['谁能看到我', '展示画像', '仅我可见', '好友可见', '公开可见', '暂未开放', '这个身份', '记录与数据', '新朋友加我', '已有分享链接', '保存恢复密钥', '名字与简介']) assert.ok(settings.includes(text), text);  assert.match(settings, /role="radio" aria-checked="true"[^>]*>.*?好友可见/);
   assert.match(settings, /role="radio" aria-checked="false" disabled=""[^>]*>.*?公开可见/);
   assert.ok(settings.includes('aria-checked="false"'));
   const history = renderToStaticMarkup(React.createElement(My, {
     tab: 'history', records: [{ ...created.data, localPresent: true }], account: myAccount,
   }));
-  for (const text of ['过去的记录', '管理', '权限管理']) assert.ok(history.includes(text), text);
+  for (const text of ['过去的记录', '管理', '刷新']) assert.ok(history.includes(text), text);
   const { default: Identity } = await vite.ssrLoadModule('/src/pages/Identity.jsx');
   const { default: Invite } = await vite.ssrLoadModule('/src/pages/Invite.jsx');
   const { default: FriendProfile } = await vite.ssrLoadModule('/src/pages/FriendProfile.jsx');
