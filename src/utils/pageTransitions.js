@@ -1,5 +1,5 @@
 // Preserve page order and numeric slide/scale ownership from the known-good 8c247da.
-const PAGE_ORDER = ['landing', 'about', 'archetypes', 'traits', 'questions', 'me', 'identity', 'invite', 'friend', 'together', 'test', 'loading', 'result', 'view', 'compare'];
+const PAGE_ORDER = ['landing', 'about', 'archetypes', 'traits', 'questions', 'me', 'identity', 'invite', 'friend', 'together', 'test', 'loading', 'result', 'view', 'compare', 'admin'];
 
 const TRANSITION_BLUR = 'blur(4px)';
 

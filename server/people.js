@@ -1,5 +1,6 @@
 import { publicRecord } from '../shared/profile.js';
 import { HttpError, json, body } from './http.js';
+import { touchAccount } from './metrics.js';
 
 export async function registerAccount(db, owner, nickname = '', bio = '', createdAt = Date.now()) {
   await db.prepare(`INSERT INTO accounts (owner_hash, nickname, bio, created_at, public_id, friend_code)
@@ -10,6 +11,7 @@ export async function registerAccount(db, owner, nickname = '', bio = '', create
 }
 
 export async function account(db, owner) {
+  await touchAccount(db, owner);
   let row = await db.prepare('SELECT * FROM accounts WHERE owner_hash = ?').bind(owner).first();
   if (!row) {
     const legacy = await db.prepare('SELECT created_at FROM profiles WHERE owner_hash = ? LIMIT 1').bind(owner).first();

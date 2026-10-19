@@ -16,6 +16,7 @@ import SharedProfile from './pages/SharedProfile';
 import Identity from './pages/Identity';
 import Invite from './pages/Invite';
 import FriendProfile from './pages/FriendProfile';
+import Admin from './pages/Admin';
 import { generateResult, solveProfile } from './utils/blurEngine';
 import { buildPersonaSymbols, revealAt } from './utils/personaSymbols';
 import { questions } from './data/questions';
@@ -23,6 +24,7 @@ import { getHistoryRecords, getAllHistoryRecords, saveHistoryRecord, removeLocal
 import { flushPending, refreshCloudHistory, downloadRecord } from './utils/cloud';
 import { getAccountInfo, ensureLocalIdentity, updateAccountInfo } from './utils/identity';
 import { syncDefaultPortrait } from './utils/people';
+import { recordEvent } from './utils/metrics';
 
 const LOADING_DURATION = 3500;
 const INITIAL_TEST_SYMBOLS = buildPersonaSymbols(solveProfile([]).field, revealAt(0));
@@ -39,7 +41,7 @@ function readRoute() {
   if (screen === 'result') return getHistoryRecords().some((record) => record.id === id && record.localPresent)
     ? { screen, id } : { screen: 'me' };
   if (screen === 'history') return { screen: 'me' };
-  return { screen: ['about', 'archetypes', 'traits', 'questions', 'me'].includes(screen) ? screen : 'landing' };
+  return { screen: ['about', 'archetypes', 'traits', 'questions', 'me', 'admin'].includes(screen) ? screen : 'landing' };
 }
 
 export default function App() {
@@ -120,6 +122,7 @@ export default function App() {
   };
 
   const start = (shareId = null) => {
+    recordEvent('test_started');
     comparisonTarget.current = shareId;
     setComparisonRecordId(null);
     setUnsavedResult(null);
@@ -131,6 +134,7 @@ export default function App() {
     navigate('loading');
     clearTimeout(loadingTimer.current);
     loadingTimer.current = setTimeout(() => {
+      recordEvent('test_completed');
       const result = generateResult(answers, questions);
       const saved = saveHistoryRecord(answers, result);
       const target = comparisonTarget.current;
@@ -194,6 +198,7 @@ export default function App() {
     case 'traits': content = <Traits onBack={() => navigate('about')} />; break;
     case 'questions': content = <Questions onBack={() => navigate('about')} />; break;
     case 'me': content = myPage(); break;
+    case 'admin': content = <Admin onBack={home} />; break;
     case 'identity': content = <Identity account={account} onBack={openMy} onDone={() => {
       const [target, id] = (route.id || 'profile').split('-');
       if (['invite', 'friend', 'together'].includes(target)) navigate(target, id);

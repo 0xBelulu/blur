@@ -117,3 +117,30 @@ Cloudflare Workers & Pages 查看请求量与实时日志；D1 控制台查看 `
 | POST | `/api/records/:cloudId/share` | 开启或复用分享，提交可选昵称 |
 | DELETE | `/api/records/:cloudId/share` | 停止分享 |
 | GET | `/api/shares/:shareId` | 无需身份的公开只读画像 |
+| POST | `/api/metrics/event` | 匿名计数，仅接受 `test_started` / `test_completed` |
+| GET | `/api/admin/stats?days=30` | 后台聚合统计，需要独立后台令牌 |
+
+## 管理员面板与流量口径
+
+入口是 `#admin`，页面不在导航中出现。它只读，只显示聚合数量与按日趋势，不读取答案、画像正文、好友关系边、凭证或单用户记录。
+
+访问令牌与用户身份体系完全分离：`admin_tokens` 只保存令牌的 SHA-256，用户凭证即使泄露也无法进入后台，也没有可被提权的 `is_admin` 字段。
+
+```powershell
+npm run admin:token                          # 生成令牌，打印写入本机/线上数据库的命令
+npm run admin:token -- --apply local         # 生成并写入本机 D1
+npm run admin:token -- --apply remote        # 生成并写入线上 D1
+```
+
+令牌只在生成时显示一次，数据库无法还原；丢失后重新生成即可。表为空时接口返回 503 而不是默认放行。页面把令牌存在当前标签页的 `sessionStorage`，关闭标签即失效。
+
+两类数字必须分开看，不要混为一个“用户数”：
+
+- **完成测试 / 开始测试**：匿名计数器，覆盖所有访客，包括从未使用云端功能的人。数据在 `metrics_daily`，按 UTC 日聚合，只有 `day / metric / count` 三列，没有任何可识别字段。客户端用 `sendBeacon` 发送，失败静默，不阻塞测试流程。
+- **注册身份 / 云端画像 / 分享中 / 好友关系**：来自 `accounts`、`profiles`、`friendships` 的聚合。注册是懒发生的，只有访问“我的”、保存身份、同步画像或加好友时才创建账号，因此这个数一定小于真实参与人数。
+
+`accounts.last_seen_at` 由 `0006_metrics.sql` 增加，最多每 24 小时写一次，写入失败会被忽略，不影响身份读取。活跃数据从该版本上线后开始累积，此前的身份没有历史，面板会显示起始日期而不是把空值当作 0。
+
+已知限制：匿名计数没有身份，也就无法去重或防刷，只适合作产品指标，不适合作为审计数据。需要更严格口径时应引入 Cloudflare Turnstile 或服务端事件，而不是在计数器上补身份。
+
+发布顺序：先 `npm run db:migrate:remote` 应用 `0006_metrics.sql`、`0007_admin_tokens.sql`，确认 `npx wrangler d1 migrations list blur --remote` 无待执行项，再部署依赖它们的代码。`0006` 是增量迁移，旧代码可继续运行；`last_seen_at` 的写入已做容错，代码先于迁移上线也不会让身份接口报错。

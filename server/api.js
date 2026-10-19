@@ -1,6 +1,7 @@
 import { publicRecord, publicResult } from '../shared/profile.js';
 
 import { HttpError, json, body } from './http.js';
+import { metricsRoute } from './metrics.js';
 import { registerAccount, peopleRoute } from './people.js';
 
 async function ownerHash(request) {
@@ -43,6 +44,9 @@ async function route(request, env) {
     if (!row) throw new HttpError(404, '这份画像未公开，或分享已撤销');
     return json(publicRecord({ ...fromRow(row), id: row.id }));
   }
+
+  const anonymous = await metricsRoute(request, env, path);
+  if (anonymous) return anonymous;
 
   const owner = await ownerHash(request);
   const people = await peopleRoute(request, env.DB, owner, path);
@@ -120,7 +124,10 @@ export async function handleRequest(request, env) {
   const requestId = crypto.randomUUID();
   const started = Date.now();
   const path = new URL(request.url).pathname;
-  const resource = path.startsWith('/api/shares/') ? 'public_profile' : path.endsWith('/share') ? 'share_settings' : 'private_records';
+  const resource = path.startsWith('/api/admin/') ? 'admin'
+    : path.startsWith('/api/metrics/') ? 'anonymous_metrics'
+    : path.startsWith('/api/shares/') ? 'public_profile'
+    : path.endsWith('/share') ? 'share_settings' : 'private_records';
   let response;
   try { response = await route(request, env); } catch (error) {
     const status = error.status || 503;

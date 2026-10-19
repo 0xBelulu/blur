@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { handleRequest } from '../server/api.js';
 import { generateResult } from '../src/utils/blurEngine.js';
 import { questions } from '../src/data/questions.js';
@@ -16,17 +17,8 @@ import { getIdentityToken, getAccountInfo, formatRecoveryKey, identityId, ensure
 import { recordStatus } from '../src/utils/recordStatus.js';
 
 // Execute production SQL against real SQLite through the small D1 statement API.
-function database(t, legacy = false) {
-  const sqlite = new DatabaseSync(':memory:');
-  sqlite.exec(readFileSync(new URL('../migrations/0001_profiles.sql', import.meta.url), 'utf8'));
-  if (!legacy) {
-    sqlite.exec(readFileSync(new URL('../migrations/0002_accounts.sql', import.meta.url), 'utf8'));
-    sqlite.exec(readFileSync(new URL('../migrations/0003_people.sql', import.meta.url), 'utf8'));
-    sqlite.exec(readFileSync(new URL('../migrations/0004_privacy.sql', import.meta.url), 'utf8'));
-    sqlite.exec(readFileSync(new URL('../migrations/0005_result_permissions.sql', import.meta.url), 'utf8'));
-  }
-  t.after(() => sqlite.close());
-  return { sqlite, prepare(sql) {
+function adapter(sqlite) {
+  return { prepare(sql) {
     const statement = sqlite.prepare(sql);
     return { bind(...args) {
       return {
@@ -36,6 +28,21 @@ function database(t, legacy = false) {
       };
     } };
   } };
+}
+
+function database(t, legacy = false) {
+  const sqlite = new DatabaseSync(':memory:');
+  sqlite.exec(readFileSync(new URL('../migrations/0001_profiles.sql', import.meta.url), 'utf8'));
+  if (!legacy) {
+    sqlite.exec(readFileSync(new URL('../migrations/0002_accounts.sql', import.meta.url), 'utf8'));
+    sqlite.exec(readFileSync(new URL('../migrations/0003_people.sql', import.meta.url), 'utf8'));
+    sqlite.exec(readFileSync(new URL('../migrations/0004_privacy.sql', import.meta.url), 'utf8'));
+    sqlite.exec(readFileSync(new URL('../migrations/0005_result_permissions.sql', import.meta.url), 'utf8'));
+    sqlite.exec(readFileSync(new URL('../migrations/0006_metrics.sql', import.meta.url), 'utf8'));
+    sqlite.exec(readFileSync(new URL('../migrations/0007_admin_tokens.sql', import.meta.url), 'utf8'));
+  }
+  t.after(() => sqlite.close());
+  return { sqlite, ...adapter(sqlite) };
 }
 
 const answers = questions.slice(0, 10).map((q) => ({ questionId: q.id, type: q.type, optionId: q.options[0].id }));
@@ -975,4 +982,69 @@ test('accounts created by an old worker after migration acquire stable public id
   assert.equal(first.publicId, again.publicId);
   assert.equal(first.nickname, '旧账户');
   assert.equal(first.createdAt, 123456);
+});
+
+test('anonymous counters aggregate by day and store no identity', async (t) => {
+  const db = database(t);
+  for (let index = 0; index < 3; index += 1) {
+    const response = await call(db, '/metrics/event', 'POST', { event: 'test_completed' }, '');
+    assert.equal(response.status, 200);
+    assert.equal(response.data.recorded, true);
+  }
+  await call(db, '/metrics/event', 'POST', { event: 'test_started' }, '');
+  // The endpoint is public but accepts only the two known counters.
+  assert.equal((await call(db, '/metrics/event', 'POST', { event: 'answer_submitted' }, '')).status, 400);
+  assert.equal((await call(db, '/metrics/event', 'POST', {}, '')).status, 400);
+  assert.equal((await call(db, '/metrics/event', 'GET', undefined, '')).status, 405);
+  const rows = db.sqlite.prepare('SELECT day, metric, count FROM metrics_daily ORDER BY metric').all();
+  assert.deepEqual(rows.map((row) => [row.metric, row.count]), [['test_completed', 3], ['test_started', 1]]);
+  assert.match(rows[0].day, /^\d{4}-\d{2}-\d{2}$/);
+  // The table has no column that could identify a person.
+  assert.deepEqual(db.sqlite.prepare('PRAGMA table_info(metrics_daily)').all().map((column) => column.name),
+    ['day', 'metric', 'count']);
+});
+
+test('admin stats stay closed without an issued token and expose aggregates only', async (t) => {
+  const db = database(t);
+  await call(db, '/records/test', 'PUT', record);
+  await call(db, '/records/test/share', 'POST', { nickname: '小林' });
+  await call(db, '/metrics/event', 'POST', { event: 'test_completed' }, '');
+
+  const adminToken = 'k'.repeat(32);
+  // Nothing opens before a token is issued, not even a valid user identity.
+  assert.equal((await call(db, '/admin/stats')).status, 503);
+  assert.equal((await call(db, '/admin/stats', 'GET', undefined, adminToken)).status, 503);
+  db.sqlite.prepare('INSERT INTO admin_tokens (token_hash, label, created_at) VALUES (?, ?, ?)')
+    .run(createHash('sha256').update(adminToken).digest('hex'), 'test', Date.now());
+  assert.equal((await call(db, '/admin/stats')).status, 401);
+  assert.equal((await call(db, '/admin/stats', 'GET', undefined, 'k'.repeat(31))).status, 401);
+  assert.equal((await call(db, '/admin/stats', 'GET', undefined, 'k'.repeat(33))).status, 401);
+
+  const ok = await call(db, '/admin/stats', 'GET', undefined, adminToken);
+  assert.equal(ok.status, 200);
+  assert.equal(ok.data.rangeDays, 30);
+  assert.equal(ok.data.daily.length, 30);
+  assert.equal(ok.data.cloud.accounts, 1);
+  assert.equal(ok.data.cloud.profiles, 1);
+  assert.equal(ok.data.cloud.liveShares, 1);
+  assert.equal(ok.data.events.test_completed, 1);
+  const text = JSON.stringify(ok.data);
+  for (const secret of ['answers', 'owner_hash', 'ownerHash', 'shareId', 'nickname', '小林', record.result.archetype.title]) {
+    assert.ok(!text.includes(secret));
+  }
+  assert.equal((await call(db, '/admin/stats?days=999', 'GET', undefined, adminToken)).data.rangeDays, 90);
+  assert.equal((await call(db, '/admin/stats?days=0', 'GET', undefined, adminToken)).data.rangeDays, 1);
+});
+
+test('activity tracking degrades safely when 0006 is not yet applied', async (t) => {
+  const sqlite = new DatabaseSync(':memory:');
+  for (const file of ['0001_profiles.sql', '0002_accounts.sql', '0003_people.sql', '0004_privacy.sql', '0005_result_permissions.sql']) {
+    sqlite.exec(readFileSync(new URL(`../migrations/${file}`, import.meta.url), 'utf8'));
+  }
+  t.after(() => sqlite.close());
+  const db = adapter(sqlite);
+  // Code deployed ahead of its migration must still read and write identity data.
+  assert.equal((await call(db, '/records/test', 'PUT', record)).status, 200);
+  assert.equal((await call(db, '/account')).status, 200);
+  assert.equal((await call(db, '/records', 'GET')).data.records.length, 1);
 });

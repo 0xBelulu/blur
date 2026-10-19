@@ -32,6 +32,7 @@
 | `node scripts/compute-baselines.js --trials 20000 --apply` | 随机基线校准，重算各原型的余弦相似度 μ/σ 并写入 blurEngine.js |
 | `node scripts/analyze-exposure.js` | 分析维度暴露均衡性，报告各维度的正/负向总权重 |
 | `node scripts/find-contributors.js` | 扫描指定维度的主要贡献题目 |
+| `npm run admin:token -- --apply local` | 生成后台访问令牌并写入 D1（仅保存 SHA-256）；`remote` 写入线上 |
 
 ## Architecture
 - **App.jsx** — state machine (`landing → test → loading → result`), all state lives here, pages receive callbacks via props. No routing library. Uses `AnimatePresence mode="wait"` with `custom=direction` for slide transitions. Loading has a hardcoded **3.5s `setTimeout`**.
@@ -50,6 +51,7 @@
   - `focusMode`: `"pointer"` (Landing + explore page, focus follows cursor/gyro) vs `"persona"` (test page, focus plane pinned, clarity driven by each symbol's `z`).
   - `onFocusChange(item | null)` fires only when the focused symbol changes, so pages can render a readout without per-frame React renders. `scope="container"` ignores pointer input outside the container and normalizes parallax to it.
   - `active={false}` suspends RAF, native dust animations and input handling while retaining nodes, engine state and animation objects. Visibility changes must not wake an inactive field.
+- **src/pages/Admin.jsx** — `#admin` read-only dashboard: anonymous counters, cloud aggregates and per-day trend. Token lives in `sessionStorage`; `server/metrics.js` verifies it against the `admin_tokens` SHA-256, outside the user identity system. Never add answers, portrait content, friend edges or per-user records here.
 - **src/index.css** — `@theme` custom color tokens (`--color-blur-*`), glass morphism classes (`.glass`, `.glass-strong`), gradient border (`.prism-shift`), animation utilities (`animate-float`, `animate-pulse-glow`, `animate-drift`, `animate-breathe*`), custom range input (`.blur-slider`), custom scrollbar.
 
 ## Conventions
