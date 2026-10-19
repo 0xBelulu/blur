@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { UserRound, Sparkles, ArrowUpRight } from "lucide-react";
+import { UserRound, Sparkles, CircleDot } from "lucide-react";
 import GlassButton from "../components/GlassButton";
 
 const TIPS = [
@@ -61,18 +61,26 @@ export default function Landing({ onStart, onExplore, onOpenMy, onOpenNext }) {
       className: "text-base px-10 md:px-12 animate-fade-in-up delay-900",
     },
     {
+      label: "community",
+      icon: CircleDot,
+      variant: "primary",
+      badge: "预告",
+      onClick: onOpenNext,
+      className: "text-sm gap-2 animate-fade-in-up delay-1100",
+    },
+    {
       label: "探索blur",
       icon: Sparkles,
       variant: "primary",
       onClick: onExplore,
-      className: "text-sm gap-1.5 animate-fade-in-up delay-1100",
+      className: "text-sm gap-1.5 animate-fade-in-up delay-1300",
     },
     {
       label: "我的空间",
       icon: UserRound,
       variant: "primary",
       onClick: onOpenMy,
-      className: "text-sm gap-1.5 animate-fade-in-up delay-1300",
+      className: "text-sm gap-1.5 animate-fade-in-up delay-1500",
     },
   ];
 
@@ -188,7 +196,7 @@ export default function Landing({ onStart, onExplore, onOpenMy, onOpenNext }) {
         </motion.div>
 
         <div className="flex flex-col items-center md:items-start gap-2.5 md:gap-3 w-full">
-          {actions.map(({ label, icon: Icon, variant, onClick, className }) => (
+          {actions.map(({ label, icon: Icon, variant, badge, onClick, className }) => (
             <GlassButton
               key={label}
               variant={variant}
@@ -197,33 +205,20 @@ export default function Landing({ onStart, onExplore, onOpenMy, onOpenNext }) {
             >
               {Icon && <Icon size={14} />}
               {label}
+              {badge && (
+                <span className="rounded-full border border-blur-accent/45 bg-blur-accent/8 px-1.5 py-[1px] text-[10px] leading-[1.35] tracking-[0.08em] text-blur-accent">
+                  {badge}
+                </span>
+              )}
             </GlassButton>
           ))}
         </div>
-
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.45, duration: 0.6 }}
-          onClick={onOpenNext}
-          className="group mt-5 md:mt-8 inline-flex items-center gap-2 text-[12px] tracking-[0.18em] text-blur-text/85 transition-colors duration-300 hover:text-blur-text cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blur-accent/40 rounded-sm"
-        >
-          <span className="h-1 w-1 rounded-full bg-blur-accent/85 animate-pulse-glow" aria-hidden="true" />
-          <span className="relative">
-            有一片夜空，还没亮起来
-            <span className="absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 bg-blur-accent/50 transition-transform duration-500 ease-out group-hover:scale-x-100 group-focus-visible:scale-x-100" />
-          </span>
-          <ArrowUpRight
-            size={11}
-            className="opacity-60 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-          />
-        </motion.button>
 
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.3, duration: 0.6 }}
-          className="mt-6 md:mt-10 text-[11.5px] text-blur-text/75 italic leading-relaxed text-center md:text-left w-full"
+          className="mt-8 md:mt-12 text-[11.5px] text-blur-text/75 italic leading-relaxed text-center md:text-left w-full"
         >
           本测试结果不具备任何科学参考价值，但可能意外地准确
         </motion.p>
