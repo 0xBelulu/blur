@@ -219,7 +219,7 @@ export default function App() {
     case 'together': content = <FriendProfile key={`${account.id}/${route.screen}/${route.id}`} publicId={route.id} account={account} mode={route.screen}
       onBack={() => navigate('me', 'friends')} onCreate={() => navigate('identity', `${route.screen}-${route.id}`)}
       onCompare={() => navigate('together', route.id)} onView={() => navigate('friend', route.id)} onMy={openMy} />; break;
-    case 'test': content = <Test onComplete={complete} onSymbolsChange={setTestSymbols} />; break;
+    case 'test': content = <Test onComplete={complete} onSymbolsChange={setTestSymbols} onExit={home} />; break;
     case 'loading': content = <Loading />; break;
     case 'result': content = record?.result || unsavedResult
       ? <Result result={record?.result || unsavedResult} record={record} onRestart={home} onOpenMy={openMy} onPermissions={() => navigate('me', 'settings')} />

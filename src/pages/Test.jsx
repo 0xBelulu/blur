@@ -57,7 +57,7 @@ function shuffleQuestions(questionList) {
   return [...required, ...exploratory];
 }
 
-export default function Test({ onComplete, onSymbolsChange }) {
+export default function Test({ onComplete, onSymbolsChange, onExit }) {
   const shuffledQuestions = useMemo(() => shuffleQuestions(questions), []);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
@@ -514,16 +514,15 @@ export default function Test({ onComplete, onSymbolsChange }) {
               )}
 
               <div className="flex items-center gap-3 mt-auto pt-2">
-                {currentIndex > 0 && (
-                  <GlassButton
-                    variant="secondary"
-                    onClick={handlePrev}
-                    className="flex items-center gap-1 text-xs"
-                  >
-                    <ChevronLeft size={15} />
-                    上一题
-                  </GlassButton>
-                )}
+                {/* 第一题没有上一题可退，同一个按钮位改为返回起点，保持底部布局一致 */}
+                <GlassButton
+                  variant="secondary"
+                  onClick={currentIndex > 0 ? handlePrev : onExit}
+                  className="flex items-center gap-1 text-xs"
+                >
+                  <ChevronLeft size={15} />
+                  {currentIndex > 0 ? "上一题" : "返回"}
+                </GlassButton>
 
                 <button
                   type="button"
