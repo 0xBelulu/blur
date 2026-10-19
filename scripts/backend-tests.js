@@ -40,6 +40,7 @@ function database(t, legacy = false) {
     sqlite.exec(readFileSync(new URL('../migrations/0005_result_permissions.sql', import.meta.url), 'utf8'));
     sqlite.exec(readFileSync(new URL('../migrations/0006_metrics.sql', import.meta.url), 'utf8'));
     sqlite.exec(readFileSync(new URL('../migrations/0007_admin_tokens.sql', import.meta.url), 'utf8'));
+    sqlite.exec(readFileSync(new URL('../migrations/0008_stats_snapshots.sql', import.meta.url), 'utf8'));
   }
   t.after(() => sqlite.close());
   return { sqlite, ...adapter(sqlite) };
@@ -1034,6 +1035,40 @@ test('admin stats stay closed without an issued token and expose aggregates only
   }
   assert.equal((await call(db, '/admin/stats?days=999', 'GET', undefined, adminToken)).data.rangeDays, 90);
   assert.equal((await call(db, '/admin/stats?days=0', 'GET', undefined, adminToken)).data.rangeDays, 1);
+});
+
+test('dashboard totals are materialized once per TTL instead of scanning every read', async (t) => {
+  const db = database(t);
+  await call(db, '/records/test', 'PUT', record);
+  const adminToken = 'k'.repeat(32);
+  db.sqlite.prepare('INSERT INTO admin_tokens (token_hash, label, created_at) VALUES (?, ?, ?)')
+    .run(createHash('sha256').update(adminToken).digest('hex'), 'test', Date.now());
+
+  const first = await call(db, '/admin/stats', 'GET', undefined, adminToken);
+  assert.equal(first.data.cached, false);
+  assert.equal(first.data.cloud.accounts, 1);
+  assert.equal(db.sqlite.prepare('SELECT COUNT(*) AS n FROM stats_snapshots').get().n, 1);
+
+  // The second read is served from the snapshot, not from a new scan.
+  const second = await call(db, '/admin/stats', 'GET', undefined, adminToken);
+  assert.equal(second.data.cached, true);
+  assert.equal(second.data.generatedAt, first.data.generatedAt);
+  assert.equal(second.data.cloud.accounts, 1);
+
+  // A new account stays invisible until the snapshot expires.
+  await call(db, '/account', 'POST', { nickname: '新用户' }, bob);
+  assert.equal((await call(db, '/admin/stats', 'GET', undefined, adminToken)).data.cloud.accounts, 1);
+
+  db.sqlite.prepare('UPDATE stats_snapshots SET computed_at = ?').run(Date.now() - 10 * 60 * 1000);
+  const fresh = await call(db, '/admin/stats', 'GET', undefined, adminToken);
+  assert.equal(fresh.data.cached, false);
+  assert.equal(fresh.data.cloud.accounts, 2);
+  assert.equal(fresh.data.cloud.newAccounts, 2);
+  assert.equal(db.sqlite.prepare('SELECT COUNT(*) AS n FROM stats_snapshots').get().n, 1);
+
+  // The stored snapshot carries counts only, never names or content.
+  const payload = db.sqlite.prepare('SELECT payload FROM stats_snapshots').all().map((row) => row.payload).join('');
+  for (const secret of ['新用户', '小林', 'answers', 'owner_hash']) assert.ok(!payload.includes(secret));
 });
 
 test('activity tracking degrades safely when 0006 is not yet applied', async (t) => {

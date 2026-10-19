@@ -49,16 +49,17 @@ function count(row) {
   return Number(row?.n || 0);
 }
 
-async function adminStats(db, rawDays) {
-  const parsed = Number.parseInt(rawDays ?? '30', 10);
-  const days = Number.isFinite(parsed) ? Math.min(Math.max(parsed, 1), 90) : 30;
-  const now = Date.now();
-  const series = Array.from({ length: days }, (_, index) => dayKey(now - (days - 1 - index) * DAY_MS));
-  const since = Date.parse(`${series[0]}T00:00:00Z`);
+const SNAPSHOT_TTL = 5 * 60 * 1000;
 
+// Whole-table counts are materialized once per day and reused for the TTL, so a
+// dashboard refresh reads one row instead of walking every account and profile.
+async function cloudSnapshot(db, day, now) {
+  const row = await db.prepare('SELECT computed_at, payload FROM stats_snapshots WHERE day = ?').bind(day).first();
+  if (row && now - Number(row.computed_at) < SNAPSHOT_TTL) {
+    return { computedAt: Number(row.computed_at), cached: true, ...JSON.parse(row.payload) };
+  }
   const totals = await db.prepare(`SELECT
     (SELECT COUNT(*) FROM accounts) AS accounts,
-    (SELECT COUNT(*) FROM accounts WHERE created_at >= ?) AS newAccounts,
     (SELECT COUNT(*) FROM accounts WHERE portrait_id IS NOT NULL) AS accountsWithPortrait,
     (SELECT COUNT(*) FROM accounts WHERE last_seen_at >= ?) AS accountsSeen7d,
     (SELECT COUNT(*) FROM accounts WHERE last_seen_at >= ?) AS accountsSeen30d,
@@ -67,18 +68,46 @@ async function adminStats(db, rawDays) {
     (SELECT COUNT(*) FROM friendships) AS friendships,
     (SELECT COUNT(*) FROM friendships WHERE status = 'accepted') AS acceptedFriendships,
     (SELECT MIN(last_seen_at) FROM accounts) AS lastSeenSince`)
-    .bind(since, now - 7 * DAY_MS, now - 30 * DAY_MS).first();
+    .bind(now - 7 * DAY_MS, now - 30 * DAY_MS).first();
+  const { results: versions } = await db.prepare(`SELECT question_version AS questionVersion,
+    engine_version AS engineVersion, COUNT(*) AS n FROM profiles WHERE deleted_at IS NULL
+    GROUP BY question_version, engine_version ORDER BY n DESC LIMIT 8`).bind().all();
+  const payload = {
+    cloud: {
+      accounts: Number(totals?.accounts || 0),
+      accountsWithPortrait: Number(totals?.accountsWithPortrait || 0),
+      accountsSeen7d: Number(totals?.accountsSeen7d || 0),
+      accountsSeen30d: Number(totals?.accountsSeen30d || 0),
+      profiles: Number(totals?.profiles || 0),
+      liveShares: Number(totals?.liveShares || 0),
+      friendships: Number(totals?.friendships || 0),
+      acceptedFriendships: Number(totals?.acceptedFriendships || 0),
+      lastSeenSince: Number(totals?.lastSeenSince || 0),
+    },
+    versions: versions.map((version) => ({ ...version, n: Number(version.n) })),
+  };
+  await db.prepare(`INSERT INTO stats_snapshots (day, computed_at, payload) VALUES (?, ?, ?)
+    ON CONFLICT(day) DO UPDATE SET computed_at = excluded.computed_at, payload = excluded.payload`)
+    .bind(day, now, JSON.stringify(payload)).run();
+  return { computedAt: now, cached: false, ...payload };
+}
 
+async function adminStats(db, rawDays) {
+  const parsed = Number.parseInt(rawDays ?? '30', 10);
+  const days = Number.isFinite(parsed) ? Math.min(Math.max(parsed, 1), 90) : 30;
+  const now = Date.now();
+  const series = Array.from({ length: days }, (_, index) => dayKey(now - (days - 1 - index) * DAY_MS));
+  const since = Date.parse(`${series[0]}T00:00:00Z`);
+
+  const snapshot = await cloudSnapshot(db, series[series.length - 1], now);
+
+  // Bounded by the requested range and served by accounts_created, not a full scan.
   const { results: accountRows } = await db.prepare(`SELECT
     strftime('%Y-%m-%d', created_at / 1000, 'unixepoch') AS day, COUNT(*) AS n
     FROM accounts WHERE created_at >= ? GROUP BY day`).bind(since).all();
 
   const { results: eventRows } = await db.prepare(
     'SELECT day, metric, count FROM metrics_daily WHERE day >= ?').bind(series[0]).all();
-
-  const { results: versions } = await db.prepare(`SELECT question_version AS questionVersion,
-    engine_version AS engineVersion, COUNT(*) AS n FROM profiles WHERE deleted_at IS NULL
-    GROUP BY question_version, engine_version ORDER BY n DESC LIMIT 8`).bind().all();
 
   const byDay = new Map(series.map((day) => [day, { day, accounts: 0, test_started: 0, test_completed: 0 }]));
   for (const row of accountRows) {
@@ -93,23 +122,17 @@ async function adminStats(db, rawDays) {
   }
 
   return {
-    generatedAt: now,
+    generatedAt: snapshot.computedAt,
+    cached: snapshot.cached,
     rangeDays: days,
     cloud: {
-      accounts: Number(totals?.accounts || 0),
-      newAccounts: Number(totals?.newAccounts || 0),
-      accountsWithPortrait: Number(totals?.accountsWithPortrait || 0),
-      accountsSeen7d: Number(totals?.accountsSeen7d || 0),
-      accountsSeen30d: Number(totals?.accountsSeen30d || 0),
-      profiles: Number(totals?.profiles || 0),
-      liveShares: Number(totals?.liveShares || 0),
-      friendships: Number(totals?.friendships || 0),
-      acceptedFriendships: Number(totals?.acceptedFriendships || 0),
-      lastSeenSince: Number(totals?.lastSeenSince || 0),
+      ...snapshot.cloud,
+      // Derived from the requested range so a cached snapshot stays correct for any window.
+      newAccounts: series.reduce((sum, day) => sum + byDay.get(day).accounts, 0),
     },
     events,
     daily: series.map((day) => byDay.get(day)),
-    versions: versions.map((row) => ({ ...row, n: Number(row.n) })),
+    versions: snapshot.versions,
   };
 }
 

@@ -141,6 +141,8 @@ npm run admin:token -- --apply remote        # 生成并写入线上 D1
 
 `accounts.last_seen_at` 由 `0006_metrics.sql` 增加，最多每 24 小时写一次，写入失败会被忽略，不影响身份读取。活跃数据从该版本上线后开始累积，此前的身份没有历史，面板会显示起始日期而不是把空值当作 0。
 
-已知限制：匿名计数没有身份，也就无法去重或防刷，只适合作产品指标，不适合作为审计数据。需要更严格口径时应引入 Cloudflare Turnstile 或服务端事件，而不是在计数器上补身份。
+规模数字不是每次现算。`0008_stats_snapshots.sql` 增加 `stats_snapshots`，每个 UTC 日一行，保存聚合结果与 `computed_at`：读取时若快照在 5 分钟内，直接返回该行；否则重算一次并覆盖。因此一次后台刷新的成本是常数（1 行快照 + 30 天趋势），而不是随身份数线性增长，代价是规模数字最多滞后 5 分钟，接口用 `cached` 标明本次是否来自快照。同一迁移补了 `accounts_created` 与 `accounts_last_seen` 两个索引，让新增趋势和活跃区间只读命中的行。快照只存计数，不含身份、答案、画像内容或好友关系。
+
+匿名计数没有身份，也就无法去重或防刷，只适合作产品指标，不适合作为审计数据。需要更严格口径时应引入 Cloudflare Turnstile 或服务端事件，而不是在计数器上补身份。
 
 发布顺序：先 `npm run db:migrate:remote` 应用 `0006_metrics.sql`、`0007_admin_tokens.sql`，确认 `npx wrangler d1 migrations list blur --remote` 无待执行项，再部署依赖它们的代码。`0006` 是增量迁移，旧代码可继续运行；`last_seen_at` 的写入已做容错，代码先于迁移上线也不会让身份接口报错。

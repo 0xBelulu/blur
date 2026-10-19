@@ -110,7 +110,7 @@ export default function Admin({ onBack }) {
           <ArrowLeft size={13} /> 返回首页
         </button>
         <h1 className="mt-4 text-2xl font-medium tracking-tight text-blur-text">流量与规模</h1>
-        <p className="mt-1.5 text-sm text-blur-text-muted">近 {stats.rangeDays} 天 · 只读 · 更新于 {new Date(stats.generatedAt).toLocaleTimeString('zh-CN')}</p>
+        <p className="mt-1.5 text-sm text-blur-text-muted">近 {stats.rangeDays} 天 · 只读 · 规模统计更新于 {new Date(stats.generatedAt).toLocaleTimeString('zh-CN')}{stats.cached ? '（缓存）' : ''}</p>
       </div>
       <button className="flex items-center gap-1.5 rounded-xl border border-blur-border bg-white/60 px-3 py-2 text-xs text-blur-text transition-colors hover:bg-white disabled:opacity-40"
         disabled={busy} onClick={() => load(token.trim())}>
@@ -193,6 +193,7 @@ export default function Admin({ onBack }) {
     <p className="mt-5 text-[11px] leading-relaxed text-blur-text-light">
       口径说明：完成测试来自匿名计数器，覆盖所有访客；注册身份只在用户使用云端功能后产生，因此小于真实参与人数。
       后台不读取答案、画像正文、好友关系与凭证，单用户信息不在此页展示。
+      规模数字每 5 分钟最多重算一次，趋势与新增数据每次实时读取。
     </p>
   </section>;
 }
