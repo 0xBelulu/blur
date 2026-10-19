@@ -31,7 +31,7 @@ export default function Settings({ account, records, pendingLegacy, onCreate, on
   };
 
   return <section className="pp-settings" aria-label="设置">
-    <header className="pp-settings-intro"><div><p className="pp-eyebrow">我的空间</p><h1>设置</h1></div><p>管理你的可见范围、身份与记录。</p></header>
+    <div className="pp-section-head"><div><h2>设置</h2><p>管理你的可见范围、身份与记录。</p></div></div>
     {message && <p className="pp-settings-message" role="status">{message}</p>}
     <section className="pp-settings-section" aria-labelledby="privacy-title">
       <div className="pp-settings-heading"><div><h2 id="privacy-title">权限管理</h2><p>谁能看到你的结果，怎样与你成为好友。</p></div></div>

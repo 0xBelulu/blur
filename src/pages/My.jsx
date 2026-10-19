@@ -47,11 +47,11 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
         </div>
         <button className="pp-text-button pp-backup" onClick={settings}><SettingsIcon size={17} />设置</button>
       </header>
-      {tab !== 'settings' && <section className="pp-identity" aria-label="个人介绍">
+      <section className="pp-identity" aria-label="个人介绍">
         <div className="pp-person-head"><PortraitMark color={profile?.color} /><div><p className="pp-eyebrow">我的空间</p><h1>{account.nickname || '还没起名字'}</h1></div></div>
         <button className="pp-text-button" onClick={() => open('edit')}><Pencil size={14} />编辑资料</button>
         <p className="pp-bio">{account.bio || '写一点关于自己的事，或先留个空白。'}</p>
-      </section>}
+      </section>
       <nav className="pp-tabs" aria-label="个人空间">
         {[['profile', '我的画像'], ['history', '过去的记录'], ['friends', '好友'], ['settings', '设置']].map(([key, label]) => <button key={key}
           aria-current={tab === key ? 'page' : undefined} onClick={() => onTab(key)}>{label}<i /></button>)}
