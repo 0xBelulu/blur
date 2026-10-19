@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { UserRound, Sparkles, CircleDot } from "lucide-react";
+import { UserRound, Sparkles, Users } from "lucide-react";
 import GlassButton from "../components/GlassButton";
 
 const TIPS = [
@@ -61,26 +61,26 @@ export default function Landing({ onStart, onExplore, onOpenMy, onOpenNext }) {
       className: "text-base px-10 md:px-12 animate-fade-in-up delay-900",
     },
     {
-      label: "community",
-      icon: CircleDot,
-      variant: "primary",
-      badge: "预告",
-      onClick: onOpenNext,
-      className: "text-sm gap-2 animate-fade-in-up delay-1100",
-    },
-    {
       label: "探索blur",
       icon: Sparkles,
       variant: "primary",
       onClick: onExplore,
-      className: "text-sm gap-1.5 animate-fade-in-up delay-1300",
+      className: "text-sm gap-1.5 animate-fade-in-up delay-1100",
     },
     {
       label: "我的空间",
       icon: UserRound,
       variant: "primary",
       onClick: onOpenMy,
-      className: "text-sm gap-1.5 animate-fade-in-up delay-1500",
+      className: "text-sm gap-1.5 animate-fade-in-up delay-1300",
+    },
+    {
+      label: "社区",
+      icon: Users,
+      variant: "primary",
+      badge: "预告",
+      onClick: onOpenNext,
+      className: "text-sm gap-2 animate-fade-in-up delay-1500",
     },
   ];
 
