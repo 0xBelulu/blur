@@ -2,6 +2,7 @@ import { memo, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import AtmosphereField from './AtmosphereField';
 import OpticalStage from './optical/OpticalStage';
+import SkyField from './optical/SkyField';
 import { PAGE_BACKGROUND_PRESETS, LANDING_PRESET, TEST_PRESET } from './optical/presets';
 import { SPATIAL_SYMBOLS } from './optical/symbols';
 import { BACKGROUND_VARIANTS, PAGE_TRANSITION } from '../utils/pageTransitions';
@@ -19,6 +20,10 @@ export default memo(function AppBackground({ screen, present, testSymbols, opaci
     <motion.div className="fixed inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden="true" style={{ opacity }}>
       <div className="app-background-layer" data-visible={scene.atmosphere > 0}>
         <AtmosphereField intensity={scene.atmosphere} />
+      </div>
+      {/* 下一步页的星场：跟着指针亮起来，页面滚动时保持不动 */}
+      <div className="app-background-layer" data-visible={!!scene.sky}>
+        <SkyField active={!!scene.sky} />
       </div>
       {/* The wash is already diffuse. Blur the detailed symbols/dust once as a
           group, leaving the large watercolor textures and dither untouched. */}
