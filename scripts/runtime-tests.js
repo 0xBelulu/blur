@@ -66,8 +66,18 @@ const otherRecord = await api(`/records/${otherId}`, 'PUT', {
   answers, result, createdAt: Date.now(), engineVersion: ENGINE_VERSION, questionVersion: QUESTION_VERSION,
 }, otherToken);
 assert.equal(otherRecord.status, 200);
-await api('/account/portrait', 'PUT', { portraitId: otherId, friendsVisible: true }, otherToken);
-relationshipId = (await api('/friends', 'POST', { publicId: otherAccount.publicId })).data.id;
+assert.equal((await api('/account/portrait', 'PUT', { portraitId: otherId }, otherToken)).data.friendsVisible, true);
+assert.equal(otherAccount.requireFriendApproval, false);
+assert.equal((await api(`/friends/${myAccount.publicId}/profile`, 'GET', undefined, otherToken)).status, 403);
+const direct = (await api('/friends', 'POST', { publicId: otherAccount.publicId, friendCode: otherAccount.friendCode })).data;
+relationshipId = direct.id;
+assert.equal(direct.status, 'accepted');
+assert.equal((await api(`/friends/${myAccount.publicId}/profile`, 'GET', undefined, otherToken)).status, 200);
+await api(`/friends/${relationshipId}`, 'DELETE');
+assert.equal((await api('/account/privacy', 'PUT', { requireFriendApproval: true }, otherToken)).data.requireFriendApproval, true);
+const pendingFriend = (await api('/friends', 'POST', { publicId: otherAccount.publicId, friendCode: otherAccount.friendCode })).data;
+relationshipId = pendingFriend.id;
+assert.equal(pendingFriend.status, 'pending');
 assert.equal((await api(`/friends/${myAccount.publicId}/profile`, 'GET', undefined, otherToken)).status, 403);
 assert.equal((await api(`/friends/${relationshipId}/accept`, 'POST', undefined, otherToken)).status, 200);
 const friendPortrait = (await api(`/friends/${otherAccount.publicId}/profile`)).data.portrait;
@@ -75,10 +85,15 @@ assert.equal(friendPortrait.id, otherId);
 assert.equal(friendPortrait.answers, undefined);
 assert.equal(friendPortrait.shareId, undefined);
 assert.equal((await api('/friends')).data.connections.length, 1);
-await api('/account/portrait', 'PUT', { portraitId: otherId, friendsVisible: false }, otherToken);
+assert.equal((await api('/account/privacy', 'PUT', { resultVisibility: 'private' }, otherToken)).data.resultVisibility, 'private');
 assert.equal((await api(`/friends/${otherAccount.publicId}/profile`)).data.portrait, null);
-await api('/account/portrait', 'PUT', { portraitId: otherId, friendsVisible: true }, otherToken);
+assert.equal((await api('/account/privacy', 'PUT', { resultVisibility: 'friends' }, otherToken)).data.resultVisibility, 'friends');
+assert.equal((await api('/account/privacy', 'PUT', { resultVisibility: 'public' }, otherToken)).status, 400);
 console.log('✓ two real local identities: invitation, acceptance, private portrait projection and visibility revocation');
+const newCode = (await api('/account/friend-code', 'POST', undefined, otherToken)).data.friendCode;
+assert.equal((await api(`/people/by-code/${otherAccount.friendCode}`)).status, 404);
+assert.equal((await api('/friends', 'POST', { publicId: otherAccount.publicId, friendCode: otherAccount.friendCode })).status, 404);
+assert.equal((await api(`/people/by-code/${newCode}`)).data.publicId, otherAccount.publicId);
 
 const vite = await createServer({ configFile: false, plugins: [react()],
   optimizeDeps: { noDiscovery: true, include: [] },
@@ -108,11 +123,16 @@ try {
     records: [{ ...created.data, localPresent: true }, { ...summaries[0], id: 'cloud-only', localPresent: false }],
     account: { id: 'guest', nickname: '联调身份', registered: true },
   }));
-  for (const text of ['我的画像', '身份与备份', '现在，我用这份画像介绍自己', '新记录会留下来', '过去的记录', '好友']) assert.ok(myPage.includes(text), text);
+  for (const text of ['我的画像', '设置', '现在，我用这份画像介绍自己', '新记录会留下来', '过去的记录', '好友']) assert.ok(myPage.includes(text), text);
+  const settings = renderToStaticMarkup(React.createElement(My, { tab: 'settings', records: [], account: myAccount }));
+  for (const text of ['权限管理', '测试结果', '仅我可见', '好友可见', '公开可见', '暂未开放', '身份与备份', '记录与存储', '添加好友需要我确认', '已有分享链接', '保存恢复密钥']) assert.ok(settings.includes(text), text);
+  assert.match(settings, /role="radio" aria-checked="true"[^>]*>.*?好友可见/);
+  assert.match(settings, /role="radio" aria-checked="false" disabled=""[^>]*>.*?公开可见/);
+  assert.ok(settings.includes('aria-checked="false"'));
   const history = renderToStaticMarkup(React.createElement(My, {
     tab: 'history', records: [{ ...created.data, localPresent: true }], account: myAccount,
   }));
-  for (const text of ['过去的记录', '管理', '本机记录不会自动上传']) assert.ok(history.includes(text), text);
+  for (const text of ['过去的记录', '管理', '权限管理']) assert.ok(history.includes(text), text);
   const { default: Identity } = await vite.ssrLoadModule('/src/pages/Identity.jsx');
   const { default: Invite } = await vite.ssrLoadModule('/src/pages/Invite.jsx');
   const { default: FriendProfile } = await vite.ssrLoadModule('/src/pages/FriendProfile.jsx');

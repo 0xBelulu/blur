@@ -5,7 +5,7 @@ import RecordBadges from './RecordBadges';
 import { publishRecord, revokeShare, shareUrl, syncRecord, removeCloudCopy, refreshCloudHistory } from '../utils/cloud';
 import { getAccountInfo } from '../utils/identity';
 
-export default function ShareControls({ record }) {
+export default function ShareControls({ record, sharing = true, onPermissions }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [nickname, setNickname] = useState(record.nickname || getAccountInfo().nickname || '');
@@ -21,13 +21,15 @@ export default function ShareControls({ record }) {
 
   return <div className="w-full space-y-4 text-xs">
     <RecordBadges record={record} />
+    {!sharing && onPermissions && <button className="text-blur-text-muted underline cursor-pointer" onClick={onPermissions}>权限管理</button>}
     {record.pendingAction && <p role="status" className="text-amber-800 leading-relaxed">云端操作尚未确认，分享可能仍处于开启状态。请重试或核实云端状态。</p>}
     {!synchronized && !record.pendingAction && record.localPresent && <div className="space-y-3">
-      <p className="text-blur-text-muted leading-relaxed">画像与答案默认只留在本机。点击同步，才会将这一份存入云端；同步不会开启分享。</p>
+      <p className="text-blur-text-muted leading-relaxed">将这份记录保存到云端。展示结果的可见范围在「权限管理」中设置。</p>
       <GlassButton variant="secondary" disabled={busy} onClick={() => run(async () => {
-        await syncRecord(record); setMessage('云端副本已保存，尚未公开。现在可以选择开启分享。');
+        await syncRecord(record); setMessage('云端副本已保存。');
       })}><span className="flex items-center gap-2"><CloudUpload size={14} />{busy ? '正在同步…' : record.cloudId ? '重试同步' : '同步到云端'}</span></GlassButton>
     </div>}
+    {sharing && <>
     {synchronized && !link && (!record.pendingAction || record.pendingAction === 'publish') && <div className="space-y-3">
       <label className="flex flex-wrap items-center gap-3 text-blur-text-muted">分享昵称
         <input value={nickname} onChange={(event) => setNickname(event.target.value)} maxLength={24} placeholder="选填"
@@ -60,6 +62,7 @@ export default function ShareControls({ record }) {
     {!link && record.pendingAction === 'revoke' && <GlassButton variant="secondary" disabled={busy} onClick={() => run(async () => {
       await revokeShare(record); setMessage('停止分享已确认');
     })}>重试停止分享</GlassButton>}
+    </>}
     {record.cloudId && <div className="pt-3 border-t border-blur-border space-y-3">
       <div className="flex flex-wrap gap-4">
         <button disabled={busy} className="text-blur-text-muted underline cursor-pointer disabled:opacity-40" onClick={() => run(async () => {

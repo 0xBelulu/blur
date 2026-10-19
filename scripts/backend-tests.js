@@ -8,7 +8,7 @@ import { questions } from '../src/data/questions.js';
 import { publicResult, ENGINE_VERSION, QUESTION_VERSION, canCompare } from '../shared/profile.js';
 import { getHistoryRecords, getAllHistoryRecords, saveHistoryRecord, updateHistoryRecord, removeLocalRecord, CLOUD_SESSION } from '../src/utils/historyStorage.js';
 import { syncRecord, publishRecord, revokeShare, removeCloudCopy, flushPending, refreshCloudHistory, downloadRecord, saveNickname, saveProfile, exportRecoveryKey, restoreIdentity } from '../src/utils/cloud.js';
-import { selectPortrait, readPeople, friendAction } from '../src/utils/people.js';
+import { selectPortrait, readPeople, friendAction, savePrivacy, resetFriendCode, saveResultVisibility, syncDefaultPortrait } from '../src/utils/people.js';
 import { displayRecord } from '../src/utils/portraits.js';
 import { compareDimensions } from '../src/utils/comparison.js';
 import { comparisonPrompts } from '../src/utils/comparisonPrompts.js';
@@ -22,6 +22,8 @@ function database(t, legacy = false) {
   if (!legacy) {
     sqlite.exec(readFileSync(new URL('../migrations/0002_accounts.sql', import.meta.url), 'utf8'));
     sqlite.exec(readFileSync(new URL('../migrations/0003_people.sql', import.meta.url), 'utf8'));
+    sqlite.exec(readFileSync(new URL('../migrations/0004_privacy.sql', import.meta.url), 'utf8'));
+    sqlite.exec(readFileSync(new URL('../migrations/0005_result_permissions.sql', import.meta.url), 'utf8'));
   }
   t.after(() => sqlite.close());
   return { sqlite, prepare(sql) {
@@ -459,6 +461,8 @@ test('additive migration preserves legacy portraits, share links and anonymous o
     .run('legacy', ownerHash, record.createdAt, ENGINE_VERSION, QUESTION_VERSION, 10, JSON.stringify(answers), JSON.stringify(result), shareId);
   db.sqlite.exec(readFileSync(new URL('../migrations/0002_accounts.sql', import.meta.url), 'utf8'));
   db.sqlite.exec(readFileSync(new URL('../migrations/0003_people.sql', import.meta.url), 'utf8'));
+  db.sqlite.exec(readFileSync(new URL('../migrations/0004_privacy.sql', import.meta.url), 'utf8'));
+  db.sqlite.exec(readFileSync(new URL('../migrations/0005_result_permissions.sql', import.meta.url), 'utf8'));
   assert.equal((await call(db, '/account')).data.id, await identityId(alice));
   assert.equal((await call(db, '/records?summary=1')).data.records[0].id, 'legacy');
   assert.equal((await call(db, `/shares/${shareId}`)).status, 200);
@@ -503,14 +507,14 @@ test('friend-code lookup returns only invitation information; self and unknown c
   const db = database(t);
   const { a, b } = await pair(db);
   const found = await call(db, `/people/by-code/${b.friendCode}`);
-  assert.deepEqual(Object.keys(found.data).sort(), ['bio', 'nickname', 'publicId']);
+  assert.deepEqual(Object.keys(found.data).sort(), ['bio', 'nickname', 'publicId', 'requireFriendApproval']);
   assert.equal(found.data.publicId, b.publicId);
   assert.equal((await call(db, '/people/by-code/000000000000')).status, 404);
   assert.equal((await call(db, '/friends', 'POST', { publicId: a.publicId })).status, 400);
   assert.equal((await call(db, '/friends', 'POST', { publicId: 'bad' })).status, 400);
 });
 
-test('crossed and repeated requests create one pair and only the recipient can accept', async (t) => {
+test('legacy clients without code proof keep manual confirmation and cannot bypass it using public IDs', async (t) => {
   const db = database(t);
   const { a, b } = await pair(db);
   const first = (await call(db, '/friends', 'POST', { publicId: b.publicId })).data;
@@ -530,6 +534,225 @@ test('crossed and repeated requests create one pair and only the recipient can a
   assert.equal(list[0].status, 'accepted');
   assert.equal(list[0].person.nickname, '小满');
   assert.equal(JSON.stringify(list).includes('owner_hash'), false);
+});
+
+test('current friend codes connect immediately by default, with idempotent repeated and crossed adds', async (t) => {
+  const db = database(t);
+  const { a, b } = await pair(db);
+  assert.equal(a.requireFriendApproval, false);
+  assert.equal(b.requireFriendApproval, false);
+  const first = (await call(db, '/friends', 'POST', { publicId: b.publicId, friendCode: b.friendCode })).data;
+  assert.equal(first.status, 'accepted');
+  const again = (await call(db, '/friends', 'POST', { publicId: b.publicId, friendCode: b.friendCode })).data;
+  const crossed = (await call(db, '/friends', 'POST', { publicId: a.publicId, friendCode: a.friendCode }, bob)).data;
+  assert.equal(first.id, again.id);
+  assert.equal(first.id, crossed.id);
+  assert.equal(crossed.status, 'accepted');
+  const list = (await call(db, '/friends')).data.connections;
+  assert.equal(list.length, 1);
+  assert.ok(list[0].acceptedAt);
+  assert.equal((await call(db, `/friends/${b.publicId}/profile`)).status, 200);
+  assert.equal((await call(db, `/friends/${b.publicId}/profile`)).data.portrait, null);
+});
+
+test('approval preference is enforced at add time and affects future adds without rewriting existing pairs', async (t) => {
+  const db = database(t);
+  const { b } = await pair(db);
+  assert.equal((await call(db, `/people/by-code/${b.friendCode}`)).data.requireFriendApproval, false);
+  assert.equal((await call(db, '/account/privacy', 'PUT', { requireFriendApproval: true }, bob)).data.requireFriendApproval, true);
+  const added = (await call(db, '/friends', 'POST', { publicId: b.publicId, friendCode: b.friendCode })).data;
+  assert.equal(added.status, 'pending');
+  assert.equal((await call(db, `/friends/${b.publicId}/profile`)).status, 403);
+  assert.equal((await call(db, `/friends/${added.id}/accept`, 'POST')).status, 403);
+  await call(db, '/account/privacy', 'PUT', { requireFriendApproval: false }, bob);
+  assert.equal((await call(db, '/friends')).data.connections[0].status, 'pending');
+  const retried = (await call(db, '/friends', 'POST', { publicId: b.publicId, friendCode: b.friendCode })).data;
+  assert.equal(retried.id, added.id);
+  assert.equal(retried.status, 'accepted');
+  await call(db, '/account/privacy', 'PUT', { requireFriendApproval: true }, bob);
+  assert.equal((await call(db, '/friends')).data.connections[0].status, 'accepted');
+  for (const value of [null, 0, 'false']) assert.equal((await call(db, '/account/privacy', 'PUT', { requireFriendApproval: value })).status, 400);
+  assert.equal((await call(db, '/account')).data.requireFriendApproval, false);
+});
+
+test('rotating friend codes invalidates lookup and stale adds while preserving friends, portraits and shares', async (t) => {
+  const db = database(t);
+  const { a, b } = await pair(db);
+  await call(db, '/records/portrait', 'PUT', record, bob);
+  await call(db, '/account/portrait', 'PUT', { portraitId: 'portrait', friendsVisible: true }, bob);
+  const share = (await call(db, '/records/portrait/share', 'POST', { nickname: '小满' }, bob)).data.shareId;
+  const connected = (await call(db, '/friends', 'POST', { publicId: b.publicId, friendCode: b.friendCode })).data;
+  const rotated = (await call(db, '/account/friend-code', 'POST', undefined, bob)).data;
+  assert.notEqual(rotated.friendCode, b.friendCode);
+  assert.equal(rotated.publicId, b.publicId);
+  assert.equal(rotated.portraitId, 'portrait');
+  assert.equal(rotated.friendsVisible, true);
+  assert.equal((await call(db, `/people/by-code/${b.friendCode}`)).status, 404);
+  assert.equal((await call(db, '/friends', 'POST', { publicId: b.publicId, friendCode: b.friendCode })).status, 404);
+  assert.equal((await call(db, `/friends/${b.publicId}/profile`)).data.portrait.id, 'portrait');
+  assert.equal((await call(db, `/shares/${share}`)).status, 200);
+  await call(db, `/friends/${connected.id}`, 'DELETE');
+  const thirdToken = 'c'.repeat(64);
+  await call(db, '/account', 'POST', { nickname: '新朋友' }, thirdToken);
+  assert.equal((await call(db, '/friends', 'POST', { publicId: b.publicId, friendCode: b.friendCode }, thirdToken)).status, 404);
+  assert.equal((await call(db, '/friends', 'POST', { publicId: b.publicId, friendCode: rotated.friendCode }, thirdToken)).data.status, 'accepted');
+  assert.equal((await call(db, '/friends', 'POST', { publicId: a.publicId, friendCode: rotated.friendCode }, thirdToken)).status, 404);
+  assert.equal((await call(db, '/friends', 'POST', { publicId: b.publicId, friendCode: null })).status, 400);
+});
+
+test('privacy migration preserves accepted and pending relationships and all existing account data', async (t) => {
+  const db = database(t);
+  const { b } = await pair(db);
+  await call(db, '/records/preserved', 'PUT', record);
+  await call(db, '/account/portrait', 'PUT', { portraitId: 'preserved', friendsVisible: true });
+  const share = (await call(db, '/records/preserved/share', 'POST', { nickname: '小林' })).data.shareId;
+  const relation = (await call(db, '/friends', 'POST', { publicId: b.publicId })).data;
+  const third = (await call(db, '/account', 'POST', { nickname: '另一位朋友' }, 'c'.repeat(64))).data;
+  const accepted = (await call(db, '/friends', 'POST', { publicId: third.publicId, friendCode: third.friendCode })).data;
+  // Recreate the old schema before adding the new preference.
+  db.sqlite.exec('ALTER TABLE accounts DROP COLUMN require_friend_approval');
+  const before = db.sqlite.prepare('SELECT * FROM accounts ORDER BY owner_hash').all();
+  db.sqlite.exec(readFileSync(new URL('../migrations/0004_privacy.sql', import.meta.url), 'utf8'));
+  const after = db.sqlite.prepare('SELECT * FROM accounts ORDER BY owner_hash').all();
+  after.forEach((row, i) => { assert.equal(row.require_friend_approval, 0); delete row.require_friend_approval; assert.deepEqual(row, before[i]); });
+  const connections = (await call(db, '/friends')).data.connections;
+  assert.equal(connections.find((c) => c.id === relation.id).status, 'pending');
+  assert.equal(connections.find((c) => c.id === accepted.id).status, 'accepted');
+  assert.equal((await call(db, '/account')).data.portraitId, 'preserved');
+  assert.equal((await call(db, '/account')).data.friendsVisible, true);
+  assert.equal((await call(db, '/records/preserved')).status, 200);
+  assert.equal((await call(db, `/shares/${share}`)).status, 200);
+});
+
+test('client privacy updates persist across refresh and recovery without uploading local records', async (t) => {
+  const db = database(t);
+  const connection = browser(t, db);
+  const local = saveHistoryRecord(answers, result);
+  await saveProfile({ nickname: '隐私测试' }, true);
+  await savePrivacy(true);
+  const oldCode = getAccountInfo().friendCode;
+  await resetFriendCode();
+  assert.notEqual(getAccountInfo().friendCode, oldCode);
+  const key = await exportRecoveryKey();
+  await refreshCloudHistory();
+  await restoreIdentity(key);
+  assert.equal(getAccountInfo().requireFriendApproval, true);
+  assert.equal((await readPeople('/records')).records.length, 0);
+  assert.equal(connection.requests.some((r) => r.path.startsWith('/api/records/') && r.method === 'PUT'), false);
+  await selectPortrait(local, true);
+  await saveResultVisibility('private');
+  assert.equal(getAccountInfo().friendsVisible, false);
+  assert.ok(getAccountInfo().portraitId);
+  connection.offline();
+  await assert.rejects(savePrivacy(false));
+  assert.equal(getAccountInfo().requireFriendApproval, true);
+});
+
+test('result permissions default to friends before a portrait exists and portrait choice follows the permission', async (t) => {
+  const db = database(t);
+  const { a, b } = await pair(db);
+  assert.equal(a.resultVisibility, 'friends');
+  await call(db, '/records/visible', 'PUT', record);
+  const selected = await call(db, '/account/portrait', 'PUT', { portraitId: 'visible' });
+  assert.equal(selected.data.friendsVisible, true);
+  const connection = (await call(db, '/friends', 'POST', { publicId: b.publicId, friendCode: b.friendCode })).data;
+  assert.equal(connection.status, 'accepted');
+  const shown = await call(db, `/friends/${a.publicId}/profile`, 'GET', undefined, bob);
+  assert.equal(shown.data.portrait.id, 'visible');
+  assert.equal(shown.data.portrait.answers, undefined);
+  await call(db, '/account/privacy', 'PUT', { resultVisibility: 'private' });
+  assert.equal((await call(db, `/friends/${a.publicId}/profile`, 'GET', undefined, bob)).data.portrait, null);
+  await call(db, '/records/other', 'PUT', record);
+  assert.equal((await call(db, '/account/portrait', 'PUT', { portraitId: 'other' })).data.resultVisibility, 'private');
+  assert.equal((await call(db, `/friends/${a.publicId}/profile`, 'GET', undefined, bob)).data.portrait, null);
+  await call(db, '/account/privacy', 'PUT', { resultVisibility: 'friends' });
+  assert.equal((await call(db, `/friends/${a.publicId}/profile`, 'GET', undefined, bob)).data.portrait.id, 'other');
+  for (const value of ['public', '', null, true]) assert.equal((await call(db, '/account/privacy', 'PUT', { resultVisibility: value })).status, 400);
+  assert.equal((await call(db, '/account')).data.resultVisibility, 'friends');
+});
+
+test('default friend visibility syncs the displayed result once and never falls back after deletion', async (t) => {
+  const db = database(t);
+  const connection = browser(t, db);
+  const first = saveHistoryRecord(answers, result);
+  updateAccountInfo({ displayRecordId: first.id });
+  await syncDefaultPortrait();
+  assert.equal(connection.requests.length, 0);
+  await saveProfile({ nickname: '默认好友可见' }, true);
+  await syncDefaultPortrait();
+  assert.equal(getAccountInfo().friendsVisible, true);
+  assert.equal(getHistoryRecords()[0].shareId, null);
+  const portraitId = getAccountInfo().portraitId;
+  saveHistoryRecord(answers, result);
+  await syncDefaultPortrait();
+  assert.equal((await readPeople('/records')).records.length, 1);
+  assert.equal(getAccountInfo().portraitId, portraitId);
+  await removeCloudCopy(getHistoryRecords().find((r) => r.id === first.id));
+  await refreshCloudHistory();
+  assert.equal(getAccountInfo().hasPortraitSelection, true);
+  await syncDefaultPortrait();
+  assert.equal((await readPeople('/records')).records.length, 0);
+});
+
+test('private preference survives identity creation, stays private when choosing a result and can later become friends-visible', async (t) => {
+  const db = database(t);
+  const connection = browser(t, db);
+  const local = saveHistoryRecord(answers, result);
+  updateAccountInfo({ displayRecordId: local.id });
+  await saveResultVisibility('private');
+  await saveProfile({ nickname: '自己的结果' }, true);
+  assert.equal(getAccountInfo().resultVisibility, 'private');
+  await syncDefaultPortrait();
+  assert.equal(connection.requests.some((r) => r.path.startsWith('/api/records/') && r.method === 'PUT'), false);
+  await saveResultVisibility('friends');
+  assert.equal(getAccountInfo().friendsVisible, true);
+  await saveResultVisibility('private');
+  await selectPortrait(getHistoryRecords()[0]);
+  assert.equal(getAccountInfo().resultVisibility, 'private');
+  assert.equal(getAccountInfo().friendsVisible, false);
+  const key = await exportRecoveryKey();
+  connection.storage.clear();
+  await restoreIdentity(key);
+  assert.equal(getAccountInfo().resultVisibility, 'private');
+  await assert.rejects(saveResultVisibility('public'), /暂未开放/);
+});
+
+test('default visibility never uploads another identity’s local results after recovery', async (t) => {
+  const db = database(t);
+  const connection = browser(t, db);
+  const local = saveHistoryRecord(answers, result);
+  updateAccountInfo({ displayRecordId: local.id });
+  await saveProfile({ nickname: '本机原身份' }, true);
+  await call(db, '/account', 'POST', { nickname: '恢复的空身份' }, bob);
+  await restoreIdentity(formatRecoveryKey(bob));
+  await syncDefaultPortrait();
+  assert.equal(getAccountInfo().displayRecordId, undefined);
+  assert.equal((await readPeople('/records')).records.length, 0);
+  assert.equal(connection.requests.some((r) => r.path.startsWith('/api/records/') && r.method === 'PUT'), false);
+  assert.ok(getHistoryRecords().some((r) => r.id === local.id && r.localPresent));
+});
+
+test('result permission migration preserves explicit privacy, displayed snapshots, links and relationships', async (t) => {
+  const db = database(t);
+  const { b } = await pair(db);
+  await call(db, '/records/private-old', 'PUT', record);
+  await call(db, '/account/portrait', 'PUT', { portraitId: 'private-old', friendsVisible: false });
+  const shareId = (await call(db, '/records/private-old/share', 'POST', { nickname: '旧分享' })).data.shareId;
+  const relation = (await call(db, '/friends', 'POST', { publicId: b.publicId, friendCode: b.friendCode })).data;
+  db.sqlite.exec('DROP TRIGGER accounts_legacy_result_visibility');
+  db.sqlite.exec('ALTER TABLE accounts DROP COLUMN result_visibility');
+  db.sqlite.exec(readFileSync(new URL('../migrations/0005_result_permissions.sql', import.meta.url), 'utf8'));
+  assert.equal((await call(db, '/account')).data.resultVisibility, 'private');
+  assert.equal((await call(db, '/account', 'GET', undefined, bob)).data.resultVisibility, 'friends');
+  assert.equal((await call(db, '/account')).data.portraitId, 'private-old');
+  assert.equal((await call(db, '/friends')).data.connections[0].id, relation.id);
+  assert.equal((await call(db, `/shares/${shareId}`)).status, 200);
+  assert.equal((await call(db, '/records/private-old')).status, 200);
+  // An old deployed worker can still change the legacy boolean during rollout.
+  db.sqlite.prepare('UPDATE accounts SET friends_visible = 1 WHERE public_id = ?').run((await call(db, '/account')).data.publicId);
+  assert.equal((await call(db, '/account')).data.resultVisibility, 'friends');
+  db.sqlite.prepare('UPDATE accounts SET friends_visible = 0 WHERE public_id = ?').run((await call(db, '/account')).data.publicId);
+  assert.equal((await call(db, '/account')).data.resultVisibility, 'private');
 });
 
 test('only accepted friends can read the explicitly selected portrait, never raw answers or history', async (t) => {

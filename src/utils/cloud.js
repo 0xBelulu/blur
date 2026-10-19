@@ -292,7 +292,9 @@ export async function saveProfile({ nickname, bio = '' }, create = false) {
   await ensureLocalIdentity();
   if (!create && !getAccountInfo().registered) return updateAccountInfo({ nickname: clean, bio: intro });
   return identityOperation(`profile:${clean}:${intro}`, async (ctx) => {
-    const account = await api('/account', { token: ctx.token, method: 'POST', body: { nickname: clean, bio: intro } });
+    const account = await api('/account', { token: ctx.token, method: 'POST', body: { nickname: clean, bio: intro,
+      ...(create && getAccountInfo().resultVisibility ? { resultVisibility: getAccountInfo().resultVisibility } : {}),
+    } });
     assertIdentity(ctx);
     return updateAccountInfo({ ...account, registered: true, checkStatus: 'verified' });
   });

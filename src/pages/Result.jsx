@@ -23,7 +23,7 @@ const tabContentVariants = {
   exit: { opacity: 0, y: -8 },
 };
 
-export default function Result({ result, onRestart, record, publicView = false, onCompare, onOpenMy }) {
+export default function Result({ result, onRestart, record, publicView = false, onCompare, onOpenMy, onPermissions }) {
   const [activeTab, setActiveTab] = useState("cloud");
   const [activePairIndex, setActivePairIndex] = useState(0);
   const [hoveredArchetype, setHoveredArchetype] = useState(null);
@@ -617,7 +617,7 @@ export default function Result({ result, onRestart, record, publicView = false, 
           transition={{ delay: 1.0 }}
           className="mt-auto pt-8 w-full"
         >
-          {!publicView && record && <ShareControls record={record} />}
+          {!publicView && record && <ShareControls record={record} sharing={false} onPermissions={onPermissions} />}
           {!publicView && !record && <p role="status" className="text-xs text-blur-text-muted">本机存储空间不足，本次画像暂未存档。</p>}
           <div className="mt-4 flex flex-wrap items-center justify-center md:justify-start gap-3">
             {publicView && <GlassButton onClick={onCompare}>和 ta 对比</GlassButton>}

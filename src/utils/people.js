@@ -1,6 +1,7 @@
 import { api, identityOperation, syncRecord } from './cloud.js';
 import { getIdentityToken, getAccountInfo, updateAccountInfo } from './identity.js';
 import { getHistoryRecords } from './historyStorage.js';
+import { displayRecord } from './portraits.js';
 
 export async function readPeople(path, signal) {
   const token = getIdentityToken();
@@ -11,16 +12,51 @@ export async function readPeople(path, signal) {
 }
 
 export function friendAction(path, method = 'POST', body) {
-  return identityOperation(`${method}:${path}:${body?.publicId || ''}`, async (ctx) => {
+  return identityOperation(`${method}:${path}:${JSON.stringify(body)}`, async (ctx) => {
     return api(path, { token: ctx.token, method, body });
   });
+}
+
+function accountAction(path, method, body) {
+  return identityOperation(`${method}:${path}:${JSON.stringify(body)}`, async (ctx) => {
+    const account = await api(path, { token: ctx.token, method, body });
+    if (getIdentityToken() !== ctx.token) throw new Error('身份已切换，请重新操作');
+    return updateAccountInfo({ ...account, checkStatus: 'verified' });
+  });
+}
+
+export function savePrivacy(requireFriendApproval) {
+  return accountAction('/account/privacy', 'PUT', { requireFriendApproval });
+}
+
+export function resetFriendCode() {
+  return accountAction('/account/friend-code', 'POST');
+}
+
+export async function saveResultVisibility(resultVisibility) {
+  if (!['private', 'friends'].includes(resultVisibility)) throw new Error('公开可见暂未开放');
+  if (!getAccountInfo().registered) return updateAccountInfo({ resultVisibility });
+  await accountAction('/account/privacy', 'PUT', { resultVisibility });
+  if (resultVisibility === 'friends') await syncDefaultPortrait();
+  return getAccountInfo();
+}
+
+export async function syncDefaultPortrait() {
+  const account = getAccountInfo();
+  if (!account.registered || account.resultVisibility === 'private' || account.hasPortraitSelection || account.portraitId) return;
+  const records = getHistoryRecords();
+  // Recovery must never adopt unrelated device-local results into another identity.
+  const record = account.displayRecordId !== undefined ? displayRecord(records, account)
+    : records.find((r) => r.cloudId && r.cloudOwner === account.id);
+  if (record && !record.pendingAction) await selectPortrait(record);
 }
 
 export async function selectPortrait(record, friendsVisible) {
   const token = getIdentityToken();
   if (!getAccountInfo().registered) {
-    if (friendsVisible) throw new Error('先创建身份，再把画像展示给好友');
-    return updateAccountInfo({ displayRecordId: record?.id || null });
+    return updateAccountInfo({ displayRecordId: record?.id || null,
+      ...(typeof friendsVisible === 'boolean' ? { resultVisibility: friendsVisible ? 'friends' : 'private' } : {}),
+    });
   }
   if (record && (!record.cloudId || record.syncStatus !== 'synced')) await syncRecord(record);
   if (getIdentityToken() !== token) throw new Error('身份已切换，请重新选择');

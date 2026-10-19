@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, ArrowUpRight, Download, Fingerprint } from 'lucide-react';
 import { useModalDismiss } from './modalDismiss';
 import { exportRecoveryKey, restoreIdentity } from '../utils/cloud';
@@ -13,6 +13,14 @@ export default function AccountPanel({ account, onCreate, initialView = 'menu' }
   const [acknowledged, setAcknowledged] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (initialView !== 'backup') return;
+    let active = true;
+    exportRecoveryKey().then((key) => { if (active) setRecoveryKey(key); })
+      .catch((error) => { if (active) setMessage(error.message); });
+    return () => { active = false; };
+  }, [initialView]);
 
   const run = async (action) => {
     setBusy(true); setMessage('');
@@ -73,7 +81,7 @@ export default function AccountPanel({ account, onCreate, initialView = 'menu' }
       {initialView === 'menu' && <button className="pp-back" onClick={() => setView('menu')}><ArrowLeft size={13} />返回</button>}
       <h3 className="pp-flow-title">恢复密钥</h3>
       <p className="pp-account-help">这是这个身份的钥匙。换设备时用它找回；只留给自己，别发给别人。</p>
-      {!recoveryKey && <p className="pp-account-message">{busy ? '正在生成…' : '还没有取到密钥。'}</p>}
+      {!recoveryKey && <p className="pp-account-message">{message ? <button className="pp-text-button" disabled={busy} onClick={openBackup}>重新获取密钥</button> : '正在获取密钥…'}</p>}
       {recoveryKey && <>
         <textarea aria-label="我的恢复密钥" readOnly value={recoveryKey} rows={4} spellCheck={false}
           className="pp-key" onFocus={(event) => event.target.select()} />

@@ -4,7 +4,7 @@ import { PersonalModal, PortraitMark } from '../components/PersonalElements';
 import FriendFinder from '../components/FriendFinder';
 import { readPeople, friendAction, friendCode, inviteUrl } from '../utils/people';
 
-export default function Friends({ account, onCreate, onFriend, onBackup }) {
+export default function Friends({ account, onCreate, onFriend, onBackup, onSettings }) {
   const [connections, setConnections] = useState(null);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -42,6 +42,7 @@ export default function Friends({ account, onCreate, onFriend, onBackup }) {
       <div className="pp-row-actions"><button className="pp-text-button" disabled={!account.friendCode || busy} onClick={() => run(async () => { await navigator.clipboard.writeText(friendCode(account.friendCode)); setMessage('好友码已复制'); })}><Copy size={13} />复制</button>
         <button className="pp-text-button" disabled={!account.friendCode || busy} onClick={() => run(async () => { await navigator.clipboard.writeText(inviteUrl(account.friendCode)); setMessage('邀请链接已复制，可以发给朋友了'); })}>复制邀请链接<ArrowRight size={13} /></button></div>
     </div>
+    <p className="pp-helper">{account.requireFriendApproval ? '你开启了好友确认，新朋友需要你接受申请。' : '好友码就是邀请，朋友可以直接添加你。'}<button className="pp-inline-link" onClick={onSettings}>权限管理</button></p>
     {!account.backupSavedAt && <p className="pp-helper">换设备时，需要恢复密钥找回这个身份。<button className="pp-inline-link" onClick={onBackup}>先保存一份</button></p>}
     <div className="pp-row-actions"><button className="pp-text-button" onClick={reload}><RefreshCw size={12} />刷新好友</button>{error && <p className="pp-status" role="status">{error} 当前列表尚未核实。</p>}</div>
     {connections === null && !error && <p className="pp-helper" role="status">正在找回你们的连接…</p>}

@@ -22,6 +22,7 @@ import { questions } from './data/questions';
 import { getHistoryRecords, getAllHistoryRecords, saveHistoryRecord, removeLocalRecord } from './utils/historyStorage';
 import { flushPending, refreshCloudHistory, downloadRecord } from './utils/cloud';
 import { getAccountInfo, ensureLocalIdentity, updateAccountInfo } from './utils/identity';
+import { syncDefaultPortrait } from './utils/people';
 
 const LOADING_DURATION = 3500;
 const INITIAL_TEST_SYMBOLS = buildPersonaSymbols(solveProfile([]).field, revealAt(0));
@@ -30,8 +31,8 @@ function readRoute() {
   const [screen, id] = window.location.hash.slice(1).split('/');
   if (screen === 'invite') return /^[A-Fa-f0-9]{12}$/.test(id || '') ? { screen, id: id.toUpperCase() } : { screen: 'me', id: 'friends' };
   if (['friend', 'together'].includes(screen)) return /^[a-f0-9]{32}$/.test(id || '') ? { screen, id } : { screen: 'me', id: 'friends' };
-  if (screen === 'identity') return { screen, id: /^(profile|friends|invite-[A-Fa-f0-9]{12}|friend-[a-f0-9]{32}|together-[a-f0-9]{32})$/.test(id || '') ? id : 'profile' };
-  if (screen === 'me') return { screen, id: ['history', 'friends'].includes(id) ? id : 'profile' };
+  if (screen === 'identity') return { screen, id: /^(profile|friends|settings|invite-[A-Fa-f0-9]{12}|friend-[a-f0-9]{32}|together-[a-f0-9]{32})$/.test(id || '') ? id : 'profile' };
+  if (screen === 'me') return { screen, id: ['history', 'friends', 'settings'].includes(id) ? id : 'profile' };
   if (['view', 'compare'].includes(screen)) {
     return /^[a-f0-9]{32}$/.test(id || '') ? { screen, id } : { screen: 'landing' };
   }
@@ -91,7 +92,7 @@ export default function App() {
     // Adopt the existing latest portrait once when upgrading an older browser.
     const info = getAccountInfo();
     const initial = getHistoryRecords()[0];
-    if (initial && info.displayRecordId === undefined && !info.portraitId) {
+    if (initial && !info.registered && info.displayRecordId === undefined && !info.portraitId) {
       try { updateAccountInfo({ displayRecordId: initial.id }); } catch { /* Local records remain available. */ }
     }
     return () => {
@@ -107,8 +108,8 @@ export default function App() {
   useEffect(() => {
     if (!['me', 'invite', 'friend', 'together'].includes(route.screen)) return;
     let active = true;
-    ensureLocalIdentity().then(refreshCloudHistory).then(() => { if (active) setNotice(''); })
-      .catch(() => { if (active) setNotice('暂时无法核实云端状态。新画像仍只保存在本机，不会自动上传。'); });
+    ensureLocalIdentity().then(refreshCloudHistory).then(syncDefaultPortrait).then(() => { if (active) setNotice(''); })
+      .catch(() => { if (active) setNotice('暂时无法更新云端状态。画像已保存在本机，可以稍后重试。'); });
     return () => { active = false; };
   }, [route.screen]);
 
@@ -143,6 +144,7 @@ export default function App() {
       if (getAccountInfo().displayRecordId === undefined && !getAccountInfo().portraitId) {
         try { updateAccountInfo({ displayRecordId: saved.id }); } catch { /* The snapshot itself is already saved. */ }
       }
+      syncDefaultPortrait().catch(() => setNotice('画像已保存在本机，暂未同步给好友。请到我的空间重试。'));
       if (target) { setComparisonRecordId(saved.id); navigate('compare', target); }
       else navigate('result', saved.id);
     }, LOADING_DURATION);
@@ -180,8 +182,8 @@ export default function App() {
   const myPage = () => <My records={records} account={account} notice={notice} onBack={home} onOpen={openRecord}
     onDeleteLocal={removeLocal} onClearLocal={clearLocal} onRefresh={refresh} onRetryPending={retryPending}
     onStartTest={() => start()}
-    tab={['history', 'friends'].includes(route.id) ? route.id : 'profile'} onTab={(tab) => navigate('me', tab)}
-    onCreateIdentity={() => navigate('identity', route.id === 'friends' ? 'friends' : 'profile')}
+    tab={['history', 'friends', 'settings'].includes(route.id) ? route.id : 'profile'} onTab={(tab) => navigate('me', tab)}
+    onCreateIdentity={() => navigate('identity', ['friends', 'settings'].includes(route.id) ? route.id : 'profile')}
     onFriend={(id) => navigate('friend', id)}
     pendingLegacy={getAllHistoryRecords().filter((item) => item.deletedAt).length} />;
   const record = records.find((item) => item.id === route.id);
@@ -206,7 +208,7 @@ export default function App() {
     case 'test': content = <Test onComplete={complete} onSymbolsChange={setTestSymbols} />; break;
     case 'loading': content = <Loading />; break;
     case 'result': content = record?.result || unsavedResult
-      ? <Result result={record?.result || unsavedResult} record={record} onRestart={home} onOpenMy={openMy} />
+      ? <Result result={record?.result || unsavedResult} record={record} onRestart={home} onOpenMy={openMy} onPermissions={() => navigate('me', 'settings')} />
       : myPage(); break;
     case 'view':
     case 'compare': content = <SharedProfile shareId={route.id} mode={route.screen} records={records} selectedRecordId={comparisonRecordId}

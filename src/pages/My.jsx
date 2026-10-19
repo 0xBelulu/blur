@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, ArrowUpRight, ArrowRight, Check, ChevronRight, Fingerprint, LockKeyhole, Pencil, Users } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, ArrowRight, Check, ChevronRight, Settings as SettingsIcon, LockKeyhole, Pencil, Users } from 'lucide-react';
 import AccountPanel from '../components/AccountPanel';
 import ShareControls from '../components/ShareControls';
 import RecordBadges from '../components/RecordBadges';
@@ -8,6 +8,7 @@ import { recordArchetype, displayRecord } from '../utils/portraits';
 import { saveProfile } from '../utils/cloud';
 import { selectPortrait } from '../utils/people';
 import Friends from './Friends';
+import Settings from './Settings';
 import './Personal.css';
 
 function date(record) { return new Date(record.createdAt).toLocaleDateString('zh-CN'); }
@@ -20,7 +21,6 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
   const [draftName, setDraftName] = useState('');
   const [draftBio, setDraftBio] = useState('');
   const [choice, setChoice] = useState(null);
-  const [visible, setVisible] = useState(false);
   const [filter, setFilter] = useState('all');
   const selected = displayRecord(records, account);
   const profile = recordArchetype(selected);
@@ -29,7 +29,7 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
   const open = (type, recordId) => {
     setMessage(''); setModal({ type, recordId });
     if (type === 'edit') { setDraftName(account.nickname || ''); setDraftBio(account.bio || ''); }
-    if (type === 'choose' || type === 'visibility') { setChoice(selected?.id || null); setVisible(!!account.friendsVisible); }
+    if (type === 'choose') setChoice(selected?.id || null);
   };
   const run = async (action, close = false) => {
     setBusy(true); setMessage('');
@@ -37,7 +37,7 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
     catch (error) { setMessage(error.message); }
     finally { setBusy(false); }
   };
-  const settings = () => open('identity');
+  const settings = () => onTab('settings');
   return <div className="personal-space">
     <div className="pp-page">
       <header className="pp-header">
@@ -45,15 +45,15 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
           <button className="pp-exit" onClick={onBack} title="返回首页" aria-label="返回首页"><ArrowLeft size={15} />返回首页</button>
           <span className="pp-brand">blur<span>一点点认识自己</span></span>
         </div>
-        <button className="pp-text-button pp-backup" onClick={settings}><Fingerprint size={17} />身份与备份</button>
+        <button className="pp-text-button pp-backup" onClick={settings}><SettingsIcon size={17} />设置</button>
       </header>
-      <section className="pp-identity" aria-label="个人介绍">
+      {tab !== 'settings' && <section className="pp-identity" aria-label="个人介绍">
         <div className="pp-person-head"><PortraitMark color={profile?.color} /><div><p className="pp-eyebrow">我的空间</p><h1>{account.nickname || '还没起名字'}</h1></div></div>
         <button className="pp-text-button" onClick={() => open('edit')}><Pencil size={14} />编辑资料</button>
         <p className="pp-bio">{account.bio || '写一点关于自己的事，或先留个空白。'}</p>
-      </section>
+      </section>}
       <nav className="pp-tabs" aria-label="个人空间">
-        {[['profile', '我的画像'], ['history', '过去的记录'], ['friends', '好友']].map(([key, label]) => <button key={key}
+        {[['profile', '我的画像'], ['history', '过去的记录'], ['friends', '好友'], ['settings', '设置']].map(([key, label]) => <button key={key}
           aria-current={tab === key ? 'page' : undefined} onClick={() => onTab(key)}>{label}<i /></button>)}
       </nav>
       {notice && <p className="pp-status" role="status">{notice}</p>}
@@ -75,9 +75,9 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
                 </div>
               </section>
               <div className="pp-portrait-foot">
-                <button className="pp-text-button" onClick={() => open('visibility')}>
-                  {account.friendsVisible && account.portraitId ? <Users size={14} /> : <LockKeyhole size={14} />}
-                  {account.friendsVisible && account.portraitId ? '好友可见' : '仅自己可见'}<ChevronRight size={12} />
+                <button className="pp-text-button" onClick={settings}>
+                  {account.resultVisibility !== 'private' ? <Users size={14} /> : <LockKeyhole size={14} />}
+                  {account.resultVisibility !== 'private' ? '好友可见' : '仅我可见'} · 权限管理<ChevronRight size={12} />
                 </button><span>新记录会留下来，展示哪一份由你决定。</span>
               </div>
             </> : <section className="pp-empty">
@@ -103,37 +103,39 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
               <div className="pp-row-actions"><button className="pp-text-button" onClick={() => onOpen(r)}>回看<ArrowUpRight size={13} /></button><button className="pp-text-button" onClick={() => open('record', r.id)}>管理</button></div>
             </article>)}
             {!displayed.length && <p className="pp-history-note">这里还没有记录。{!records.length ? '完成一次测试，就会留下第一份。' : '换个筛选看看。'}</p>}
-            <p className="pp-history-note">本机记录不会自动上传。同步、分享和删除，可以在每份记录的「管理」中操作。</p>
+            <p className="pp-history-note">展示结果沿用「权限管理」中的可见范围。其他记录的同步和删除，可以在每份记录的「管理」中操作。</p>
             <div className="pp-row-actions"><button className="pp-outline" onClick={onStartTest}>再测一次<ArrowRight size={14} /></button>
               {(pendingLegacy > 0 || records.some((r) => r.pendingAction)) && <button className="pp-text-button" disabled={busy} onClick={() => run(onRetryPending)}>重试待处理操作</button>}
               {records.some((r) => r.localPresent) && <button className="pp-text-button" onClick={() => open('clear')}>清空本机记录</button>}</div>
           </section>}
-          {tab === 'friends' && <Friends key={account.id || 'guest'} account={account} onCreate={onCreateIdentity} onFriend={onFriend} onBackup={settings} />}
+          {tab === 'friends' && <Friends key={account.id || 'guest'} account={account} onCreate={onCreateIdentity} onFriend={onFriend} onBackup={() => open('backup')} onSettings={settings} />}
+          {tab === 'settings' && <Settings key={account.id || 'guest'} account={account} records={records} pendingLegacy={pendingLegacy}
+            onCreate={onCreateIdentity} onAccount={() => open('identity')} onBackup={() => open('backup')}
+            onChoosePortrait={() => records.length ? open('choose') : onTab('profile')}
+            onClearLocal={() => open('clear')} onRefresh={onRefresh} onRetryPending={onRetryPending} />}
         </div>
       </main>
       {message && !modal && <p className="pp-status" role="status">{message}</p>}
-      {modal && <PersonalModal title={({ edit: '写一点关于你', identity: '身份与备份', choose: '哪一份更像现在的你？', visibility: '谁可以看到这份画像', record: '这一次的记录', clear: '清空本机记录？' })[modal.type]} onClose={() => setModal(null)} busy={busy}>
+      {modal && <PersonalModal title={({ edit: '写一点关于你', identity: '身份与备份', backup: '保存恢复密钥', choose: '哪一份更像现在的你？', record: '这一次的记录', clear: '清空本机记录？' })[modal.type]} onClose={() => setModal(null)} busy={busy}>
         {modal.type === 'edit' && <form onSubmit={(e) => { e.preventDefault(); run(() => saveProfile({ nickname: draftName, bio: draftBio }), true); }}>
           <label>展示名字<input value={draftName} onChange={(e) => setDraftName(e.target.value)} maxLength={24} required /></label>
           <label>关于我<textarea value={draftBio} onChange={(e) => setDraftBio(e.target.value)} maxLength={80} rows={3} placeholder="一句普通的话也很好。" /></label>
           <p className="pp-helper">{account.registered ? '名字和简介会随身份保存，好友可以看到。' : '先保存在这个浏览器。创建身份后，可以和朋友连接。'}</p>
           <button className="pp-primary" disabled={busy || !draftName.trim()}>{busy ? '正在保存…' : '保存资料'}<Check size={14} /></button>
         </form>}
-        {(modal.type === 'choose' || modal.type === 'visibility') && <>
+        {modal.type === 'choose' && <>
           {modal.type === 'choose' && <div>{records.map((r) => <button key={r.id} className="pp-choose" aria-pressed={choice === r.id} disabled={busy} onClick={() => setChoice(r.id)}>
             <span>{recordArchetype(r)?.symbol || '◌'}</span><div><strong>{recordArchetype(r)?.title || '画像'}</strong><small>{date(r)} · {r.answerCount} 题</small></div>{choice === r.id && <Check size={16} />}
           </button>)}</div>}
-          {account.registered ? <>
-            <label className="pp-check"><input type="checkbox" checked={visible} disabled={busy} onChange={(e) => setVisible(e.target.checked)} />允许已接受的好友查看这份完整画像</label>
-            <p className="pp-helper">保存会将选中的这一份记录同步到云端。好友可以看到画像内容，原始答案和其他记录保持私密。已有公开链接单独管理。</p>
-          </> : <p className="pp-helper">这次选择仅保存在本机。创建身份后，可以选择将画像展示给好友。</p>}
-          <button className="pp-primary" disabled={busy || !choice} onClick={() => run(() => selectPortrait(records.find((r) => r.id === choice), visible), true)}>{busy ? '正在保存…' : '就用这一份'}<Check size={14} /></button>
+          <p className="pp-helper">可见范围沿用「权限管理」：{account.resultVisibility === 'private' ? '仅我可见' : '好友可见'}。{account.registered ? '选好后会保存这份展示结果。' : '创建身份后按此权限同步。'}</p>
+          <button className="pp-primary" disabled={busy || !choice} onClick={() => run(() => selectPortrait(records.find((r) => r.id === choice)), true)}>{busy ? '正在保存…' : '就用这一份'}<Check size={14} /></button>
           {!account.registered && <button className="pp-text-button pp-spaced" onClick={onCreateIdentity}>创建身份<ArrowRight size={14} /></button>}
         </>}
         {modal.type === 'identity' && <AccountPanel key={account.id || 'guest'} account={account} onCreate={onCreateIdentity} />}
+        {modal.type === 'backup' && <AccountPanel key={account.id || 'guest'} account={account} initialView="backup" />}
         {modal.type === 'record' && (managed ? <>
           <p className="pp-dialog-description">{date(managed)} · {managed.answerCount} 题 · {recordArchetype(managed)?.title}</p>
-          <ShareControls record={managed} />
+          <ShareControls record={managed} sharing={false} onPermissions={() => { setModal(null); settings(); }} />
           {managed.localPresent && <details className="pp-danger"><summary>删除这份本机记录</summary><p>云端副本和公开链接保持原有状态。</p><button className="pp-outline" onClick={() => { onDeleteLocal(managed.id); setModal(null); }}>确认删除本机记录</button></details>}
         </> : <p className="pp-helper">这份记录已移除。</p>)}
         {modal.type === 'clear' && <><p className="pp-dialog-description">仅清除这个浏览器保存的画像与答案，云端副本和公开链接不变。本机独有的记录将无法找回。</p><button className="pp-outline" onClick={() => { onClearLocal(); setModal(null); }}>确认清空本机记录</button></>}
