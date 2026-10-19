@@ -29,6 +29,9 @@ function Reveal({ delay = 0, className = "", children }) {
   const reduceMotion = useReducedMotion();
   return (
     <motion.div
+      // 和 About 页完全一致的入场参数。
+      // filter 不是浏览器可加速的属性，framer-motion 只能用主线程逐帧插值，
+      // 所以它能不能跑顺，取决于同一帧里还有谁在抢主线程。
       initial={reduceMotion ? false : { opacity: 0, y: 20, filter: "blur(7px)" }}
       whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       viewport={{ once: true, margin: "-10% 0px -10% 0px" }}
@@ -60,7 +63,9 @@ export default function Next({ onBack, onStart, onOpenMy }) {
   return (
     <div className="flex-1 flex flex-col min-h-[100svh] relative overflow-hidden">
       <main className="relative z-10 h-[100svh] w-full overflow-y-auto custom-scrollbar">
-        <header className="sticky top-0 z-30 bg-blur-bg/70 backdrop-blur-md">
+        {/* 手机端不要 backdrop-blur：头部下面是逐帧刷新的星场，
+            每帧重新采样一次背景模糊，安卓上非常贵 */}
+        <header className="sticky top-0 z-30 bg-blur-bg/92 md:bg-blur-bg/70 md:backdrop-blur-md">
           <div className="relative flex h-16 items-center justify-between border-b border-blur-border/25 px-5 md:px-10">
             <button
               onClick={onBack}
