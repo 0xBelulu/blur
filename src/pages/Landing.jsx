@@ -127,7 +127,7 @@ export default function Landing({ onStart, onExplore, onOpenMy, onOpenNext }) {
           transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
         >
           <h1
-            className="text-[3.5rem] md:text-[5.5rem] lg:text-[6.5rem] leading-none font-medium tracking-tight text-blur-text mb-4 md:mb-6 select-none"
+            className="text-[3.5rem] md:text-[5.5rem] lg:text-[6.5rem] leading-none font-medium tracking-tight text-blur-text select-none"
             style={{
               textShadow: `
                 0 0 50px rgba(155,142,199,0.12),
@@ -138,6 +138,10 @@ export default function Landing({ onStart, onExplore, onOpenMy, onOpenNext }) {
           >
             Blur
           </h1>
+          {/* 中文名与英文名作为同一块标识：中文名不翻译、不缩写，只做第二层 */}
+          <p className="mt-3 md:mt-4 mb-4 md:mb-5 text-[16px] md:text-[19px] leading-none tracking-[0.4em] text-blur-text/70 select-none">
+            毛玻璃
+          </p>
           <p className="text-sm md:text-base text-blur-text-muted leading-relaxed tracking-widest md:tracking-[0.2em]">
             一种不精确的人格测试
           </p>

@@ -377,7 +377,7 @@ export default function About({ onBack, onStart, onOpenArchetypes, onOpenTraits,
                 index="01"
                 tag="ABOUT"
                 title="关于这个测试"
-                lead="我们不给你贴标签，不打分，不排名。Blur 不是那种做完之后给你四个字母、一个百分比、或者一句「你是 X 型人格」的测试。"
+                lead="我们不给你贴标签，不打分，不排名。毛玻璃不是那种做完之后给你四个字母、一个百分比、或者一句「你是 X 型人格」的测试。"
               />
             </motion.div>
 
@@ -550,7 +550,7 @@ export default function About({ onBack, onStart, onOpenArchetypes, onOpenTraits,
               </div>
 
               <p className="mt-16 text-[10px] leading-relaxed text-blur-text-muted/90">
-                Blur · 一种不精确的人格测试
+                毛玻璃 · 一种不精确的人格测试
                 <br />
                 结果不具备任何科学参考价值，但可能意外地准确
               </p>

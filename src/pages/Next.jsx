@@ -112,7 +112,7 @@ export default function Next({ onBack, onStart, onOpenMy }) {
 
               <Reveal delay={0.12}>
                 <p className="max-w-md text-[15px] leading-[1.8] text-blur-text md:text-[16px]">
-                  做完测试之后，Blur 要去哪，我们还没定。
+                  做完测试之后，毛玻璃要去哪，我们还没定。
                 </p>
                 <p className="mt-2 max-w-md text-[15px] leading-[1.8] text-blur-text/85 md:text-[16px]">
                   以下是我们的一个答案，不是唯一的答案。
@@ -247,7 +247,7 @@ export default function Next({ onBack, onStart, onOpenMy }) {
               )}
               <p className="mt-4 text-[12.5px] leading-relaxed text-blur-text/70">
                 {SURVEY_URL
-                  ? "五个问题，一分半。会跳转到外部问卷，那边不受 Blur 的匿名保护。"
+                  ? "五个问题，一分半。会跳转到外部问卷，那边不受毛玻璃的匿名保护。"
                   : "五个问题，一分半。入口上线后出现在这里。"}
               </p>
             </Reveal>
@@ -256,7 +256,7 @@ export default function Next({ onBack, onStart, onOpenMy }) {
           <section className="px-5 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-4 text-center md:px-10">
             <Reveal>
               <p className="text-[11px] leading-relaxed text-blur-text-muted">
-                Blur · 下一步
+                毛玻璃 · 下一步
                 <br />
                 它不是一份路线图，是一个还没决定的问题
               </p>
