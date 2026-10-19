@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { UserRound, Sparkles } from "lucide-react";
+import { UserRound, Sparkles, ArrowUpRight } from "lucide-react";
 import GlassButton from "../components/GlassButton";
 
 const TIPS = [
@@ -18,7 +18,7 @@ const TIPS = [
   "走神是人类最高效的并行计算。",
 ];
 
-const ACTION_CLASS = "min-h-13 flex items-center justify-center";
+const ACTION_CLASS = "min-h-13 w-full max-w-[248px] md:w-auto md:max-w-none flex items-center justify-center";
 
 function useRotatingTip(interval = 4000) {
   const [index, setIndex] = useState(0);
@@ -51,7 +51,7 @@ function RotatingTip() {
   );
 }
 
-export default function Landing({ onStart, onExplore, onOpenMy }) {
+export default function Landing({ onStart, onExplore, onOpenMy, onOpenNext }) {
   const actions = [
     {
       label: "开始测试",
@@ -77,9 +77,9 @@ export default function Landing({ onStart, onExplore, onOpenMy }) {
   ];
 
   return (
-    <div className="flex-1 flex flex-col md:flex-row items-center md:justify-center px-6 md:px-16 lg:px-24 pt-20 pb-12 md:py-16 min-h-[100svh] relative overflow-hidden max-w-6xl mx-auto w-full">
+    <div className="flex-1 flex flex-col md:flex-row items-center md:justify-center px-6 md:px-16 lg:px-24 pt-14 pb-[calc(6rem+env(safe-area-inset-bottom))] md:py-16 min-h-[100svh] relative overflow-hidden max-w-6xl mx-auto w-full">
       {/* Left — Brand */}
-      <div className="relative z-10 w-full md:w-1/2 text-center md:text-left flex flex-col justify-start md:justify-center md:pr-8 lg:pr-16 mb-10 md:mb-0">
+      <div className="relative z-10 w-full md:w-1/2 text-center md:text-left flex flex-col justify-start md:justify-center md:pr-8 lg:pr-16 mb-7 md:mb-0">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -152,7 +152,7 @@ export default function Landing({ onStart, onExplore, onOpenMy }) {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.7 }}
-          className="mb-8 md:mb-12 w-full text-center md:text-left"
+          className="mb-6 md:mb-12 w-full text-center md:text-left"
         >
           <div className="pt-5 border-t border-blur-border/20 text-left pl-4 md:pl-0">
             <p className="text-[15px] text-blur-text leading-relaxed mb-3">
@@ -169,7 +169,7 @@ export default function Landing({ onStart, onExplore, onOpenMy }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5, duration: 0.8 }}
-          className="mb-8 md:mb-12 h-6 w-full flex items-center justify-center md:justify-start"
+          className="mb-5 md:mb-12 min-h-[2.75rem] w-full flex items-center justify-center md:justify-start px-2"
         >
           <RotatingTip />
         </motion.div>
@@ -178,7 +178,7 @@ export default function Landing({ onStart, onExplore, onOpenMy }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7, duration: 0.6 }}
-          className="flex items-center justify-center md:justify-start gap-3 mb-8 md:mb-12 w-full"
+          className="flex items-center justify-center md:justify-start gap-3 mb-6 md:mb-12 w-full"
         >
           <span className="w-8 h-px bg-blur-border/60" />
           <span className="text-[11px] text-blur-text-light tracking-wider">
@@ -187,7 +187,7 @@ export default function Landing({ onStart, onExplore, onOpenMy }) {
           <span className="w-8 h-px bg-blur-border/60" />
         </motion.div>
 
-        <div className="flex flex-col items-center md:items-start gap-3 w-full">
+        <div className="flex flex-col items-center md:items-start gap-2.5 md:gap-3 w-full">
           {actions.map(({ label, icon: Icon, variant, onClick, className }) => (
             <GlassButton
               key={label}
@@ -201,11 +201,29 @@ export default function Landing({ onStart, onExplore, onOpenMy }) {
           ))}
         </div>
 
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.45, duration: 0.6 }}
+          onClick={onOpenNext}
+          className="group mt-5 md:mt-8 inline-flex items-center gap-2 text-[12px] tracking-[0.18em] text-blur-text/85 transition-colors duration-300 hover:text-blur-text cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blur-accent/40 rounded-sm"
+        >
+          <span className="h-1 w-1 rounded-full bg-blur-accent/85 animate-pulse-glow" aria-hidden="true" />
+          <span className="relative">
+            有一片夜空，还没亮起来
+            <span className="absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 bg-blur-accent/50 transition-transform duration-500 ease-out group-hover:scale-x-100 group-focus-visible:scale-x-100" />
+          </span>
+          <ArrowUpRight
+            size={11}
+            className="opacity-60 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+          />
+        </motion.button>
+
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.3, duration: 0.6 }}
-          className="mt-12 md:mt-16 text-[11px] text-blur-text-light/80 italic leading-relaxed text-center md:text-left w-full"
+          className="mt-6 md:mt-10 text-[11.5px] text-blur-text/75 italic leading-relaxed text-center md:text-left w-full"
         >
           本测试结果不具备任何科学参考价值，但可能意外地准确
         </motion.p>

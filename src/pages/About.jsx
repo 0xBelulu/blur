@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowLeft, ArrowRight, ArrowUpRight, Hash, List, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, CircleDot, Hash, List, Sparkles } from "lucide-react";
 import GlassButton from "../components/GlassButton";
 import OpticalStage from "../components/optical/OpticalStage";
 import { ABOUT_PRESET } from "../components/optical/presets";
@@ -251,12 +251,13 @@ function TraitFragments({ onOpen }) {
   );
 }
 
-export default function About({ onBack, onStart, onOpenArchetypes, onOpenTraits, onOpenQuestions }) {
+export default function About({ onBack, onStart, onOpenArchetypes, onOpenTraits, onOpenQuestions, onOpenNext }) {
   const reveal = useReveal();
   const progressRef = useRef(null);
   const aboutRef = useRef(null);
   const archetypesRef = useRef(null);
   const traitsRef = useRef(null);
+  const nextRef = useRef(null);
 
   const handleScroll = (event) => {
     const el = event.currentTarget;
@@ -343,10 +344,11 @@ export default function About({ onBack, onStart, onOpenArchetypes, onOpenTraits,
                 { key: "about", index: "01", label: "关于" },
                 { key: "archetypes", index: "02", label: "原型" },
                 { key: "traits", index: "03", label: "特质" },
+                { key: "next", index: "04", label: "下一步" },
               ].map((item) => (
                 <button
                   key={item.key}
-                  onClick={() => jump({ about: aboutRef, archetypes: archetypesRef, traits: traitsRef }[item.key])}
+                  onClick={() => jump({ about: aboutRef, archetypes: archetypesRef, traits: traitsRef, next: nextRef }[item.key])}
                   className="group inline-flex items-center gap-2 rounded-full border border-blur-border/40 bg-white/35 px-3.5 py-1.5 text-[11px] text-blur-text/85 backdrop-blur-sm transition-all duration-300 hover:border-blur-border/60 hover:bg-white/50 hover:text-blur-text cursor-pointer"
                 >
                   <span className="text-[10px] tabular-nums tracking-[0.18em] text-blur-text-muted group-hover:text-blur-accent">
@@ -477,6 +479,45 @@ export default function About({ onBack, onStart, onOpenArchetypes, onOpenTraits,
 
             <motion.div {...reveal(0.05)} className="md:pl-[88px]">
               <MoreLink icon={Hash} label="查看全部特质标签" onClick={onOpenTraits} />
+            </motion.div>
+          </section>
+
+          <div className="mx-5 h-px bg-gradient-to-r from-transparent via-blur-border/50 to-transparent md:mx-10" />
+
+          {/* ═══ 04 下一步 ═══ */}
+          <section ref={nextRef} className="scroll-mt-16 px-5 py-14 md:px-10 md:py-20">
+            <motion.div {...reveal(0)}>
+              <SectionHead
+                index="04"
+                tag="NEXT"
+                title="然后呢"
+                lead="这份画像不是结论，是一个坐标。而坐标只有放进一张图里，才有意义。"
+              />
+            </motion.div>
+
+            <motion.blockquote
+              {...reveal(0.1)}
+              className="mt-9 border-l border-blur-accent/40 pl-5 md:ml-[88px] md:pl-6"
+            >
+              <p className="text-[17px] leading-[1.85] text-blur-text/85 md:text-lg">
+                这不是一个广场，是一片夜空。
+              </p>
+            </motion.blockquote>
+
+            <motion.div {...reveal(0.15)} className="mt-8 space-y-5 md:pl-[88px]">
+              <p className="text-[14px] leading-[1.9] text-blur-text/80 md:text-[15px]">
+                现在这个坐标只有你看得见。把它发给一个人，两张画像并排，会看到一些平时不会说出口的话——这已经是社区的第一种形态：不是很多人聚在一起，是两个人终于看见彼此。
+              </p>
+              <p className="text-[14px] leading-[1.9] text-blur-text/80 md:text-[15px]">
+                再往后，每一份愿意公开的画像，会变成一片夜空里的一个点。你能看见自己在哪，也感觉得到附近有人，但看不清他们是谁。
+              </p>
+              <p className="text-[14px] leading-[1.9] text-blur-text/80 md:text-[15px]">
+                夜空还没亮起来。它缺的不是时间，是足够多的点。
+              </p>
+            </motion.div>
+
+            <motion.div {...reveal(0.05)} className="md:pl-[88px]">
+              <MoreLink icon={CircleDot} label="看看这片夜空会是什么样" onClick={onOpenNext} />
             </motion.div>
           </section>
 

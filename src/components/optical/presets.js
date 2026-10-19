@@ -41,6 +41,8 @@ export const PAGE_BACKGROUND_PRESETS = {
   landing: { atmosphere: 1, optical: 'landing' },
   test: { atmosphere: 1, optical: 'test' },
   about: { atmosphere: 0.7 },
+  // 下一步页自带星场，全屏背景压暗，避免两套光场打架
+  next: { atmosphere: 0.42 },
   me: { atmosphere: 0.34 },
   identity: { atmosphere: 0.34 },
   invite: { atmosphere: 0.34 },

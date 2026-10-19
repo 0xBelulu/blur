@@ -8,6 +8,7 @@ import Test from './pages/Test';
 import Loading from './pages/Loading';
 import Result from './pages/Result';
 import About from './pages/About';
+import Next from './pages/Next';
 import Archetypes from './pages/Archetypes';
 import Traits from './pages/Traits';
 import Questions from './pages/Questions';
@@ -41,7 +42,7 @@ function readRoute() {
   if (screen === 'result') return getHistoryRecords().some((record) => record.id === id && record.localPresent)
     ? { screen, id } : { screen: 'me' };
   if (screen === 'history') return { screen: 'me' };
-  return { screen: ['about', 'archetypes', 'traits', 'questions', 'me', 'admin'].includes(screen) ? screen : 'landing' };
+  return { screen: ['about', 'next', 'archetypes', 'traits', 'questions', 'me', 'admin'].includes(screen) ? screen : 'landing' };
 }
 
 export default function App() {
@@ -55,6 +56,8 @@ export default function App() {
   const [account, setAccount] = useState(getAccountInfo);
   const [unsavedResult, setUnsavedResult] = useState(null);
   const [notice, setNotice] = useState('');
+  // The "next" page is reachable from two places; its back button returns to the one you came from.
+  const [nextFrom, setNextFrom] = useState('landing');
   const [peer, setPeer] = useState(null);
   const [comparisonRecordId, setComparisonRecordId] = useState(null);
   const loadingTimer = useRef(null);
@@ -119,6 +122,11 @@ export default function App() {
     clearTimeout(loadingTimer.current);
     comparisonTarget.current = null;
     navigate('landing');
+  };
+
+  const openNext = (from) => {
+    setNextFrom(from === 'about' ? 'about' : 'landing');
+    navigate('next');
   };
 
   const start = (shareId = null) => {
@@ -193,7 +201,8 @@ export default function App() {
   const record = records.find((item) => item.id === route.id);
   let content;
   switch (route.screen) {
-    case 'about': content = <About onBack={home} onStart={() => start()} onOpenArchetypes={() => navigate('archetypes')} onOpenTraits={() => navigate('traits')} onOpenQuestions={() => navigate('questions')} />; break;
+    case 'about': content = <About onBack={home} onStart={() => start()} onOpenArchetypes={() => navigate('archetypes')} onOpenTraits={() => navigate('traits')} onOpenQuestions={() => navigate('questions')} onOpenNext={() => openNext('about')} />; break;
+    case 'next': content = <Next onBack={() => navigate(nextFrom)} onStart={() => start()} onOpenMy={openMy} />; break;
     case 'archetypes': content = <Archetypes onBack={() => navigate('about')} />; break;
     case 'traits': content = <Traits onBack={() => navigate('about')} />; break;
     case 'questions': content = <Questions onBack={() => navigate('about')} />; break;
@@ -221,7 +230,7 @@ export default function App() {
       onLoaded={(profile) => setPeer({ shareId: route.id, profile })}
       onHome={home} onCompare={() => { setComparisonRecordId(null); navigate('compare', route.id); }} onView={() => navigate('view', route.id)}
       onStart={() => start(route.id)} />; break;
-    default: content = <Landing onStart={() => start()} onExplore={() => navigate('about')} onOpenMy={openMy} />;
+    default: content = <Landing onStart={() => start()} onExplore={() => navigate('about')} onOpenMy={openMy} onOpenNext={() => openNext('landing')} />;
   }
 
   return <div className="relative isolate min-h-[100svh] bg-blur-bg">
