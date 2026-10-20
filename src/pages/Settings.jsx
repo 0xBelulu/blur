@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ArrowRight, ChevronRight } from 'lucide-react';
 import ShareControls from '../components/ShareControls';
-import { PersonalModal } from '../components/PersonalElements';
+import { PersonalModal, CloudState } from '../components/PersonalElements';
 import { recordArchetype, displayRecord } from '../utils/portraits';
 import { friendCode, resetFriendCode, savePrivacy, saveResultVisibility } from '../utils/people';
 
@@ -90,6 +90,7 @@ export default function Settings({ account, records, pendingLegacy, onCreate, on
       <div className="pp-group-body">
         <h3 className="pp-group-title" id="identity-title">这个身份</h3>
         <p className="pp-group-lead">名字、密钥，以及它在别的设备上的样子。</p>
+        <CloudState registered={registered} cloudRecords={records.filter((r) => r.cloudId).length} />
         <div className="pp-rows">
           <div className="pp-row">
             <div className="pp-row-main"><strong>名字与简介</strong><small>{account.nickname || '还没起名字'} · {account.bio || '还没写介绍。'}</small></div>

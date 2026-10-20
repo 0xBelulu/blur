@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowUpRight, ArrowRight, Check, ChevronRight, CloudUpload, 
 import AccountPanel from '../components/AccountPanel';
 import ShareControls from '../components/ShareControls';
 import RecordBadges from '../components/RecordBadges';
-import { PersonalModal, PortraitField, PortraitMark } from '../components/PersonalElements';
+import { PersonalModal, PortraitField, PortraitMark, CloudState } from '../components/PersonalElements';
 import { recordArchetype, displayRecord } from '../utils/portraits';
 import { saveProfile } from '../utils/cloud';
 import { selectPortrait } from '../utils/people';
@@ -49,7 +49,8 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
         <button className="pp-text-button pp-backup" onClick={settings}><SettingsIcon size={17} />设置</button>
       </header>
       <section className="pp-identity" aria-label="个人介绍">
-        <div className="pp-person-head"><PortraitMark color={profile?.color} /><div><p className="pp-eyebrow">我的空间</p><h1>{account.nickname || '还没起名字'}</h1></div></div>
+        <div className="pp-person-head"><PortraitMark color={profile?.color} /><div><p className="pp-eyebrow">我的空间</p><h1>{account.nickname || '还没起名字'}</h1>
+          <CloudState registered={account.registered} cloudRecords={records.filter((r) => r.cloudId).length} /></div></div>
         <button className="pp-text-button" onClick={() => open('edit')}><Pencil size={14} />编辑资料</button>
         <p className="pp-bio">{account.bio || '写一点关于自己的事，或先留个空白。'}</p>
       </section>

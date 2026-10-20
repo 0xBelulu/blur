@@ -6,6 +6,18 @@ export function PortraitMark({ color = [180, 185, 195] }) {
   return <span className="pp-mark" style={{ '--ink': color.join(',') }} aria-hidden="true"><i /><i /><i /></span>;
 }
 
+// The one place that answers "is this account only here, or is there something
+// on the server?" — identity state first, then how much of it is actually up.
+export function CloudState({ registered, cloudRecords = 0 }) {
+  return <p className={`pp-cloud-state ${registered ? 'is-cloud' : 'is-local'}`}>
+    <i aria-hidden="true" />
+    <strong>{registered ? '已存到云端' : '只在这台设备'}</strong>
+    <span>{registered
+      ? (cloudRecords ? `${cloudRecords} 份画像在云端` : '还没有画像上云')
+      : '服务器上还没有你的任何东西'}</span>
+  </p>;
+}
+
 export function PortraitField({ profile }) {
   return <div className="pp-field" style={{ '--ink': (profile.color || [180, 185, 195]).join(',') }} aria-hidden="true">
     <div className="pp-wash" /><div className="pp-orbit pp-orbit-one" /><div className="pp-orbit pp-orbit-two" /><div className="pp-orbit pp-orbit-three" />
