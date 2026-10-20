@@ -5,7 +5,7 @@ import { exportRecoveryKey, restoreIdentity } from '../utils/cloud';
 import { updateAccountInfo } from '../utils/identity';
 import { friendCode } from '../utils/people';
 
-export default function AccountPanel({ account, onCreate, initialView = 'menu' }) {
+export default function AccountPanel({ account, onCreate, initialView = 'menu', onSignOut }) {
   const dismiss = useModalDismiss();
   const [view, setView] = useState(initialView);
   const [recoveryKey, setRecoveryKey] = useState('');
@@ -53,6 +53,9 @@ export default function AccountPanel({ account, onCreate, initialView = 'menu' }
         <button className="pp-entry" onClick={() => { setMessage(''); setView('restore'); }}>
           <span><strong>{account.registered ? '换用另一个身份' : '用恢复密钥找回'}</strong><small>从另一台设备保存的密钥恢复</small></span><ArrowUpRight size={15} />
         </button>
+        {account.registered && onSignOut && <button className="pp-entry" onClick={() => { setMessage(''); setView('leave'); }}>
+          <span><strong>退出这台设备</strong><small>本机画像留下，云端身份仍在</small></span><ArrowUpRight size={15} />
+        </button>}
       </div>
       {message && <p role="status" className="pp-account-message">{message}</p>}
     </>}
@@ -73,6 +76,17 @@ export default function AccountPanel({ account, onCreate, initialView = 'menu' }
           className="pp-primary" onClick={() => run(async () => {
             await restoreIdentity(inputKey); setInputKey(''); setMessage('身份已恢复，云端画像已列出；本机画像没有上传');
           })}>{busy ? '正在验证…' : '恢复这个身份'}<ArrowRight size={14} /></button>
+      </div>
+      {message && <p role="status" className="pp-account-message">{message}</p>}
+    </div>}
+
+    {view === 'leave' && <div className="pp-flow">
+      {initialView === 'menu' && <button className="pp-back" onClick={() => setView('menu')}><ArrowLeft size={13} />返回</button>}
+      <h3 className="pp-flow-title">退出这台设备</h3>
+      <p className="pp-account-help">退出后，这个浏览器不再记得这个身份。本机画像与答案会留下，成为只属于这台设备的记录；云端身份、好友和分享链接都还在。</p>
+      {!account.backupSavedAt && <p className="pp-account-message">你还没有保存恢复密钥。退出后，这个身份将无法再被找回。</p>}
+      <div className="pp-account-links">
+        <button className="pp-primary" disabled={busy} onClick={() => run(onSignOut)}>{busy ? '正在退出…' : '确认退出'}<ArrowRight size={14} /></button>
       </div>
       {message && <p role="status" className="pp-account-message">{message}</p>}
     </div>}

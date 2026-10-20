@@ -250,6 +250,16 @@
 .pp-note{margin:0;font-size:11px;line-height:1.9;color:#948a80}
 .pp-row .pp-text-button{flex-shrink:0;font-size:11.5px!important;padding:0!important;gap:2px}
 .pp-text-button.is-danger{color:#977466!important}
+.pp-outline.is-danger{color:#977466!important;border-color:rgba(151,116,102,.35)}
+.pp-outline.is-danger:hover{background:rgba(151,116,102,.07)}
+.pp-dialog-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:22px}
+.pp-dialog-list{margin:0 0 20px;padding:0;list-style:none;font-size:12px;line-height:2;color:var(--muted)}
+.pp-dialog-list li{position:relative;padding-left:15px}
+.pp-dialog-list li::before{content:"";position:absolute;left:0;top:.9em;width:4px;height:1px;background:#b6a99d}
+.pp-dialog-note{margin:0 0 18px;font-size:11.5px;line-height:1.9;color:#948a80}
+.pp-dialog-note.is-warning{padding:10px 13px;color:#977466;background:rgba(151,116,102,.06);border-left:2px solid rgba(151,116,102,.3)}
+.pp-friend[data-deleted] .pp-mark{opacity:.45}
+.pp-friend-deleted{font-size:11.5px;color:#a3968b}
 .pp-choice{display:flex;flex-wrap:wrap;gap:8px 26px}
 .pp-choice button{position:relative;border:0;background:none;padding:0 0 8px;font-size:13px;line-height:1.5;color:#8a8076;letter-spacing:.02em;transition:color .18s}
 .pp-choice button[aria-checked=true]{color:#5b5049}

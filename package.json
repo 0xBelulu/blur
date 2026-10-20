@@ -16,6 +16,7 @@
     "db:migrate:local": "wrangler d1 migrations apply blur --local",
     "db:migrate:remote": "wrangler d1 migrations apply blur --remote",
     "admin:token": "node scripts/admin-token.js",
+    "ghosts:purge": "node scripts/purge-ghosts.js",
     "deploy": "wrangler pages deploy dist",
     "audit:balance": "node scripts/balance-audit.js --trials 5000",
     "audit:exposure": "node scripts/analyze-exposure.js",

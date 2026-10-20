@@ -14,7 +14,8 @@ import './Personal.css';
 function date(record) { return new Date(record.createdAt).toLocaleDateString('zh-CN'); }
 
 export default function My({ records = [], account = {}, notice, onBack, onOpen, onDeleteLocal, onClearLocal,
-  onRefresh, onRetryPending, onStartTest, onCreateIdentity, onFriend, onTab, tab = 'profile', pendingLegacy = 0 }) {
+  onRefresh, onRetryPending, onStartTest, onCreateIdentity, onFriend, onTab, tab = 'profile', pendingLegacy = 0,
+  onSignOut, onDeleteIdentity }) {
   const [modal, setModal] = useState(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -116,7 +117,8 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
           {tab === 'settings' && <Settings key={account.id || 'guest'} account={account} records={records} pendingLegacy={pendingLegacy}
             onCreate={onCreateIdentity} onAccount={() => open('identity')} onBackup={() => open('backup')} onEditProfile={() => open('edit')}
             onChoosePortrait={() => records.length ? open('choose') : onTab('profile')}
-            onClearLocal={() => open('clear')} onRefresh={onRefresh} onRetryPending={onRetryPending} />}
+            onClearLocal={() => open('clear')} onRefresh={onRefresh} onRetryPending={onRetryPending}
+            onSignOut={onSignOut} onDeleteIdentity={onDeleteIdentity} />}
         </div>
       </main>
       {message && !modal && <p className="pp-status" role="status">{message}</p>}
@@ -135,7 +137,7 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
           <button className="pp-primary" disabled={busy || !choice} onClick={() => run(() => selectPortrait(records.find((r) => r.id === choice)), true)}>{busy ? '正在保存…' : '就用这一份'}<Check size={14} /></button>
           {!account.registered && <button className="pp-text-button pp-spaced" onClick={onCreateIdentity}>创建身份<ArrowRight size={14} /></button>}
         </>}
-        {modal.type === 'identity' && <AccountPanel key={account.id || 'guest'} account={account} onCreate={onCreateIdentity} />}
+        {modal.type === 'identity' && <AccountPanel key={account.id || 'guest'} account={account} onCreate={onCreateIdentity} onSignOut={onSignOut} />}
         {modal.type === 'backup' && <AccountPanel key={account.id || 'guest'} account={account} initialView="backup" />}
         {modal.type === 'record' && (managed ? <>
           <p className="pp-dialog-description">{date(managed)} · {managed.answerCount} 题 · {recordArchetype(managed)?.title}</p>

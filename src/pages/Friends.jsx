@@ -77,9 +77,9 @@ export default function Friends({ account, onCreate, onFriend, onBackup, onSetti
 
     {pending.length > 0 && <section className="pp-friend-group">
       <div className="pp-friend-group-head"><h3>等待回应</h3><span>{pending.length}</span></div>
-      {pending.map((c) => <article key={c.id} className="pp-friend">
-        <PortraitMark /><div className="pp-friend-info"><h3>{c.person.nickname || '还没起名字'}</h3><p>{c.person.bio}</p><small>{c.direction === 'incoming' ? '想和你成为好友' : '已送出申请，等待对方接受'}</small></div>
-        <div className="pp-row-actions">{c.direction === 'incoming' && <button className="pp-outline" disabled={busy} onClick={() => mutate(c, true)}>接受</button>}
+      {pending.map((c) => <article key={c.id} className="pp-friend" data-deleted={c.person.deleted ? 'true' : undefined}>
+        <PortraitMark /><div className="pp-friend-info"><h3>{c.person.deleted ? '已注销的身份' : (c.person.nickname || '还没起名字')}</h3><p>{c.person.deleted ? '这个身份已被删除。' : c.person.bio}</p><small>{c.person.deleted ? '等待清理' : c.direction === 'incoming' ? '想和你成为好友' : '已送出申请，等待对方接受'}</small></div>
+        <div className="pp-row-actions">{c.direction === 'incoming' && !c.person.deleted && <button className="pp-outline" disabled={busy} onClick={() => mutate(c, true)}>接受</button>}
           <button className="pp-text-button" disabled={busy} onClick={() => mutate(c)}>{c.direction === 'incoming' ? '暂不接受' : '取消申请'}</button></div>
       </article>)}
     </section>}
@@ -87,9 +87,13 @@ export default function Friends({ account, onCreate, onFriend, onBackup, onSetti
     <section className="pp-friend-group">
       <div className="pp-friend-group-head"><h3>已经是好友</h3><span>{friends.length || ''}</span>
         <button className="pp-icon-button" onClick={reload} title="刷新好友列表" aria-label="刷新好友列表"><RefreshCw size={13} /></button></div>
-      {friends.map((c) => <article className="pp-friend" key={c.id}>
-        <PortraitMark /><div className="pp-friend-info"><h3><button className="pp-name-button" onClick={() => onFriend(c.person.publicId)}>{c.person.nickname || '还没起名字'}</button></h3><p>{c.person.bio || '还没写介绍。'}</p><small>{new Date(c.acceptedAt).toLocaleDateString('zh-CN')} 成为好友</small></div>
-        <button className="pp-outline" onClick={() => onFriend(c.person.publicId)}>看看 ta<ArrowRight size={14} /></button>
+      {friends.map((c) => <article className="pp-friend" key={c.id} data-deleted={c.person.deleted ? 'true' : undefined}>
+        <PortraitMark /><div className="pp-friend-info">
+          <h3>{c.person.deleted ? <span className="pp-friend-deleted">已注销的身份</span> : <button className="pp-name-button" onClick={() => onFriend(c.person.publicId)}>{c.person.nickname || '还没起名字'}</button>}</h3>
+          <p>{c.person.deleted ? '这个身份已被删除，画像与好友码都不再可用。' : (c.person.bio || '还没写介绍。')}</p>
+          <small>{c.person.deleted ? '30 天后会自动移除' : `${new Date(c.acceptedAt).toLocaleDateString('zh-CN')} 成为好友`}</small>
+        </div>
+        {!c.person.deleted && <button className="pp-outline" onClick={() => onFriend(c.person.publicId)}>看看 ta<ArrowRight size={14} /></button>}
         <button className="pp-text-button" onClick={() => { setMessage(''); setModal(c); }}>管理</button>
       </article>)}
       {connections && !friends.length && <p className="pp-history-note">这里还空着。把上面那串好友码或邀请链接发给朋友，等一个熟悉的名字出现。</p>}
@@ -97,9 +101,11 @@ export default function Friends({ account, onCreate, onFriend, onBackup, onSetti
 
     {!account.backupSavedAt && <p className="pp-connect-foot">换设备时，需要恢复密钥才能找回这个身份和好友。<button className="pp-inline-link" onClick={onBackup}>先保存一份</button></p>}
     {message && <p className="pp-status" role="status">{message}</p>}
-    {modal && <PersonalModal title="解除这段好友连接？" busy={busy} onClose={() => setModal(null)}>
-      <p className="pp-dialog-description">与 {modal.person.nickname || '这位朋友'} 解除后，双方不能再通过好友入口读取画像。原有公开分享链接分别管理。</p>
-      <button className="pp-outline" disabled={busy} onClick={() => mutate(modal)}>确认解除</button>
+    {modal && <PersonalModal title={modal.person.deleted ? '移除这段关系？' : '解除这段好友连接？'} busy={busy} onClose={() => setModal(null)}>
+      <p className="pp-dialog-description">{modal.person.deleted
+        ? '对方已经注销了这个身份。移除后，这条记录会从这里消失。'
+        : `与 ${modal.person.nickname || '这位朋友'} 解除后，双方不能再通过好友入口读取画像。原有公开分享链接分别管理。`}</p>
+      <button className="pp-outline" disabled={busy} onClick={() => mutate(modal)}>{modal.person.deleted ? '确认移除' : '确认解除'}</button>
     </PersonalModal>}
   </section>;
 }

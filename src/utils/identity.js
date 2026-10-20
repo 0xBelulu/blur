@@ -53,3 +53,11 @@ export function adoptIdentity(token, account) {
   localStorage.setItem(ACCOUNT_KEY, JSON.stringify({ ...account, registered: true, lastVerifiedAt: Date.now() }));
   window.dispatchEvent?.(new Event('blur-account-change'));
 }
+
+// Leaving a device only drops the credential and its cached identity. Device
+// portraits are the user's own copies and stay until they clear them.
+export function forgetDeviceIdentity() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(ACCOUNT_KEY);
+  window.dispatchEvent?.(new Event('blur-account-change'));
+}

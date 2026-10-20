@@ -9,10 +9,13 @@ const VISIBILITY = [['private', '仅我可见'], ['friends', '好友可见'], ['
 const day = (record) => record ? new Date(record.createdAt).toLocaleDateString('zh-CN') : '';
 
 export default function Settings({ account, records, pendingLegacy, onCreate, onAccount, onBackup, onEditProfile,
-  onChoosePortrait, onClearLocal, onRefresh, onRetryPending }) {
+  onChoosePortrait, onClearLocal, onRefresh, onRetryPending, onSignOut, onDeleteIdentity }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [confirmReset, setConfirmReset] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(null);
+  const [acknowledged, setAcknowledged] = useState(false);
+  const [clearLocalToo, setClearLocalToo] = useState(false);
   const registered = !!account.registered;
   const shared = records.filter((r) => r.shareId || r.pendingAction === 'revoke' || r.pendingAction === 'publish');
   const resultVisibility = account.resultVisibility || 'friends';
@@ -127,9 +130,57 @@ export default function Settings({ account, records, pendingLegacy, onCreate, on
       </div>
     </section>
 
+    <section className="pp-group" aria-labelledby="leave-title">
+      <span className="pp-group-index" aria-hidden="true">04</span>
+      <div className="pp-group-body">
+        <h3 className="pp-group-title" id="leave-title">离开</h3>
+        <p className="pp-group-lead">这台设备还要不要记得你。</p>
+        <div className="pp-rows">
+          <div className="pp-row">
+            <div className="pp-row-main"><strong>退出这台设备</strong><small>{registered
+              ? '本机画像会留下，云端身份与好友都还在。用恢复密钥可以随时回来。'
+              : '这个浏览器还没有创建身份，退出只是换一个新的本机身份。'}</small></div>
+            <button className="pp-text-button" disabled={busy} onClick={() => { setMessage(''); setConfirmLeave('signout'); }}>退出<ChevronRight size={12} /></button>
+          </div>
+          <div className="pp-row">
+            <div className="pp-row-main"><strong>删除这个身份</strong><small>{registered
+              ? '永久删除云端画像、好友码与分享链接，无法恢复。'
+              : '还没有云端身份可以删除。'}</small></div>
+            <button className="pp-text-button is-danger" disabled={busy || !registered}
+              onClick={() => { setMessage(''); setAcknowledged(false); setClearLocalToo(false); setConfirmLeave('delete'); }}>删除<ChevronRight size={12} /></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     {confirmReset && <PersonalModal title="换一个新的好友码？" busy={busy} onClose={() => { setConfirmReset(false); setMessage(''); }}>
       <p className="pp-dialog-description">旧好友码和所有旧邀请链接会立即失效。已有好友和待处理的申请都会保留；之后邀请朋友，请分享新的好友码。</p>
       <button className="pp-primary" disabled={busy} onClick={() => run(async () => { await resetFriendCode(); setConfirmReset(false); }, '好友码已更换。')}>{busy ? '正在更换…' : '确认更换'}<ArrowRight size={14} /></button>
+      {message && <p className="pp-status" role="status">{message}</p>}
+    </PersonalModal>}
+    {confirmLeave === 'signout' && <PersonalModal title="退出这台设备？" busy={busy} onClose={() => { setConfirmLeave(null); setMessage(''); }}>
+      <p className="pp-dialog-description">这个浏览器会忘记当前身份。本机画像与答案留在原处，成为只属于这台设备的记录；云端身份、好友和分享链接都不受影响。</p>
+      {!account.backupSavedAt && <p className="pp-dialog-note is-warning">你还没有保存恢复密钥。退出后，这个身份将无法再被找回。</p>}
+      <div className="pp-dialog-actions">
+        {!account.backupSavedAt && <button className="pp-outline" disabled={busy} onClick={() => { setConfirmLeave(null); onBackup(); }}>先保存恢复密钥</button>}
+        <button className="pp-primary" disabled={busy} onClick={() => run(onSignOut, '已退出这个身份。')}>{busy ? '正在退出…' : '确认退出'}<ArrowRight size={14} /></button>
+      </div>
+      {message && <p className="pp-status" role="status">{message}</p>}
+    </PersonalModal>}
+
+    {confirmLeave === 'delete' && <PersonalModal title="删除这个身份？" busy={busy} onClose={() => { setConfirmLeave(null); setMessage(''); }}>
+      <ul className="pp-dialog-list">
+        <li>云端画像与原始答案会被删除，无法恢复。</li>
+        <li>所有分享链接立即失效，好友码停止使用。</li>
+        <li>好友列表里会显示「已注销」，30 天后自动移除。</li>
+        <li>恢复密钥随之失效，没有撤销这一步。</li>
+      </ul>
+      <label className="pp-check"><input type="checkbox" checked={acknowledged} onChange={(event) => setAcknowledged(event.target.checked)} />我明白这个操作无法撤销。</label>
+      <label className="pp-check"><input type="checkbox" checked={clearLocalToo} onChange={(event) => setClearLocalToo(event.target.checked)} />同时清除这台设备上的画像与答案（默认保留）</label>
+      <div className="pp-dialog-actions">
+        <button className="pp-outline is-danger" disabled={busy || !acknowledged}
+          onClick={() => run(() => onDeleteIdentity({ clearLocal: clearLocalToo }), '身份已删除。')}>{busy ? '正在删除…' : '确认删除这个身份'}</button>
+      </div>
       {message && <p className="pp-status" role="status">{message}</p>}
     </PersonalModal>}
   </section>;

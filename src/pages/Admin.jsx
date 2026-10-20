@@ -123,7 +123,7 @@ export default function Admin({ onBack }) {
     <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
       <Stat label="完成测试" value={finished} note="匿名计数，含未注册访客" />
       <Stat label="开始测试" value={started} note={rate === null ? '暂无样本' : `完成率 ${rate}%`} />
-      <Stat label="注册身份" value={cloud.accounts} note={`本期新增 ${format(cloud.newAccounts)}`} />
+      <Stat label="现存身份" value={cloud.accounts} note={`本期新增 ${format(cloud.newAccounts)}`} />
       <Stat label="分享中画像" value={cloud.liveShares} note={`云端画像 ${format(cloud.profiles)} 份`} />
     </div>
 
@@ -148,8 +148,9 @@ export default function Admin({ onBack }) {
       <section className="rounded-2xl border border-blur-border bg-white/55 p-5" aria-labelledby="cloud-title">
         <h2 id="cloud-title" className="text-sm font-medium text-blur-text">云端规模</h2>
         <dl className="mt-3 divide-y divide-blur-border/60 text-sm">
-          {[['注册身份', cloud.accounts], ['设置展示画像', cloud.accountsWithPortrait], ['云端画像', cloud.profiles],
-            ['好友关系', cloud.friendships], ['已接受', cloud.acceptedFriendships]].map(([label, value]) =>
+          {[['现存身份', cloud.accounts], ['设置展示画像', cloud.accountsWithPortrait], ['云端画像', cloud.profiles],
+            ['好友关系', cloud.friendships], ['已接受', cloud.acceptedFriendships],
+            ['已注销墓碑', cloud.tombstonedAccounts], ['待清理的幽灵身份', cloud.ghostCandidates]].map(([label, value]) =>
             <div key={label} className="flex items-baseline justify-between py-2.5">
               <dt className="text-blur-text-muted">{label}</dt>
               <dd className="tabular-nums text-blur-text">{format(value)}</dd>
@@ -191,7 +192,8 @@ export default function Admin({ onBack }) {
     </section>
 
     <p className="mt-5 text-[11px] leading-relaxed text-blur-text-light">
-      口径说明：完成测试来自匿名计数器，覆盖所有访客；注册身份只在用户使用云端功能后产生，因此小于真实参与人数。
+      口径说明：完成测试来自匿名计数器，覆盖所有访客；身份只在用户使用云端功能后产生，因此小于真实参与人数。
+      现存身份不含已注销的墓碑；待清理的幽灵身份指从未留下画像或好友、且已超过保留期的行。
       后台不读取答案、画像正文、好友关系与凭证，单用户信息不在此页展示。
       规模数字每 5 分钟最多重算一次，趋势与新增数据每次实时读取。
     </p>

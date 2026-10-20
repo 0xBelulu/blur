@@ -1,4 +1,5 @@
 import { HttpError, json, body } from './http.js';
+import { purgeGhosts, countGhosts } from './ghosts.js';
 
 // Public counters are deliberately a closed set. An unknown name is rejected so
 // the table cannot grow arbitrary keys from the browser.
@@ -59,16 +60,18 @@ async function cloudSnapshot(db, day, now) {
     return { computedAt: Number(row.computed_at), cached: true, ...JSON.parse(row.payload) };
   }
   const totals = await db.prepare(`SELECT
-    (SELECT COUNT(*) FROM accounts) AS accounts,
-    (SELECT COUNT(*) FROM accounts WHERE portrait_id IS NOT NULL) AS accountsWithPortrait,
-    (SELECT COUNT(*) FROM accounts WHERE last_seen_at >= ?) AS accountsSeen7d,
-    (SELECT COUNT(*) FROM accounts WHERE last_seen_at >= ?) AS accountsSeen30d,
+    (SELECT COUNT(*) FROM accounts WHERE deleted_at IS NULL) AS accounts,
+    (SELECT COUNT(*) FROM accounts WHERE deleted_at IS NULL AND portrait_id IS NOT NULL) AS accountsWithPortrait,
+    (SELECT COUNT(*) FROM accounts WHERE deleted_at IS NULL AND last_seen_at >= ?) AS accountsSeen7d,
+    (SELECT COUNT(*) FROM accounts WHERE deleted_at IS NULL AND last_seen_at >= ?) AS accountsSeen30d,
+    (SELECT COUNT(*) FROM accounts WHERE deleted_at IS NOT NULL) AS tombstonedAccounts,
     (SELECT COUNT(*) FROM profiles WHERE deleted_at IS NULL) AS profiles,
     (SELECT COUNT(*) FROM profiles WHERE deleted_at IS NULL AND share_id IS NOT NULL) AS liveShares,
     (SELECT COUNT(*) FROM friendships) AS friendships,
     (SELECT COUNT(*) FROM friendships WHERE status = 'accepted') AS acceptedFriendships,
-    (SELECT MIN(last_seen_at) FROM accounts) AS lastSeenSince`)
+    (SELECT MIN(last_seen_at) FROM accounts WHERE deleted_at IS NULL) AS lastSeenSince`)
     .bind(now - 7 * DAY_MS, now - 30 * DAY_MS).first();
+  const ghosts = await countGhosts(db, { now });
   const { results: versions } = await db.prepare(`SELECT question_version AS questionVersion,
     engine_version AS engineVersion, COUNT(*) AS n FROM profiles WHERE deleted_at IS NULL
     GROUP BY question_version, engine_version ORDER BY n DESC LIMIT 8`).bind().all();
@@ -78,6 +81,9 @@ async function cloudSnapshot(db, day, now) {
       accountsWithPortrait: Number(totals?.accountsWithPortrait || 0),
       accountsSeen7d: Number(totals?.accountsSeen7d || 0),
       accountsSeen30d: Number(totals?.accountsSeen30d || 0),
+      tombstonedAccounts: Number(totals?.tombstonedAccounts || 0),
+      ghostCandidates: ghosts.orphan,
+      dormantCandidates: ghosts.dormant,
       profiles: Number(totals?.profiles || 0),
       liveShares: Number(totals?.liveShares || 0),
       friendships: Number(totals?.friendships || 0),
@@ -143,6 +149,15 @@ export async function metricsRoute(request, env, path) {
     if (!PUBLIC_EVENTS.has(input.event)) throw new HttpError(400, '未知的统计事件');
     await recordMetric(env.DB, input.event);
     return json({ recorded: true });
+  }
+  if (path === '/api/admin/ghosts/purge') {
+    if (request.method !== 'POST') throw new HttpError(405, '不支持此操作');
+    await requireAdmin(request, env.DB);
+    const input = await body(request);
+    const allowed = ['dryRun', 'orphanDays', 'dormantDays', 'tombstoneDays'];
+    if (Object.keys(input).some((key) => !allowed.includes(key))) throw new HttpError(400, '未知的清理参数');
+    if (input.dryRun !== undefined && typeof input.dryRun !== 'boolean') throw new HttpError(400, '请选择是否实际执行');
+    return json(await purgeGhosts(env.DB, input));
   }
   if (path === '/api/admin/stats') {
     if (request.method !== 'GET') throw new HttpError(405, '不支持此操作');

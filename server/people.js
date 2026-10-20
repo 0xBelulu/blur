@@ -2,7 +2,13 @@ import { publicRecord } from '../shared/profile.js';
 import { HttpError, json, body } from './http.js';
 import { touchAccount } from './metrics.js';
 
+// A deleted identity keeps its row so a delayed upload cannot recreate it with a
+// new public id. Every write path that can register an account must refuse it.
 export async function registerAccount(db, owner, nickname = '', bio = '', createdAt = Date.now()) {
+  let existing = null;
+  try { existing = await db.prepare('SELECT deleted_at FROM accounts WHERE owner_hash = ?').bind(owner).first(); }
+  catch { /* 0009 not applied yet: no tombstone can exist, so registration proceeds. */ }
+  if (existing?.deleted_at) throw new HttpError(410, '这个身份已注销，不能再使用');
   await db.prepare(`INSERT INTO accounts (owner_hash, nickname, bio, created_at, public_id, friend_code)
     VALUES (?, ?, ?, ?, lower(hex(randomblob(16))), upper(hex(randomblob(6))))
     ON CONFLICT(owner_hash) DO UPDATE SET
@@ -13,8 +19,9 @@ export async function registerAccount(db, owner, nickname = '', bio = '', create
 export async function account(db, owner) {
   await touchAccount(db, owner);
   let row = await db.prepare('SELECT * FROM accounts WHERE owner_hash = ?').bind(owner).first();
+  if (row?.deleted_at) throw new HttpError(410, '这个身份已注销，不能再使用');
   if (!row) {
-    const legacy = await db.prepare('SELECT created_at FROM profiles WHERE owner_hash = ? LIMIT 1').bind(owner).first();
+    const legacy = await db.prepare('SELECT created_at FROM profiles WHERE owner_hash = ? AND deleted_at IS NULL LIMIT 1').bind(owner).first();
     if (!legacy) throw new HttpError(404, '这个身份还没有云端存档，请检查恢复密钥');
     await registerAccount(db, owner, '', '', legacy.created_at);
     row = await db.prepare('SELECT * FROM accounts WHERE owner_hash = ?').bind(owner).first();
@@ -58,6 +65,22 @@ export async function peopleRoute(request, db, owner, path) {
         .bind(input.resultVisibility, input.resultVisibility === 'friends' ? 1 : 0, owner).run();
       return json(await account(db, owner));
     }
+  }
+  if (path === '/api/account' && request.method === 'DELETE') {
+    const input = await body(request);
+    if (input.confirm !== 'DELETE') throw new HttpError(400, '请确认要删除这个身份');
+    await account(db, owner);
+    const now = Date.now();
+    // Content first: a public link must not outlive the account even when the
+    // second statement fails and the client retries the whole request.
+    await db.prepare(`UPDATE profiles SET deleted_at = ?, answers_json = '{}', result_json = '{}',
+      nickname = '', share_id = NULL WHERE owner_hash = ? AND deleted_at IS NULL`).bind(now, owner).run();
+    // The row itself stays as a tombstone: it blocks resurrection and lets a
+    // friend see "已注销" instead of a person silently disappearing.
+    await db.prepare(`UPDATE accounts SET deleted_at = ?, nickname = '', bio = '', portrait_id = NULL,
+      friend_code = NULL, friends_visible = 0, require_friend_approval = 0, result_visibility = 'private'
+      WHERE owner_hash = ?`).bind(now, owner).run();
+    return json({ deleted: true });
   }
   if (path === '/api/account/privacy' && request.method === 'PUT') {
     await account(db, owner);
@@ -105,19 +128,20 @@ export async function peopleRoute(request, db, owner, path) {
   }
   if (path === '/api/friends' && request.method === 'GET') {
     const { results } = await db.prepare(`SELECT f.id, f.status, f.requester, f.created_at, f.accepted_at,
-      a.public_id, a.nickname, a.bio FROM friendships f JOIN accounts a
+      a.public_id, a.nickname, a.bio, a.deleted_at FROM friendships f JOIN accounts a
       ON a.owner_hash = CASE WHEN f.owner_a = ? THEN f.owner_b ELSE f.owner_a END
       WHERE f.owner_a = ? OR f.owner_b = ? ORDER BY f.created_at DESC`).bind(owner, owner, owner).all();
     return json({ connections: results.map((r) => ({ id: r.id, status: r.status,
-      direction: r.requester === owner ? 'outgoing' : 'incoming', person: person(r), createdAt: r.created_at, acceptedAt: r.accepted_at })) });
+      direction: r.requester === owner ? 'outgoing' : 'incoming', person: { ...person(r), deleted: !!r.deleted_at },
+      createdAt: r.created_at, acceptedAt: r.accepted_at })) });
   }
   if (path === '/api/friends' && request.method === 'POST') {
     const input = await body(request);
     if (!/^[a-f0-9]{32}$/.test(input.publicId || '')) throw new HttpError(400, '好友标识不正确');
     const code = input.friendCode === undefined ? null : typeof input.friendCode === 'string' ? input.friendCode.replaceAll('-', '').toUpperCase() : '';
     if (code !== null && !/^[A-F0-9]{12}$/.test(code)) throw new HttpError(400, '好友码不正确，请重新查找');
-    const target = await db.prepare('SELECT owner_hash FROM accounts WHERE public_id = ?').bind(input.publicId).first();
-    if (!target) throw new HttpError(404, '这个身份已不存在');
+    const target = await db.prepare('SELECT owner_hash FROM accounts WHERE public_id = ? AND deleted_at IS NULL').bind(input.publicId).first();
+    if (!target) throw new HttpError(404, '这个身份已注销或不存在');
     if (target.owner_hash === owner) throw new HttpError(400, '这是你自己的好友码');
     const [a, b] = [owner, target.owner_hash].sort();
     // Read consent and the current code in the write itself: rotating a code or
@@ -156,12 +180,14 @@ export async function peopleRoute(request, db, owner, path) {
   const profile = path.match(/^\/api\/friends\/([a-f0-9]{32})\/profile$/);
   if (profile && request.method === 'GET') {
     // Permission and projection are read in one query, including concurrent revocation.
-    const row = await db.prepare(`SELECT a.public_id, a.nickname AS person_name, a.bio, p.*
+    const row = await db.prepare(`SELECT a.public_id, a.nickname AS person_name, a.bio, a.deleted_at AS person_deleted, p.*
       FROM accounts a JOIN friendships f ON f.status = 'accepted'
       AND ((f.owner_a = ? AND f.owner_b = a.owner_hash) OR (f.owner_b = ? AND f.owner_a = a.owner_hash))
       LEFT JOIN profiles p ON p.id = a.portrait_id AND p.owner_hash = a.owner_hash AND p.deleted_at IS NULL AND a.friends_visible = 1
       WHERE a.public_id = ?`).bind(owner, owner, profile[1]).first();
     if (!row) throw new HttpError(403, '你们还不是好友，或这段连接已经解除');
+    // p.* also carries a deleted_at, so the account's own tombstone is aliased above.
+    if (row.person_deleted) throw new HttpError(410, '对方已注销这个身份');
     return json({ person: { publicId: row.public_id, nickname: row.person_name, bio: row.bio }, portrait: row.id ? publicRecord({
       id: row.id, createdAt: row.created_at, engineVersion: row.engine_version, questionVersion: row.question_version,
       answerCount: row.answer_count, nickname: row.person_name, result: JSON.parse(row.result_json),

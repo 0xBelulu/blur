@@ -1,10 +1,10 @@
 import {
   CLOUD_SESSION, getAllHistoryRecords, updateHistoryRecord, deleteHistoryRecord,
-  mergeCloudRecords, withoutCloud, switchHistoryIdentity,
+  mergeCloudRecords, withoutCloud, switchHistoryIdentity, clearHistoryRecords,
 } from './historyStorage.js';
 import {
   getIdentityToken, identityId, ensureLocalIdentity, getAccountInfo, updateAccountInfo,
-  formatRecoveryKey, parseRecoveryKey, adoptIdentity,
+  formatRecoveryKey, parseRecoveryKey, adoptIdentity, forgetDeviceIdentity,
 } from './identity.js';
 
 const operations = new Map();
@@ -203,6 +203,8 @@ export async function refreshCloudHistory() {
   try {
     let account;
     try { account = await api('/account', { token }); } catch (error) {
+      // A tombstone is not a missing account: never let it look like a fresh device.
+      if (error.status === 410) { updateAccountInfo({ checkStatus: 'deleted' }); throw error; }
       if (error.status !== 404) throw error;
       account = { id: owner, registered: false, nickname: getAccountInfo().nickname || '' };
     }
@@ -246,16 +248,14 @@ export function exportRecoveryKey() {
 }
 
 export async function restoreIdentity(key) {
-  if (operations.size || getAllHistoryRecords().some((record) => record.pendingAction || record.deletedAt)) {
-    throw new Error('请先完成正在进行或待确认的云端操作，再恢复其他身份');
-  }
+  if (pendingWork()) throw new Error('请先完成正在进行或待确认的云端操作，再恢复其他身份');
   const originalToken = getIdentityToken();
   const token = parseRecoveryKey(key);
   const account = await api('/account', { token });
   const { records } = await api('/records?summary=1', { token });
   // Verify everything before switching. Recovery never uploads this device's portraits.
   if (getIdentityToken() === token) { await refreshCloudHistory(); return; }
-  if (getIdentityToken() !== originalToken || operations.size || getAllHistoryRecords().some((record) => record.pendingAction || record.deletedAt)) {
+  if (getIdentityToken() !== originalToken || pendingWork()) {
     throw new Error('身份或云端操作已变化，请完成后重新恢复');
   }
   const keys = ['blur.history.v1', 'blur.identity.v1', 'blur.account.v1'];
@@ -274,6 +274,51 @@ export async function restoreIdentity(key) {
     window.dispatchEvent?.(new Event('blur-account-change'));
     throw error;
   }
+}
+
+function pendingWork() {
+  return operations.size > 0 || getAllHistoryRecords().some((record) => record.pendingAction || record.deletedAt);
+}
+
+// Detach every device portrait from the account before dropping the credential:
+// the same records stay usable, but they no longer claim a cloud copy.
+function forgetDevice() {
+  const keys = ['blur.history.v1', 'blur.identity.v1', 'blur.account.v1'];
+  const before = keys.map((key) => localStorage.getItem(key));
+  try {
+    if (!switchHistoryIdentity()) throw new Error('本机存储无法更新，身份尚未退出');
+    forgetDeviceIdentity();
+  } catch (error) {
+    keys.forEach((key, index) => {
+      if (before[index] === null) localStorage.removeItem(key);
+      else localStorage.setItem(key, before[index]);
+    });
+    window.dispatchEvent?.(new Event('blur-history-change'));
+    window.dispatchEvent?.(new Event('blur-account-change'));
+    throw error;
+  }
+}
+
+// Reversible: the recovery key still opens the cloud identity.
+export async function signOut() {
+  if (pendingWork()) throw new Error('请先完成正在进行或待确认的云端操作，再退出这个身份');
+  forgetDevice();
+}
+
+// Irreversible: the server keeps a tombstone so a delayed upload cannot revive it.
+export async function deleteIdentity({ clearLocal = false } = {}) {
+  if (pendingWork()) throw new Error('请先完成正在进行或待确认的云端操作，再删除这个身份');
+  const ctx = await context();
+  try {
+    await api('/account', { token: ctx.token, method: 'DELETE', body: { confirm: 'DELETE' } });
+    assertIdentity(ctx);
+  } catch (error) {
+    // Another tab may have already deleted it; forgetting the device is still right.
+    if (error.status !== 410) throw error;
+  }
+  if (clearLocal) clearHistoryRecords();
+  forgetDevice();
+  return { deleted: true };
 }
 
 export function shareUrl(shareId) {

@@ -8,7 +8,7 @@ import { generateResult } from '../src/utils/blurEngine.js';
 import { questions } from '../src/data/questions.js';
 import { publicResult, ENGINE_VERSION, QUESTION_VERSION, canCompare } from '../shared/profile.js';
 import { getHistoryRecords, getAllHistoryRecords, saveHistoryRecord, updateHistoryRecord, removeLocalRecord, CLOUD_SESSION } from '../src/utils/historyStorage.js';
-import { syncRecord, publishRecord, revokeShare, removeCloudCopy, flushPending, refreshCloudHistory, downloadRecord, saveNickname, saveProfile, exportRecoveryKey, restoreIdentity } from '../src/utils/cloud.js';
+import { syncRecord, publishRecord, revokeShare, removeCloudCopy, flushPending, refreshCloudHistory, downloadRecord, saveNickname, saveProfile, exportRecoveryKey, restoreIdentity, signOut, deleteIdentity } from '../src/utils/cloud.js';
 import { selectPortrait, readPeople, friendAction, savePrivacy, resetFriendCode, saveResultVisibility, syncDefaultPortrait } from '../src/utils/people.js';
 import { displayRecord } from '../src/utils/portraits.js';
 import { compareDimensions } from '../src/utils/comparison.js';
@@ -41,6 +41,7 @@ function database(t, legacy = false) {
     sqlite.exec(readFileSync(new URL('../migrations/0006_metrics.sql', import.meta.url), 'utf8'));
     sqlite.exec(readFileSync(new URL('../migrations/0007_admin_tokens.sql', import.meta.url), 'utf8'));
     sqlite.exec(readFileSync(new URL('../migrations/0008_stats_snapshots.sql', import.meta.url), 'utf8'));
+    sqlite.exec(readFileSync(new URL('../migrations/0009_account_deletion.sql', import.meta.url), 'utf8'));
   }
   t.after(() => sqlite.close());
   return { sqlite, ...adapter(sqlite) };
@@ -1082,4 +1083,146 @@ test('activity tracking degrades safely when 0006 is not yet applied', async (t)
   assert.equal((await call(db, '/records/test', 'PUT', record)).status, 200);
   assert.equal((await call(db, '/account')).status, 200);
   assert.equal((await call(db, '/records', 'GET')).data.records.length, 1);
+});
+
+test('deleting an identity leaves a tombstone that blocks resurrection and kills every link', async (t) => {
+  const db = database(t);
+  const { a, b } = await pair(db);
+  await call(db, '/records/portrait', 'PUT', record);
+  await call(db, '/account/portrait', 'PUT', { portraitId: 'portrait', friendsVisible: true });
+  const share = (await call(db, '/records/portrait/share', 'POST', { nickname: '小林' })).data.shareId;
+  const relation = (await call(db, '/friends', 'POST', { publicId: b.publicId, friendCode: b.friendCode })).data;
+
+  assert.equal((await call(db, '/account', 'DELETE')).status, 400);
+  assert.equal((await call(db, '/account', 'DELETE', { confirm: 'yes' })).status, 400);
+  assert.equal((await call(db, '/account', 'DELETE', { confirm: 'DELETE' })).status, 200);
+
+  // The same credential can no longer read, write or revive the identity.
+  assert.equal((await call(db, '/account')).status, 410);
+  assert.equal((await call(db, '/records/delayed', 'PUT', record)).status, 410);
+  assert.equal((await call(db, '/account', 'POST', { nickname: '复活' })).status, 410);
+  assert.equal((await call(db, '/records')).data.records.length, 0);
+  assert.equal((await call(db, `/shares/${share}`)).status, 404);
+
+  // The row survives as a tombstone with no personal content.
+  const row = db.sqlite.prepare('SELECT * FROM accounts WHERE owner_hash = ?')
+    .get(createHash('sha256').update(alice).digest('hex'));
+  assert.ok(row.deleted_at);
+  assert.equal(row.nickname, '');
+  assert.equal(row.bio, '');
+  assert.equal(row.friend_code, null);
+  assert.equal(row.portrait_id, null);
+  assert.ok(row.public_id);
+  assert.equal(db.sqlite.prepare('SELECT COUNT(*) AS n FROM profiles WHERE share_id IS NOT NULL').get().n, 0);
+
+  // A friend sees the tombstone instead of a silent disappearance.
+  const connections = (await call(db, '/friends', 'GET', undefined, bob)).data.connections;
+  assert.equal(connections.find((c) => c.id === relation.id).person.deleted, true);
+  assert.equal((await call(db, '/friends', 'POST', { publicId: a.publicId, friendCode: 'ABCDEF123456' }, bob)).status, 404);
+  assert.equal((await call(db, `/friends/${a.publicId}/profile`, 'GET', undefined, bob)).status, 410);
+  assert.equal((await call(db, `/friends/${relation.id}`, 'DELETE', undefined, bob)).status, 200);
+  assert.equal((await call(db, '/friends', 'GET', undefined, bob)).data.connections.length, 0);
+});
+
+test('signing out keeps device portraits and only drops their cloud links', async (t) => {
+  const db = database(t);
+  browser(t, db);
+  const local = saveHistoryRecord(answers, result);
+  await saveProfile({ nickname: '要离开的人' }, true);
+  await syncRecord(local);
+  assert.equal(getAccountInfo().registered, true);
+  assert.ok(getAllHistoryRecords().find((r) => r.id === local.id).cloudId);
+  const token = getIdentityToken();
+
+  await signOut();
+  assert.equal(getIdentityToken(), null);
+  assert.deepEqual(getAccountInfo(), {});
+  const kept = getAllHistoryRecords();
+  assert.equal(kept.length, 1);
+  assert.equal(kept[0].id, local.id);
+  assert.equal(kept[0].localPresent, true);
+  assert.ok(kept[0].result);
+  assert.equal(kept[0].cloudId, null);
+  assert.equal(kept[0].shareId, null);
+  assert.equal(kept[0].cloudOwner, null);
+  // The cloud identity is untouched and still opens with its recovery key.
+  assert.equal((await call(db, '/account', 'GET', undefined, token)).status, 200);
+});
+
+test('deleting an identity clears cloud content and leaves device portraits local-only', async (t) => {
+  const db = database(t);
+  browser(t, db);
+  const local = saveHistoryRecord(answers, result);
+  await saveProfile({ nickname: '删除测试' }, true);
+  await syncRecord(local);
+
+  await deleteIdentity();
+  assert.equal(getIdentityToken(), null);
+  assert.equal(getAllHistoryRecords().filter((r) => r.localPresent).length, 1);
+  assert.equal(getAllHistoryRecords()[0].cloudId, null);
+  assert.equal(db.sqlite.prepare('SELECT COUNT(*) AS n FROM accounts WHERE deleted_at IS NOT NULL').get().n, 1);
+  assert.equal(db.sqlite.prepare('SELECT COUNT(*) AS n FROM profiles WHERE deleted_at IS NULL').get().n, 0);
+});
+
+test('deleting with clearLocal also removes this device’s portraits', async (t) => {
+  const db = database(t);
+  browser(t, db);
+  saveHistoryRecord(answers, result);
+  await saveProfile({ nickname: '一起清掉' }, true);
+  await deleteIdentity({ clearLocal: true });
+  assert.equal(getAllHistoryRecords().length, 0);
+  assert.equal(getIdentityToken(), null);
+});
+
+test('ghost cleanup is read-only by default and only touches abandoned identities', async (t) => {
+  const db = database(t);
+  const adminToken = 'g'.repeat(32);
+  db.sqlite.prepare('INSERT INTO admin_tokens (token_hash, label, created_at) VALUES (?, ?, ?)')
+    .run(createHash('sha256').update(adminToken).digest('hex'), 'test', Date.now());
+  const day = 86_400_000;
+  const now = Date.now();
+  const orphan = 'e'.repeat(64);
+  const dormant = 'f'.repeat(64);
+  const expired = '0'.repeat(64);
+  const active = '1'.repeat(64);
+  await call(db, '/account', 'POST', { nickname: '孤儿' }, orphan);
+  await call(db, '/account', 'POST', { nickname: '休眠' }, dormant);
+  await call(db, '/account', 'POST', { nickname: '已注销' }, expired);
+  await call(db, '/records/dormant', 'PUT', record, dormant);
+  await call(db, '/records/expired', 'PUT', record, expired);
+  await call(db, '/account', 'DELETE', { confirm: 'DELETE' }, expired);
+  await call(db, '/account', 'POST', { nickname: '活跃' }, active);
+
+  const owner = (token) => createHash('sha256').update(token).digest('hex');
+  db.sqlite.prepare('UPDATE accounts SET created_at = ?, last_seen_at = NULL WHERE owner_hash = ?').run(now - 40 * day, owner(orphan));
+  db.sqlite.prepare('UPDATE accounts SET created_at = ?, last_seen_at = ? WHERE owner_hash = ?').run(now - 200 * day, now - 200 * day, owner(dormant));
+  db.sqlite.prepare('UPDATE accounts SET deleted_at = ? WHERE owner_hash = ?').run(now - 40 * day, owner(expired));
+
+  const dry = await call(db, '/admin/ghosts/purge', 'POST', { dryRun: true }, adminToken);
+  assert.equal(dry.status, 200);
+  assert.equal(dry.data.dryRun, true);
+  assert.equal(dry.data.found.orphan, 1);
+  assert.equal(dry.data.found.dormant, 1);
+  assert.equal(dry.data.found.expiredTombstones, 1);
+  assert.equal(db.sqlite.prepare('SELECT COUNT(*) AS n FROM accounts').get().n, 4);
+
+  assert.equal((await call(db, '/admin/ghosts/purge', 'POST', {}, '2'.repeat(32))).status, 401);
+  assert.equal((await call(db, '/admin/ghosts/purge', 'POST', { dryRun: 'no' }, adminToken)).status, 400);
+  assert.equal((await call(db, '/admin/ghosts/purge', 'POST', { orphanDays: 0 }, adminToken)).status, 400);
+  assert.equal((await call(db, '/admin/ghosts/purge', 'POST', { unrelated: 1 }, adminToken)).status, 400);
+
+  const applied = await call(db, '/admin/ghosts/purge', 'POST', { dryRun: false }, adminToken);
+  assert.deepEqual(applied.data.affected, { orphanDeleted: 1, dormantTombstoned: 1, tombstonePurged: 1 });
+  assert.equal(db.sqlite.prepare('SELECT COUNT(*) AS n FROM accounts').get().n, 2);
+  assert.equal((await call(db, '/account', 'GET', undefined, active)).status, 200);
+  assert.equal((await call(db, '/account', 'GET', undefined, dormant)).status, 410);
+  const dormantProfile = db.sqlite.prepare('SELECT * FROM profiles WHERE owner_hash = ?').get(owner(dormant));
+  assert.ok(dormantProfile.deleted_at);
+  assert.equal(dormantProfile.share_id, null);
+  assert.equal(dormantProfile.answers_json, '{}');
+  assert.equal(dormantProfile.result_json, '{}');
+
+  // Idempotent: a second pass finds nothing and changes nothing.
+  const again = await call(db, '/admin/ghosts/purge', 'POST', { dryRun: false }, adminToken);
+  assert.deepEqual(again.data.affected, { orphanDeleted: 0, dormantTombstoned: 0, tombstonePurged: 0 });
 });

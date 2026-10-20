@@ -33,6 +33,7 @@
 | `node scripts/analyze-exposure.js` | 分析维度暴露均衡性，报告各维度的正/负向总权重 |
 | `node scripts/find-contributors.js` | 扫描指定维度的主要贡献题目 |
 | `npm run admin:token -- --apply local` | 生成后台访问令牌并写入 D1（仅保存 SHA-256）；`remote` 写入线上 |
+| `npm run ghosts:purge -- --token <后台令牌>` | 幽灵身份清理，默认只读；加 `--apply` 才写入。连接本机或 `--base https://…`，参数 `--orphan-days/--dormant-days/--tombstone-days` |
 
 ## Architecture
 - **App.jsx** — state machine (`landing → test → loading → result`), all state lives here, pages receive callbacks via props. No routing library. Uses `AnimatePresence mode="wait"` with `custom=direction` for slide transitions. Loading has a hardcoded **3.5s `setTimeout`**.
@@ -52,6 +53,9 @@
   - `onFocusChange(item | null)` fires only when the focused symbol changes, so pages can render a readout without per-frame React renders. `scope="container"` ignores pointer input outside the container and normalizes parallax to it.
   - `active={false}` suspends RAF, native dust animations and input handling while retaining nodes, engine state and animation objects. Visibility changes must not wake an inactive field.
 - **src/pages/Admin.jsx** — `#admin` read-only dashboard: anonymous counters, cloud aggregates and per-day trend. Token lives in `sessionStorage`; `server/metrics.js` verifies it against the `admin_tokens` SHA-256, outside the user identity system. Never add answers, portrait content, friend edges or per-user records here.
+- **Leaving an identity** — two different actions, both in Settings group 04. `signOut()` (`src/utils/cloud.js`) drops the credential and detaches device portraits with `switchHistoryIdentity()`, so the portraits stay but stop claiming a cloud copy; it is reversible with the recovery key. `deleteIdentity()` calls `DELETE /api/account` and then forgets the device, optionally clearing local records.
+- **Deletion is a tombstone, not a row delete** (`server/people.js`, `0009_account_deletion.sql`). The account row survives with `deleted_at`, cleared nickname/bio/portrait, `friend_code = NULL`, and `public_id` intact. `registerAccount()` and `account()` refuse it with 410 so a delayed upload from an old device cannot recreate it with a new public id. Friendships are kept for 30 days and returned with `person.deleted`, so a friend sees "已注销" instead of a silent disappearance.
+- **Ghost cleanup** (`server/ghosts.js`, `scripts/purge-ghosts.js`) is admin-only and dry-run by default. Three tiers: orphan (never had a profile or friendship, 30 days) is deleted; dormant (180 days without a device) is tombstoned; expired tombstones (30 days) are removed with their friendships. Pages Functions have no cron trigger, so it runs manually or from an external scheduler — never inside a request handler.
 - **src/index.css** — `@theme` custom color tokens (`--color-blur-*`), glass morphism classes (`.glass`, `.glass-strong`), gradient border (`.prism-shift`), animation utilities (`animate-float`, `animate-pulse-glow`, `animate-drift`, `animate-breathe*`), custom range input (`.blur-slider`), custom scrollbar.
 
 ## Conventions

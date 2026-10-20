@@ -22,7 +22,7 @@ import { generateResult, solveProfile } from './utils/blurEngine';
 import { buildPersonaSymbols, revealAt } from './utils/personaSymbols';
 import { questions } from './data/questions';
 import { getHistoryRecords, getAllHistoryRecords, saveHistoryRecord, removeLocalRecord } from './utils/historyStorage';
-import { flushPending, refreshCloudHistory, downloadRecord } from './utils/cloud';
+import { flushPending, refreshCloudHistory, downloadRecord, signOut, deleteIdentity } from './utils/cloud';
 import { getAccountInfo, ensureLocalIdentity, updateAccountInfo } from './utils/identity';
 import { syncDefaultPortrait } from './utils/people';
 import { recordEvent } from './utils/metrics';
@@ -190,10 +190,20 @@ export default function App() {
     try { await flushPending(); await refreshCloudHistory(); setNotice('待处理操作已完成'); }
     catch (error) { setNotice(error.message); }
   };
+  // Both actions end on the landing page: the account listener has already
+  // swapped the identity out, so staying on "me" would only show an empty shell.
+  const leaveDevice = async () => {
+    await signOut();
+    navigate('landing');
+  };
+  const removeIdentity = async (options) => {
+    await deleteIdentity(options);
+    navigate('landing');
+  };
   // Reading/parsing the full history is only needed when this page is displayed.
   const myPage = () => <My records={records} account={account} notice={notice} onBack={home} onOpen={openRecord}
     onDeleteLocal={removeLocal} onClearLocal={clearLocal} onRefresh={refresh} onRetryPending={retryPending}
-    onStartTest={() => start()}
+    onStartTest={() => start()} onSignOut={leaveDevice} onDeleteIdentity={removeIdentity}
     tab={['history', 'friends', 'settings'].includes(route.id) ? route.id : 'profile'} onTab={(tab) => navigate('me', tab)}
     onCreateIdentity={() => navigate('identity', ['friends', 'settings'].includes(route.id) ? route.id : 'profile')}
     onFriend={(id) => navigate('friend', id)}
