@@ -20,12 +20,9 @@ export async function account(db, owner) {
   await touchAccount(db, owner);
   let row = await db.prepare('SELECT * FROM accounts WHERE owner_hash = ?').bind(owner).first();
   if (row?.deleted_at) throw new HttpError(410, '这个身份已注销，不能再使用');
-  if (!row) {
-    const legacy = await db.prepare('SELECT created_at FROM profiles WHERE owner_hash = ? AND deleted_at IS NULL LIMIT 1').bind(owner).first();
-    if (!legacy) throw new HttpError(404, '这个身份还没有云端存档，请检查恢复密钥');
-    await registerAccount(db, owner, '', '', legacy.created_at);
-    row = await db.prepare('SELECT * FROM accounts WHERE owner_hash = ?').bind(owner).first();
-  }
+  // A cloud identity exists only after an explicit save. Reading never creates
+  // one, so having cloud records does not silently turn into having an identity.
+  if (!row) throw new HttpError(404, '这个身份还没有存到云端');
   if (!row.public_id || !row.friend_code) {
     // Old workers may create accounts between the additive migration and rollout.
     await registerAccount(db, owner);
@@ -43,6 +40,27 @@ export async function account(db, owner) {
 }
 
 function person(row) { return { publicId: row.public_id, nickname: row.nickname, bio: row.bio }; }
+
+// Uploads no longer create an identity, but they must not resurrect a deleted
+// one either. Tolerates 0009 being absent, like registerAccount above.
+export async function assertIdentityWritable(db, owner) {
+  let row;
+  try { row = await db.prepare('SELECT deleted_at FROM accounts WHERE owner_hash = ?').bind(owner).first(); }
+  catch { return; }
+  if (row?.deleted_at) throw new HttpError(410, '这个身份已注销，不能再使用');
+}
+
+// Deletion only: a credential from before accounts existed can own cloud records
+// without an account row, and deleting its identity must still clear them. Reads
+// never adopt, because reading must not create an identity.
+async function adoptExisting(db, owner) {
+  const row = await db.prepare('SELECT * FROM accounts WHERE owner_hash = ?').bind(owner).first();
+  if (row) return row;
+  const legacy = await db.prepare('SELECT created_at FROM profiles WHERE owner_hash = ? AND deleted_at IS NULL LIMIT 1').bind(owner).first();
+  if (!legacy) return null;
+  await registerAccount(db, owner, '', '', legacy.created_at);
+  return db.prepare('SELECT * FROM accounts WHERE owner_hash = ?').bind(owner).first();
+}
 
 async function connection(db, owner, id) {
   const row = await db.prepare('SELECT * FROM friendships WHERE id = ? AND (owner_a = ? OR owner_b = ?)').bind(id, owner, owner).first();
@@ -69,7 +87,9 @@ export async function peopleRoute(request, db, owner, path) {
   if (path === '/api/account' && request.method === 'DELETE') {
     const input = await body(request);
     if (input.confirm !== 'DELETE') throw new HttpError(400, '请确认要删除这个身份');
-    await account(db, owner);
+    const existing = await adoptExisting(db, owner);
+    if (!existing) throw new HttpError(404, '这个身份还没有存到云端');
+    if (existing.deleted_at) throw new HttpError(410, '这个身份已注销，不能再使用');
     const now = Date.now();
     // Content first: a public link must not outlive the account even when the
     // second statement fails and the client retries the whole request.

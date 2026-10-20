@@ -1,7 +1,6 @@
 import { api, identityOperation, syncRecord } from './cloud.js';
 import { getIdentityToken, getAccountInfo, updateAccountInfo } from './identity.js';
 import { getHistoryRecords } from './historyStorage.js';
-import { displayRecord } from './portraits.js';
 
 export async function readPeople(path, signal) {
   const token = getIdentityToken();
@@ -37,18 +36,7 @@ export async function saveResultVisibility(resultVisibility) {
   if (!['private', 'friends'].includes(resultVisibility)) throw new Error('公开可见暂未开放');
   if (!getAccountInfo().registered) return updateAccountInfo({ resultVisibility });
   await accountAction('/account/privacy', 'PUT', { resultVisibility });
-  if (resultVisibility === 'friends') await syncDefaultPortrait();
   return getAccountInfo();
-}
-
-export async function syncDefaultPortrait() {
-  const account = getAccountInfo();
-  if (!account.registered || account.resultVisibility === 'private' || account.hasPortraitSelection || account.portraitId) return;
-  const records = getHistoryRecords();
-  // Recovery must never adopt unrelated device-local results into another identity.
-  const record = account.displayRecordId !== undefined ? displayRecord(records, account)
-    : records.find((r) => r.cloudId && r.cloudOwner === account.id);
-  if (record && !record.pendingAction) await selectPortrait(record);
 }
 
 export async function selectPortrait(record, friendsVisible) {

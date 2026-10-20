@@ -6,13 +6,13 @@
 
 | 请求 | 数据和行为 |
 | --- | --- |
-| GET `/account` | 本人身份：`id, publicId, friendCode, nickname, bio, createdAt, portraitId, friendsVisible, requireFriendApproval, resultVisibility, hasPortraitSelection`。`resultVisibility` 默认 friends，独立于是否已有画像；`hasPortraitSelection` 区分首次选择与已删除的明确选择。 |
-| POST `/account` | `{ nickname, bio?, resultVisibility? }`；创建或编辑身份，标识保持稳定。创建时可携带本机权限偏好；省略时保留原有权限。接口本身不上传记录，创建页随后按权限同步当前展示结果。 |
+| GET `/account` | 本人身份：`id, publicId, friendCode, nickname, bio, createdAt, portraitId, friendsVisible, requireFriendApproval, resultVisibility, hasPortraitSelection`。`resultVisibility` 默认 friends，独立于是否已有画像；`hasPortraitSelection` 区分首次选择与已删除的明确选择。身份还没存到云端时返回 404：读取不会创建身份，即使该凭证已经有云端画像。 |
+| POST `/account` | `{ nickname, bio?, resultVisibility? }`；把身份显式存到云端，或编辑已有身份，标识保持稳定。可携带本机权限偏好；省略时保留原有权限。接口本身不上传任何画像，也不会被其他接口隐式调用。 |
 | DELETE `/account` | `{ confirm: "DELETE" }`。清空本人云端画像与答案、撤销分享、清空昵称简介与好友码，并写入 `deleted_at` 墓碑；`public_id` 保留供好友侧显示。此后同一凭证的任何请求返回 410，好友关系保留 30 天并带 `person.deleted`。 |
 | PUT `/account/portrait` | `{ portraitId: string|null, friendsVisible?: boolean }`。选画像默认沿用统一权限；兼容旧客户端显式传 friendsVisible，并同步更新统一权限。仅允许本人未删除的云端快照；不生成公开链接。 |
 | PUT `/account/privacy` | `{ requireFriendApproval?: boolean, resultVisibility?: 'private'|'friends' }`，至少提供一项。好友确认默认 false；测试结果默认 friends。public 暂不接受，UI 保留禁用选项。权限切换立即改变好友读取范围；好友确认只影响后续添加。 |
 | POST `/account/friend-code` | 更换当前身份好友码，返回更新后的本人身份。旧码查找、旧邀请链接及已查找但尚未提交的旧码添加立即失效；已有好友与待处理申请保留。 |
-| GET `/people/by-code/:code` | 仅返回 `publicId, nickname, bio, requireFriendApproval`，用于确认邀请。需已创建身份。 |
+| GET `/people/by-code/:code` | 仅返回 `publicId, nickname, bio, requireFriendApproval`，用于确认邀请。需已存到云端。 |
 | GET `/friends` | `{ connections: [{ id, status, direction, person, createdAt, acceptedAt }] }`；person 仅含公开标识、名字、简介。 |
 | POST `/friends` | `{ publicId, friendCode }`，写入时核对当前好友码及对方确认偏好。默认直接 accepted；对方开启确认时 pending。重复与交叉添加保持同一关系，accepted 不会降级。旧客户端仅传 publicId 时保留手动确认，公开标识本身不能授予直加权限。 |
 | POST `/friends/:id/accept` | 仅申请接收者可接受；重复接受保持接受状态。被取消的申请返回 404。 |
@@ -26,20 +26,20 @@
 ```mermaid
 stateDiagram-v2
   [*] --> 本机使用
-  本机使用 --> 已创建身份: 展示名与可选简介
-  已创建身份 --> 好友: 好友码或邀请链接（默认）
-  已创建身份 --> 待接受: 对方开启好友确认
+  本机使用 --> 已存到云端: 显式保存名字与可选简介
+  已存到云端 --> 好友: 好友码或邀请链接（默认）
+  已存到云端 --> 待接受: 对方开启好友确认
   待接受 --> 好友: 接收者接受
-  待接受 --> 已创建身份: 取消或拒绝
-  好友 --> 已创建身份: 任一方解除
-  已创建身份 --> 本机使用: 退出这台设备（可逆）
-  已创建身份 --> 已注销: 删除身份（墓碑）
+  待接受 --> 已存到云端: 取消或拒绝
+  好友 --> 已存到云端: 任一方解除
+  已存到云端 --> 本机使用: 退出这台设备（可逆）
+  已存到云端 --> 已注销: 删除身份（墓碑）
   已注销 --> [*]: 30 天后清除
 ```
 
 退出这台设备只清除本机凭证，本机画像保留并解除云端关联；删除身份写入墓碑，旧凭证此后一律 410。两者都不是“登出后重新登录”：这个产品没有密码，凭证丢失只能靠恢复密钥。
 
-展示结果默认好友可见。创建身份、进入个人相关页面或完成新测试时，尚无明确云端选择且权限为 friends 的展示结果会自动同步；原始作答不进入好友接口。仅我可见时不触发默认同步。已有明确选择时，新测试不替换它，其他历史不批量上传。删除被选择的云端结果后，不自动回退或重新上传；本机副本仍可保留，重新选择是显式操作。
+展示结果默认好友可见，但没有任何自动上传：保存身份、进入个人页面、完成新测试都不会把画像送到云端。只有显式选择展示画像或在记录管理里同步，才上传那一份；原始作答不进入好友接口。已有明确选择时，新测试不替换它，其他历史不批量上传。删除被选择的云端结果后，不自动回退或重新上传；本机副本仍可保留，重新选择是显式操作。
 
 创建或恢复完成后返回原邀请、好友或设置上下文。`#me/profile`、`#me/history`、`#me/friends`、`#me/settings`、`#identity/:context`、`#friend/:publicId`、`#together/:publicId` 可刷新或直接进入。
 

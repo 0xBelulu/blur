@@ -32,8 +32,8 @@ export default function Friends({ account, onCreate, onFriend, onBackup, onSetti
   });
   const copy = (text, done) => run(async () => { await navigator.clipboard.writeText(text); setMessage(done); });
   if (!account.registered) return <section className="pp-empty">
-    <PortraitMark /><h2>把朋友留在这里。</h2><p>起个名字，拿到自己的好友码。无需邮箱或密码。</p>
-    <button className="pp-primary" onClick={onCreate}>创建我的身份<ArrowRight size={16} /></button>
+    <PortraitMark /><h2>把朋友留在这里。</h2><p>把身份存到云端，拿到自己的好友码。无需邮箱或密码。</p>
+    <button className="pp-primary" onClick={onCreate}>把身份存到云端<ArrowRight size={16} /></button>
   </section>;
   const friends = (connections || []).filter((c) => c.status === 'accepted');
   const pending = (connections || []).filter((c) => c.status === 'pending');

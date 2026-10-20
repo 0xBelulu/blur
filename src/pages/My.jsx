@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, ArrowUpRight, ArrowRight, Check, ChevronRight, Settings as SettingsIcon, LockKeyhole, Pencil, RefreshCw, Users } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, ArrowRight, Check, ChevronRight, CloudUpload, Settings as SettingsIcon, LockKeyhole, Pencil, RefreshCw, Users } from 'lucide-react';
 import AccountPanel from '../components/AccountPanel';
 import ShareControls from '../components/ShareControls';
 import RecordBadges from '../components/RecordBadges';
@@ -15,7 +15,7 @@ function date(record) { return new Date(record.createdAt).toLocaleDateString('zh
 
 export default function My({ records = [], account = {}, notice, onBack, onOpen, onDeleteLocal, onClearLocal,
   onRefresh, onRetryPending, onStartTest, onCreateIdentity, onFriend, onTab, tab = 'profile', pendingLegacy = 0,
-  onSignOut, onDeleteIdentity }) {
+  onSignOut, onDeleteIdentity, onSyncPortrait }) {
   const [modal, setModal] = useState(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -76,10 +76,17 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
                 </div>
               </section>
               <div className="pp-portrait-foot">
-                <button className="pp-text-button" onClick={settings}>
-                  {account.resultVisibility !== 'private' ? <Users size={14} /> : <LockKeyhole size={14} />}
-                  {account.resultVisibility !== 'private' ? '好友可见' : '仅我可见'} · 可见范围<ChevronRight size={12} />
-                </button><span>新记录会留下来，展示哪一份由你决定。</span>
+                {account.registered ? <>
+                  <button className="pp-text-button" onClick={settings}>
+                    {account.resultVisibility !== 'private' ? <Users size={14} /> : <LockKeyhole size={14} />}
+                    {account.resultVisibility !== 'private' ? '好友可见' : '仅我可见'} · 可见范围<ChevronRight size={12} />
+                  </button>
+                  <span>{selected.cloudId ? '这份画像已经在云端。' : account.resultVisibility === 'private' ? '这份画像还没上云。' : '这份画像还没上云，好友现在看不到。'}</span>
+                  {!selected.cloudId && <button className="pp-text-button" disabled={busy} onClick={() => run(() => onSyncPortrait(selected))}>存到云端<ArrowRight size={12} /></button>}
+                </> : <>
+                  <button className="pp-text-button" onClick={onCreateIdentity}><CloudUpload size={14} />把身份存到云端<ChevronRight size={12} /></button>
+                  <span>现在只在这台设备。存到云端后才能加好友、换设备找回。</span>
+                </>}
               </div>
             </> : <section className="pp-empty">
               <PortraitMark /><h2>{records.length ? '现在，想用哪一份介绍自己？' : '从一次随手的选择开始。'}</h2>
@@ -126,16 +133,16 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
         {modal.type === 'edit' && <form onSubmit={(e) => { e.preventDefault(); run(() => saveProfile({ nickname: draftName, bio: draftBio }), true); }}>
           <label>展示名字<input value={draftName} onChange={(e) => setDraftName(e.target.value)} maxLength={24} required /></label>
           <label>关于我<textarea value={draftBio} onChange={(e) => setDraftBio(e.target.value)} maxLength={80} rows={3} placeholder="一句普通的话也很好。" /></label>
-          <p className="pp-helper">{account.registered ? '名字和简介会随身份保存，好友可以看到。' : '先保存在这个浏览器。创建身份后，可以和朋友连接。'}</p>
+          <p className="pp-helper">{account.registered ? '名字和简介会随身份保存，好友可以看到。' : '先保存在这个浏览器。存到云端后，可以和朋友连接。'}</p>
           <button className="pp-primary" disabled={busy || !draftName.trim()}>{busy ? '正在保存…' : '保存资料'}<Check size={14} /></button>
         </form>}
         {modal.type === 'choose' && <>
           {modal.type === 'choose' && <div>{records.map((r) => <button key={r.id} className="pp-choose" aria-pressed={choice === r.id} disabled={busy} onClick={() => setChoice(r.id)}>
             <span>{recordArchetype(r)?.symbol || '◌'}</span><div><strong>{recordArchetype(r)?.title || '画像'}</strong><small>{date(r)} · {r.answerCount} 题</small></div>{choice === r.id && <Check size={16} />}
           </button>)}</div>}
-          <p className="pp-helper">可见范围沿用「权限管理」：{account.resultVisibility === 'private' ? '仅我可见' : '好友可见'}。{account.registered ? '选好后会保存这份展示结果。' : '创建身份后按此权限同步。'}</p>
+          <p className="pp-helper">可见范围沿用「权限管理」：{account.resultVisibility === 'private' ? '仅我可见' : '好友可见'}。{account.registered ? '选好后会保存这份展示结果。' : '存到云端后才对好友生效。'}</p>
           <button className="pp-primary" disabled={busy || !choice} onClick={() => run(() => selectPortrait(records.find((r) => r.id === choice)), true)}>{busy ? '正在保存…' : '就用这一份'}<Check size={14} /></button>
-          {!account.registered && <button className="pp-text-button pp-spaced" onClick={onCreateIdentity}>创建身份<ArrowRight size={14} /></button>}
+          {!account.registered && <button className="pp-text-button pp-spaced" onClick={onCreateIdentity}>存到云端<ArrowRight size={14} /></button>}
         </>}
         {modal.type === 'identity' && <AccountPanel key={account.id || 'guest'} account={account} onCreate={onCreateIdentity} onSignOut={onSignOut} />}
         {modal.type === 'backup' && <AccountPanel key={account.id || 'guest'} account={account} initialView="backup" />}

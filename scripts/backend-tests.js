@@ -9,7 +9,7 @@ import { questions } from '../src/data/questions.js';
 import { publicResult, ENGINE_VERSION, QUESTION_VERSION, canCompare } from '../shared/profile.js';
 import { getHistoryRecords, getAllHistoryRecords, saveHistoryRecord, updateHistoryRecord, removeLocalRecord, CLOUD_SESSION } from '../src/utils/historyStorage.js';
 import { syncRecord, publishRecord, revokeShare, removeCloudCopy, flushPending, refreshCloudHistory, downloadRecord, saveNickname, saveProfile, exportRecoveryKey, restoreIdentity, signOut, deleteIdentity } from '../src/utils/cloud.js';
-import { selectPortrait, readPeople, friendAction, savePrivacy, resetFriendCode, saveResultVisibility, syncDefaultPortrait } from '../src/utils/people.js';
+import { selectPortrait, readPeople, friendAction, savePrivacy, resetFriendCode, saveResultVisibility } from '../src/utils/people.js';
 import { displayRecord } from '../src/utils/portraits.js';
 import { compareDimensions } from '../src/utils/comparison.js';
 import { comparisonPrompts } from '../src/utils/comparisonPrompts.js';
@@ -359,28 +359,37 @@ test('a stale cloud id can be explicitly synced again after deletion elsewhere',
   assert.notEqual(getHistoryRecords()[0].cloudId, cloudId);
 });
 
-test('nickname and optional recovery identity can exist without uploading any portraits', async (t) => {
+test('an identity can exist without portraits, and a local nickname alone creates nothing', async (t) => {
   const db = database(t);
   const connection = browser(t, db);
   saveHistoryRecord(answers, result);
   await saveNickname('小林');
   assert.equal(connection.requests.length, 0);
+  // The key opens a cloud identity, so it cannot be generated before one exists.
+  await assert.rejects(exportRecoveryKey(), /还没有存到云端/);
+  assert.equal((await call(db, '/records', 'GET', undefined, getIdentityToken())).data.records.length, 0);
+  await saveProfile({ nickname: '小林' }, true);
   const key = await exportRecoveryKey();
   assert.ok(key.startsWith('BLUR-'));
   assert.equal(getAccountInfo().nickname, '小林');
-  assert.equal((await call(db, '/records', 'GET', undefined, getIdentityToken())).data.records.length, 0);
+  assert.equal(connection.requests.some((request) => request.path.startsWith('/api/records/')), false);
   await saveNickname('新昵称');
   assert.equal((await call(db, '/account', 'GET', undefined, getIdentityToken())).data.nickname, '新昵称');
 });
 
-test('first sync persists the guest nickname but does not publish it', async (t) => {
+test('syncing a portrait neither creates nor renames a cloud identity', async (t) => {
   const db = database(t);
   browser(t, db);
   await saveNickname('小林');
-  await syncRecord(saveHistoryRecord(answers, result));
+  const saved = saveHistoryRecord(answers, result);
+  await syncRecord(saved);
   await refreshCloudHistory();
+  assert.equal(getAccountInfo().registered, false);
   assert.equal(getAccountInfo().nickname, '小林');
+  assert.equal(db.sqlite.prepare('SELECT COUNT(*) AS n FROM accounts').get().n, 0);
   assert.equal(getHistoryRecords()[0].shareId, null);
+  // The record is still on the cloud: sharing a portrait does not need an identity.
+  assert.ok(getHistoryRecords()[0].cloudId);
 });
 
 test('cross-device recovery lists summaries, keeps device-local portraits and never uploads them', async (t) => {
@@ -389,6 +398,7 @@ test('cross-device recovery lists summaries, keeps device-local portraits and ne
   const original = saveHistoryRecord(answers, result);
   await syncRecord(original);
   await publishRecord(original, '我');
+  await saveProfile({ nickname: '我' }, true);
   const key = await exportRecoveryKey();
   const originalToken = getIdentityToken();
   connection.storage.clear();
@@ -413,7 +423,7 @@ test('invalid, unknown and offline recovery leave the current identity and recor
   saveHistoryRecord(answers, result);
   const before = [...connection.storage];
   await assert.rejects(restoreIdentity('broken'), /格式/);
-  await assert.rejects(restoreIdentity(formatRecoveryKey(bob)), /没有云端存档/);
+  await assert.rejects(restoreIdentity(formatRecoveryKey(bob)), /还没有存到云端/);
   connection.offline();
   await assert.rejects(restoreIdentity(formatRecoveryKey(alice)));
   assert.deepEqual([...connection.storage], before);
@@ -423,6 +433,7 @@ test('storage failure during identity switching rolls back both identity and loc
   const db = database(t);
   const connection = browser(t, db);
   await call(db, '/records/existing', 'PUT', record);
+  await call(db, '/account', 'POST', { nickname: '原身份' });
   await saveNickname('原身份');
   saveHistoryRecord(answers, result);
   const before = new Map(connection.storage);
@@ -472,7 +483,7 @@ test('additive migration preserves legacy portraits, share links and anonymous o
   db.sqlite.exec(readFileSync(new URL('../migrations/0003_people.sql', import.meta.url), 'utf8'));
   db.sqlite.exec(readFileSync(new URL('../migrations/0004_privacy.sql', import.meta.url), 'utf8'));
   db.sqlite.exec(readFileSync(new URL('../migrations/0005_result_permissions.sql', import.meta.url), 'utf8'));
-  assert.equal((await call(db, '/account')).data.id, await identityId(alice));
+  assert.equal((await call(db, '/account')).status, 404);
   assert.equal((await call(db, '/records?summary=1')).data.records[0].id, 'legacy');
   assert.equal((await call(db, `/shares/${shareId}`)).status, 200);
   assert.equal((await call(db, '/records/legacy')).data.cloudId, 'legacy');
@@ -680,26 +691,29 @@ test('result permissions default to friends before a portrait exists and portrai
   assert.equal((await call(db, '/account')).data.resultVisibility, 'friends');
 });
 
-test('default friend visibility syncs the displayed result once and never falls back after deletion', async (t) => {
+test('saving an identity uploads no portrait; the displayed one goes up only when asked', async (t) => {
   const db = database(t);
   const connection = browser(t, db);
   const first = saveHistoryRecord(answers, result);
   updateAccountInfo({ displayRecordId: first.id });
-  await syncDefaultPortrait();
-  assert.equal(connection.requests.length, 0);
-  await saveProfile({ nickname: '默认好友可见' }, true);
-  await syncDefaultPortrait();
-  assert.equal(getAccountInfo().friendsVisible, true);
-  assert.equal(getHistoryRecords()[0].shareId, null);
-  const portraitId = getAccountInfo().portraitId;
-  saveHistoryRecord(answers, result);
-  await syncDefaultPortrait();
+  await saveProfile({ nickname: '只存身份' }, true);
+  assert.equal(connection.requests.some((r) => r.path.startsWith('/api/records/')), false);
+  assert.equal(getAccountInfo().portraitId, null);
+  assert.equal((await readPeople('/records')).records.length, 0);
+  // The explicit action is what puts the displayed portrait on the cloud.
+  await selectPortrait(getHistoryRecords()[0]);
   assert.equal((await readPeople('/records')).records.length, 1);
+  assert.equal(getAccountInfo().friendsVisible, true);
+  const portraitId = getAccountInfo().portraitId;
+  // A newer local result never replaces the chosen one on its own.
+  saveHistoryRecord(answers, result);
+  await refreshCloudHistory();
   assert.equal(getAccountInfo().portraitId, portraitId);
+  assert.equal((await readPeople('/records')).records.length, 1);
+  // Removing the displayed cloud copy does not fall back or re-upload.
   await removeCloudCopy(getHistoryRecords().find((r) => r.id === first.id));
   await refreshCloudHistory();
   assert.equal(getAccountInfo().hasPortraitSelection, true);
-  await syncDefaultPortrait();
   assert.equal((await readPeople('/records')).records.length, 0);
 });
 
@@ -711,10 +725,9 @@ test('private preference survives identity creation, stays private when choosing
   await saveResultVisibility('private');
   await saveProfile({ nickname: '自己的结果' }, true);
   assert.equal(getAccountInfo().resultVisibility, 'private');
-  await syncDefaultPortrait();
   assert.equal(connection.requests.some((r) => r.path.startsWith('/api/records/') && r.method === 'PUT'), false);
   await saveResultVisibility('friends');
-  assert.equal(getAccountInfo().friendsVisible, true);
+  assert.equal(getAccountInfo().resultVisibility, 'friends');
   await saveResultVisibility('private');
   await selectPortrait(getHistoryRecords()[0]);
   assert.equal(getAccountInfo().resultVisibility, 'private');
@@ -726,7 +739,7 @@ test('private preference survives identity creation, stays private when choosing
   await assert.rejects(saveResultVisibility('public'), /暂未开放/);
 });
 
-test('default visibility never uploads another identity’s local results after recovery', async (t) => {
+test('recovery never uploads this device’s portraits', async (t) => {
   const db = database(t);
   const connection = browser(t, db);
   const local = saveHistoryRecord(answers, result);
@@ -734,7 +747,7 @@ test('default visibility never uploads another identity’s local results after 
   await saveProfile({ nickname: '本机原身份' }, true);
   await call(db, '/account', 'POST', { nickname: '恢复的空身份' }, bob);
   await restoreIdentity(formatRecoveryKey(bob));
-  await syncDefaultPortrait();
+  await refreshCloudHistory();
   assert.equal(getAccountInfo().displayRecordId, undefined);
   assert.equal((await readPeople('/records')).records.length, 0);
   assert.equal(connection.requests.some((r) => r.path.startsWith('/api/records/') && r.method === 'PUT'), false);
@@ -1010,6 +1023,7 @@ test('admin stats stay closed without an issued token and expose aggregates only
   const db = database(t);
   await call(db, '/records/test', 'PUT', record);
   await call(db, '/records/test/share', 'POST', { nickname: '小林' });
+  await call(db, '/account', 'POST', { nickname: '小林' });
   await call(db, '/metrics/event', 'POST', { event: 'test_completed' }, '');
 
   const adminToken = 'k'.repeat(32);
@@ -1041,6 +1055,7 @@ test('admin stats stay closed without an issued token and expose aggregates only
 test('dashboard totals are materialized once per TTL instead of scanning every read', async (t) => {
   const db = database(t);
   await call(db, '/records/test', 'PUT', record);
+  await call(db, '/account', 'POST', { nickname: '小林' });
   const adminToken = 'k'.repeat(32);
   db.sqlite.prepare('INSERT INTO admin_tokens (token_hash, label, created_at) VALUES (?, ?, ?)')
     .run(createHash('sha256').update(adminToken).digest('hex'), 'test', Date.now());
@@ -1081,6 +1096,7 @@ test('activity tracking degrades safely when 0006 is not yet applied', async (t)
   const db = adapter(sqlite);
   // Code deployed ahead of its migration must still read and write identity data.
   assert.equal((await call(db, '/records/test', 'PUT', record)).status, 200);
+  assert.equal((await call(db, '/account', 'POST', { nickname: '降级测试' })).status, 200);
   assert.equal((await call(db, '/account')).status, 200);
   assert.equal((await call(db, '/records', 'GET')).data.records.length, 1);
 });
@@ -1225,4 +1241,21 @@ test('ghost cleanup is read-only by default and only touches abandoned identitie
   // Idempotent: a second pass finds nothing and changes nothing.
   const again = await call(db, '/admin/ghosts/purge', 'POST', { dryRun: false }, adminToken);
   assert.deepEqual(again.data.affected, { orphanDeleted: 0, dormantTombstoned: 0, tombstonePurged: 0 });
+});
+
+test('reading never creates an identity, and deleting one still adopts a legacy owner', async (t) => {
+  const db = database(t);
+  const ownerHash = createHash('sha256').update(alice).digest('hex');
+  db.sqlite.prepare(`INSERT INTO profiles (id, owner_hash, created_at, engine_version, question_version,
+    answer_count, answers_json, result_json, share_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run('legacy', ownerHash, record.createdAt, ENGINE_VERSION, QUESTION_VERSION, 10,
+      JSON.stringify(answers), JSON.stringify(result), 'c'.repeat(32));
+  // A credential that owns cloud records but no identity stays unregistered on read.
+  assert.equal((await call(db, '/account')).status, 404);
+  assert.equal((await call(db, '/records')).data.records.length, 1);
+  assert.equal(db.sqlite.prepare('SELECT COUNT(*) AS n FROM accounts').get().n, 0);
+  // Deleting the identity is a write, so it may adopt the legacy owner first.
+  assert.equal((await call(db, '/account', 'DELETE', { confirm: 'DELETE' })).status, 200);
+  assert.equal((await call(db, '/records')).data.records.length, 0);
+  assert.equal(db.sqlite.prepare('SELECT COUNT(*) AS n FROM accounts WHERE deleted_at IS NOT NULL').get().n, 1);
 });

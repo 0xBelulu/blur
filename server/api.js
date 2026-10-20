@@ -2,7 +2,7 @@ import { publicRecord, publicResult } from '../shared/profile.js';
 
 import { HttpError, json, body } from './http.js';
 import { metricsRoute } from './metrics.js';
-import { registerAccount, peopleRoute } from './people.js';
+import { peopleRoute, assertIdentityWritable } from './people.js';
 
 async function ownerHash(request) {
   const token = request.headers.get('Authorization')?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];
@@ -78,12 +78,10 @@ async function route(request, env) {
     if (typeof localId !== 'string' || !/^[\w-]{1,80}$/.test(localId)) throw new HttpError(400, '本机记录标识不正确');
     const answerCount = Object.keys(input.answers).length;
     if (answerCount < 10 || answerCount > 200) throw new HttpError(400, '作答数量不正确');
-    const accountNickname = input.accountNickname ?? '';
-    if (typeof accountNickname !== 'string' || accountNickname.trim().length > 24) throw new HttpError(400, '昵称最多 24 个字');
-    const accountBio = input.accountBio ?? '';
-    if (typeof accountBio !== 'string' || accountBio.trim().length > 80) throw new HttpError(400, '简介最多 80 个字');
-    // Immutable, idempotent snapshots. A timed-out retry cannot overwrite a result.
-    await registerAccount(env.DB, owner, accountNickname.trim(), accountBio.trim());
+    // A portrait upload is a record-level action. It never creates the cloud
+    // identity, and it never carries the account nickname: that stays local
+    // until the user explicitly saves the identity.
+    await assertIdentityWritable(env.DB, owner);
     await env.DB.prepare(`INSERT INTO profiles
       (id, owner_hash, created_at, engine_version, question_version, answer_count, answers_json, result_json, local_id)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING`)

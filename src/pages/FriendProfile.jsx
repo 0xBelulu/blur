@@ -42,7 +42,7 @@ export default function FriendProfile({ publicId, account, mode, onBack, onCreat
   const profile = portrait?.result.archetype;
   return <div className="personal-space"><div className="pp-page">
     <header className="pp-header"><button className="pp-text-button" onClick={onBack}><ArrowLeft size={16} />我的好友</button><span className="pp-brand">blur</span></header>
-    {!account.registered ? <section className="pp-empty"><h1>先找回你自己的名字。</h1><p>创建或恢复身份后，才能读取好友画像。</p><button className="pp-primary" onClick={onCreate}>创建或恢复身份<ArrowRight size={15} /></button></section>
+    {!account.registered ? <section className="pp-empty"><h1>先找回你自己的名字。</h1><p>把身份存到云端，或恢复已有身份，才能读取好友画像。</p><button className="pp-primary" onClick={onCreate}>存到云端或恢复身份<ArrowRight size={15} /></button></section>
       : error || !data ? <section className="pp-empty"><h1>{error ? (error.includes('注销') ? '这个身份已经注销。' : '暂时没能读到这份画像。') : '正在找回你们的连接…'}</h1><p role="status">{error}</p>{error && !error.includes('注销') && <button className="pp-outline" onClick={() => setRevision((v) => v + 1)}><RefreshCw size={14} />重新读取</button>}</section>
         : <>
           <section className="pp-identity"><div className="pp-person-head"><PortraitMark color={profile?.color} /><div><p className="pp-eyebrow">朋友的空间</p><h1>{data.person.nickname || '还没起名字'}</h1></div></div><p className="pp-bio">{data.person.bio || '还没写介绍。'}</p></section>

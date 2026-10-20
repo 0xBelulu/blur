@@ -44,7 +44,7 @@ export default function Settings({ account, records, pendingLegacy, onCreate, on
             <div className="pp-row-head">
               <div className="pp-row-main">
                 <strong>展示画像</strong>
-                <small>{shownProfile ? `现在展示「${shownProfile.title}」· ${day(shown)}` : '还没有可以展示的记录'}</small>
+                <small>{shownProfile ? `现在展示「${shownProfile.title}」· ${day(shown)}${registered && !shown?.cloudId ? ' · 还没上云' : ''}` : '还没有可以展示的记录'}</small>
               </div>
               <button className="pp-text-button" disabled={busy} onClick={onChoosePortrait}>更换<ChevronRight size={12} /></button>
             </div>
@@ -55,7 +55,7 @@ export default function Settings({ account, records, pendingLegacy, onCreate, on
               </button>)}
             </div>
             <p className="pp-note">{resultVisibility === 'friends'
-              ? registered ? '好友能看到你正在展示的这一份，新记录会按此范围同步。' : '创建身份后，好友才能看到这一份。'
+              ? registered ? '好友能看到你正在展示的那一份；每份记录需要单独存到云端。' : '把身份存到云端后，好友才能看到你展示的这一份。'
               : '只有你能在个人空间里看到这一份。'}原始作答始终只有自己可见。</p>
           </div>
 
@@ -70,8 +70,8 @@ export default function Settings({ account, records, pendingLegacy, onCreate, on
           </div>
 
           {!registered && <div className="pp-row">
-            <div className="pp-row-main"><small>创建身份后，可以添加好友，并在设备之间同步这些设置。</small></div>
-            <button className="pp-text-button" onClick={onCreate}>创建我的身份<ArrowRight size={13} /></button>
+            <div className="pp-row-main"><small>把身份存到云端后，可以添加好友，并在设备之间同步这些设置。</small></div>
+            <button className="pp-text-button" onClick={onCreate}>存到云端<ArrowRight size={13} /></button>
           </div>}
 
           <details className="pp-share-links">
@@ -96,14 +96,14 @@ export default function Settings({ account, records, pendingLegacy, onCreate, on
             <button className="pp-text-button" onClick={onEditProfile}>编辑<ChevronRight size={12} /></button>
           </div>
           <div className="pp-row">
-            <div className="pp-row-main"><strong>好友码</strong><small>{account.friendCode ? friendCode(account.friendCode) : '创建身份后获得'}</small></div>
+            <div className="pp-row-main"><strong>好友码</strong><small>{account.friendCode ? friendCode(account.friendCode) : '存到云端后获得'}</small></div>
             <button className="pp-text-button" disabled={busy || !registered || !account.friendCode} onClick={() => { setMessage(''); setConfirmReset(true); }}>更换<ChevronRight size={12} /></button>
           </div>
           <button className="pp-entry" disabled={busy || !registered} onClick={onBackup}>
             <span><strong>保存恢复密钥</strong><small>{account.backupSavedAt ? '已在这台设备保存过' : '换设备时，用它找回身份与好友'}</small></span><ChevronRight size={15} />
           </button>
           <button className="pp-entry" disabled={busy} onClick={onAccount}>
-            <span><strong>{registered ? '恢复或切换身份' : '创建或恢复身份'}</strong><small>{registered ? '用已有的密钥在另一台设备上找回' : '不需要邮箱或密码'}</small></span><ChevronRight size={15} />
+            <span><strong>{registered ? '恢复或切换身份' : '存到云端或恢复身份'}</strong><small>{registered ? '用已有的密钥在另一台设备上找回' : '不需要邮箱或密码'}</small></span><ChevronRight size={15} />
           </button>
         </div>
       </div>
@@ -139,7 +139,7 @@ export default function Settings({ account, records, pendingLegacy, onCreate, on
           <div className="pp-row">
             <div className="pp-row-main"><strong>退出这台设备</strong><small>{registered
               ? '本机画像会留下，云端身份与好友都还在。用恢复密钥可以随时回来。'
-              : '这个浏览器还没有创建身份，退出只是换一个新的本机身份。'}</small></div>
+              : '这个浏览器还没有存到云端的身份，退出只是换一个新的本机身份。'}</small></div>
             <button className="pp-text-button" disabled={busy} onClick={() => { setMessage(''); setConfirmLeave('signout'); }}>退出<ChevronRight size={12} /></button>
           </div>
           <div className="pp-row">

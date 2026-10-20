@@ -37,15 +37,15 @@ export default function AccountPanel({ account, onCreate, initialView = 'menu', 
       <header className="pp-account-head">
         <span className="pp-account-mark" aria-hidden="true"><Fingerprint size={18} strokeWidth={1.5} /></span>
         <div className="pp-account-id">
-          <p className="pp-account-label">留在这里的身份<span className="pp-account-state"><i />{account.registered ? '已连接云端' : '仅在本机'}</span></p>
+          <p className="pp-account-label">留在这里的身份<span className="pp-account-state"><i />{account.registered ? '已存到云端' : '只在这台设备'}</span></p>
           <h3 className="pp-account-name">{account.nickname || '未命名身份'}</h3>
           {account.friendCode && <p className="pp-account-code">好友码<span>{friendCode(account.friendCode)}</span></p>}
         </div>
       </header>
-      <p className="pp-account-note">{account.registered ? '这个浏览器记得你。换设备时，用恢复密钥把身份带过去。' : '目前只在这个浏览器里。创建身份后朋友能找到你，也可以用密钥找回别的设备上的身份。'}</p>
+      <p className="pp-account-note">{account.registered ? '这个浏览器记得你。换设备时，用恢复密钥把身份带过去。' : '目前只在这个浏览器里。存到云端后朋友能找到你，也可以用密钥找回别的设备上的身份。'}</p>
       <div className="pp-account-entries">
         {!account.registered && onCreate && <button className="pp-entry" onClick={() => (dismiss ? dismiss(onCreate) : onCreate())}>
-          <span><strong>创建我的身份</strong><small>一个名字就够了，不用邮箱和密码</small></span><ArrowRight size={15} />
+          <span><strong>把身份存到云端</strong><small>一个名字就够了，不用邮箱和密码</small></span><ArrowRight size={15} />
         </button>}
         {account.registered && <button className="pp-entry" onClick={openBackup}>
           <span><strong>保存恢复密钥</strong><small>把身份的钥匙存到别处</small></span><ArrowRight size={15} />

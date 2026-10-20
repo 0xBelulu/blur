@@ -24,7 +24,7 @@ import { questions } from './data/questions';
 import { getHistoryRecords, getAllHistoryRecords, saveHistoryRecord, removeLocalRecord } from './utils/historyStorage';
 import { flushPending, refreshCloudHistory, downloadRecord, signOut, deleteIdentity } from './utils/cloud';
 import { getAccountInfo, ensureLocalIdentity, updateAccountInfo } from './utils/identity';
-import { syncDefaultPortrait } from './utils/people';
+import { selectPortrait } from './utils/people';
 import { recordEvent } from './utils/metrics';
 
 const LOADING_DURATION = 3500;
@@ -113,7 +113,7 @@ export default function App() {
   useEffect(() => {
     if (!['me', 'invite', 'friend', 'together'].includes(route.screen)) return;
     let active = true;
-    ensureLocalIdentity().then(refreshCloudHistory).then(syncDefaultPortrait).then(() => { if (active) setNotice(''); })
+    ensureLocalIdentity().then(refreshCloudHistory).then(() => { if (active) setNotice(''); })
       .catch(() => { if (active) setNotice('暂时无法更新云端状态。画像已保存在本机，可以稍后重试。'); });
     return () => { active = false; };
   }, [route.screen]);
@@ -156,7 +156,7 @@ export default function App() {
       if (getAccountInfo().displayRecordId === undefined && !getAccountInfo().portraitId) {
         try { updateAccountInfo({ displayRecordId: saved.id }); } catch { /* The snapshot itself is already saved. */ }
       }
-      syncDefaultPortrait().catch(() => setNotice('画像已保存在本机，暂未同步给好友。请到我的空间重试。'));
+      // Finishing a test never uploads anything. Saving to the cloud is explicit.
       if (target) { setComparisonRecordId(saved.id); navigate('compare', target); }
       else navigate('result', saved.id);
     }, LOADING_DURATION);
@@ -190,6 +190,11 @@ export default function App() {
     try { await flushPending(); await refreshCloudHistory(); setNotice('待处理操作已完成'); }
     catch (error) { setNotice(error.message); }
   };
+  // The only way a portrait reaches the cloud: an explicit tap, here or in record management.
+  const syncPortrait = async (item) => {
+    try { await selectPortrait(item); setNotice(''); }
+    catch (error) { setNotice(error.message); }
+  };
   // Both actions end on the landing page: the account listener has already
   // swapped the identity out, so staying on "me" would only show an empty shell.
   const leaveDevice = async () => {
@@ -203,7 +208,7 @@ export default function App() {
   // Reading/parsing the full history is only needed when this page is displayed.
   const myPage = () => <My records={records} account={account} notice={notice} onBack={home} onOpen={openRecord}
     onDeleteLocal={removeLocal} onClearLocal={clearLocal} onRefresh={refresh} onRetryPending={retryPending}
-    onStartTest={() => start()} onSignOut={leaveDevice} onDeleteIdentity={removeIdentity}
+    onStartTest={() => start()} onSignOut={leaveDevice} onDeleteIdentity={removeIdentity} onSyncPortrait={syncPortrait}
     tab={['history', 'friends', 'settings'].includes(route.id) ? route.id : 'profile'} onTab={(tab) => navigate('me', tab)}
     onCreateIdentity={() => navigate('identity', ['friends', 'settings'].includes(route.id) ? route.id : 'profile')}
     onFriend={(id) => navigate('friend', id)}

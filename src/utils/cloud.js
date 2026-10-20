@@ -100,12 +100,10 @@ export function syncRecord(record) {
       const saved = await api(`/records/${cloudId}`, { token: ctx.token, method: 'PUT', body: {
         localId: local.id, createdAt: local.createdAt, engineVersion: local.engineVersion,
         questionVersion: local.questionVersion, answers: local.answers, result: local.result,
-        accountNickname: getAccountInfo().nickname || '',
-        accountBio: getAccountInfo().bio || '',
       } });
       assertIdentity(ctx);
       write(local, verified({ cloudId: saved.cloudId, cloudOwner: ctx.id, syncStatus: 'synced', shareId: saved.shareId, nickname: saved.nickname }));
-      updateAccountInfo({ registered: true });
+      // Syncing a record is not saving the identity: `registered` stays as it was.
       return saved;
     } catch (error) {
       if (getIdentityToken() === ctx.token && current(local.id)) {
@@ -208,7 +206,9 @@ export async function refreshCloudHistory() {
       if (error.status !== 404) throw error;
       account = { id: owner, registered: false, nickname: getAccountInfo().nickname || '' };
     }
-    const records = account.registered === false ? [] : (await api('/records?summary=1', { token })).records;
+    // Cloud records exist independently of the cloud identity: a shared portrait
+    // can be uploaded before the identity is ever saved, so both are always read.
+    const records = (await api('/records?summary=1', { token })).records;
     assertIdentity({ token });
     mergeCloudRecords(records, owner, revisions);
     if (revision === accountRevision && !operations.has(ACCOUNT_OPERATION)) updateAccountInfo({ ...account,
@@ -235,12 +235,9 @@ export async function saveNickname(nickname) {
 
 export function exportRecoveryKey() {
   return identityOperation('recovery-export', async (ctx) => {
-    let account;
-    try { account = await api('/account', { token: ctx.token }); }
-    catch (error) {
-      if (error.status !== 404) throw error;
-      account = await api('/account', { token: ctx.token, method: 'POST', body: { nickname: getAccountInfo().nickname || '', bio: getAccountInfo().bio || '' } });
-    }
+    // The key opens a cloud identity. Without one there is nothing to open, and
+    // generating a key must not be the thing that puts the identity on the cloud.
+    const account = await api('/account', { token: ctx.token });
     assertIdentity(ctx);
     updateAccountInfo({ ...account, registered: true });
     return formatRecoveryKey(ctx.token);
