@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, ArrowUpRight, ArrowRight, Check, ChevronRight, CloudUpload, Settings as SettingsIcon, LockKeyhole, Pencil, RefreshCw, Users } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, ArrowRight, Check, ChevronRight, CloudUpload, Settings as SettingsIcon, LockKeyhole, Pencil, RefreshCw, Users, Copy } from 'lucide-react';
 import AccountPanel from '../components/AccountPanel';
 import ShareControls from '../components/ShareControls';
 import RecordBadges from '../components/RecordBadges';
@@ -7,8 +7,9 @@ import { PersonalModal, PortraitField, PortraitMark, CloudState } from '../compo
 import AccentPicker from '../components/AccentPicker';
 import { recordArchetype, displayRecord } from '../utils/portraits';
 import { resolveAccent, FOLLOW } from '../../shared/accents.js';
-import { saveProfile, saveAccent } from '../utils/cloud';
+import { saveProfile, saveAccent, shareUrl } from '../utils/cloud';
 import { selectPortrait } from '../utils/people';
+import { copyText, COPY_MANUAL_HINT } from '../utils/clipboard';
 import Friends from './Friends';
 import Settings from './Settings';
 import './Personal.css';
@@ -42,6 +43,11 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
     try { await action(); if (close) setModal(null); }
     catch (error) { setMessage(error.message); }
     finally { setBusy(false); }
+  };
+  const copyShare = async (shareId) => {
+    setMessage('');
+    const outcome = await copyText(shareUrl(shareId));
+    setMessage(outcome === 'manual' ? COPY_MANUAL_HINT : '分享链接已复制到剪贴板');
   };
   const settings = () => onTab('settings');
   return <div className="personal-space">
@@ -118,7 +124,11 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
                 <h3>{recordArchetype(r)?.title || '画像'}{selected?.id === r.id && <small>正在展示</small>}</h3>
                 <p className="pp-record-meta"><span>{r.answerCount} 题</span><RecordBadges record={r} /></p>
               </div>
-              <div className="pp-row-actions"><button className="pp-text-button" onClick={() => onOpen(r)}>回看<ArrowUpRight size={13} /></button><button className="pp-text-button" onClick={() => open('record', r.id)}>管理</button></div>
+              <div className="pp-row-actions">
+                {r.shareId && <button className="pp-text-button" onClick={() => copyShare(r.shareId)}><Copy size={12} />复制链接</button>}
+                <button className="pp-text-button" onClick={() => onOpen(r)}>回看<ArrowUpRight size={13} /></button>
+                <button className="pp-text-button" onClick={() => open('record', r.id)}>管理</button>
+              </div>
             </article>)}
             {!displayed.length && <p className="pp-history-note">这里还没有记录。{!records.length ? '完成一次测试，就会留下第一份。' : '换个筛选看看。'}</p>}
             <p className="pp-history-note">展示结果按「设置」里的可见范围同步；每份记录的同步、分享与删除，在自己的「管理」里操作。</p>
@@ -159,7 +169,7 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
         {modal.type === 'backup' && <AccountPanel key={account.id || 'guest'} account={account} initialView="backup" />}
         {modal.type === 'record' && (managed ? <>
           <p className="pp-dialog-description">{date(managed)} · {managed.answerCount} 题 · {recordArchetype(managed)?.title}</p>
-          <ShareControls record={managed} sharing={false} onPermissions={() => { setModal(null); settings(); }} onCreate={onCreateIdentity} />
+          <ShareControls record={managed} onPermissions={() => { setModal(null); settings(); }} onCreate={onCreateIdentity} />
           {managed.localPresent && <details className="pp-danger"><summary>删除这份本机记录</summary><p>云端副本和公开链接保持原有状态。</p><button className="pp-outline" onClick={() => { onDeleteLocal(managed.id); setModal(null); }}>确认删除本机记录</button></details>}
         </> : <p className="pp-helper">这份记录已移除。</p>)}
         {modal.type === 'clear' && <><p className="pp-dialog-description">仅清除这个浏览器保存的画像与答案，云端副本和公开链接不变。本机独有的记录将无法找回。</p><button className="pp-outline" onClick={() => { onClearLocal(); setModal(null); }}>确认清空本机记录</button></>}

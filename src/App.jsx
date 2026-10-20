@@ -32,7 +32,10 @@ const INITIAL_TEST_SYMBOLS = buildPersonaSymbols(solveProfile([]).field, revealA
 
 function readRoute() {
   const [screen, id] = window.location.hash.slice(1).split('/');
-  if (screen === 'invite') return /^[A-Fa-f0-9]{12}$/.test(id || '') ? { screen, id: id.toUpperCase() } : { screen: 'me', id: 'friends' };
+  if (screen === 'invite') {
+    const cleanId = (id || '').replaceAll('-', '').toUpperCase();
+    return /^[A-F0-9]{12}$/.test(cleanId) ? { screen, id: cleanId } : { screen: 'me', id: 'friends' };
+  }
   if (['friend', 'together'].includes(screen)) return /^[a-f0-9]{32}$/.test(id || '') ? { screen, id } : { screen: 'me', id: 'friends' };
   if (screen === 'identity') return { screen, id: /^(profile|friends|settings|invite-[A-Fa-f0-9]{12}|friend-[a-f0-9]{32}|together-[a-f0-9]{32})$/.test(id || '') ? id : 'profile' };
   if (screen === 'me') return { screen, id: ['history', 'friends', 'settings'].includes(id) ? id : 'profile' };

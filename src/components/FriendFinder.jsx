@@ -6,8 +6,8 @@ import { friendAction, readPeople } from '../utils/people';
 import { getIdentityToken } from '../utils/identity';
 
 function parseCode(value) {
-  const fromLink = value.trim().match(/#invite\/([a-fA-F0-9]{12})$/)?.[1];
-  return (fromLink || value).replaceAll('-', '').trim().toUpperCase();
+  const fromLink = value.trim().match(/#invite\/([a-fA-F0-9-]{12,16})/)?.[1];
+  return (fromLink || value).replaceAll(/[^a-fA-F0-9]/g, '').trim().toUpperCase();
 }
 
 // 添加朋友是「我的好友码」的另一半，直接摆在页面上，不再藏进弹窗。

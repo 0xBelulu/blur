@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Eye, Sparkles } from "lucide-react";
 import { questions } from "../data/questions";
@@ -185,7 +185,12 @@ export default function Test({ onComplete, onSymbolsChange, onExit }) {
         return prev.slice(0, existingPos);
       }
       if (prev.length >= 4) return prev;
-      return [...prev, optionIndex];
+      const next = [...prev, optionIndex];
+      if (next.length === 3 && currentQuestion?.options?.length === 4) {
+        const remaining = [0, 1, 2, 3].find((idx) => !next.includes(idx));
+        if (remaining !== undefined) next.push(remaining);
+      }
+      return next;
     });
   };
 
@@ -215,7 +220,7 @@ export default function Test({ onComplete, onSymbolsChange, onExit }) {
     if (!question) return null;
 
     if (question.type === "rank") {
-      if (currentRankOrder.length > 0) {
+      if (currentRankOrder.length === 4) {
         return {
           questionId: question.id,
           type: "rank",
@@ -310,7 +315,7 @@ export default function Test({ onComplete, onSymbolsChange, onExit }) {
   };
 
   const handleSeeResult = () => {
-    const currentAnswer = isTransition ? null : buildAnswer(currentQuestion, rankOrder, scaleValue, selectedOption);
+    const currentAnswer = (!isTransition && canProceed()) ? buildAnswer(currentQuestion, rankOrder, scaleValue, selectedOption) : null;
     const newAnswers = [...answers];
     if (currentAnswer) {
       newAnswers[currentIndex] = currentAnswer;
@@ -329,24 +334,34 @@ export default function Test({ onComplete, onSymbolsChange, onExit }) {
     }
   };
 
+  const keyStateRef = useRef({});
+  useEffect(() => {
+    keyStateRef.current = {
+      isTransition, isScaleQuestion, isRankQuestion, currentQuestion,
+      canProceed, handleNext, handlePrev, handleSelect, handleRankClick,
+      currentIndex,
+    };
+  });
+
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (isTransition) return;
+      const s = keyStateRef.current;
+      if (s.isTransition) return;
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       const key = e.key;
 
-      if (isScaleQuestion) {
+      if (s.isScaleQuestion) {
         if (["1", "2", "3", "4", "5"].includes(key)) {
           setScaleValue(Number(key));
           return;
         }
-      } else if (isRankQuestion) {
+      } else if (s.isRankQuestion) {
         if (["1", "2", "3", "4"].includes(key)) {
-          handleRankClick(Number(key) - 1);
+          s.handleRankClick(Number(key) - 1);
           return;
         }
-      } else if (currentQuestion?.options) {
+      } else if (s.currentQuestion?.options) {
         const optionKeys = ["a", "b", "c", "d"];
         const numberKeys = ["1", "2", "3", "4"];
         const lowerKey = key.toLowerCase();
@@ -354,24 +369,24 @@ export default function Test({ onComplete, onSymbolsChange, onExit }) {
         let optIndex = optionKeys.indexOf(lowerKey);
         if (optIndex === -1) optIndex = numberKeys.indexOf(key);
 
-        if (optIndex >= 0 && optIndex < currentQuestion.options.length) {
-          handleSelect(currentQuestion.options[optIndex]);
+        if (optIndex >= 0 && optIndex < s.currentQuestion.options.length) {
+          s.handleSelect(s.currentQuestion.options[optIndex]);
           return;
         }
       }
 
-      if (key === "Enter" && canProceed()) {
+      if (key === "Enter" && s.canProceed()) {
         e.preventDefault();
-        handleNext();
-      } else if (key === "ArrowLeft" && currentIndex > 0) {
+        s.handleNext();
+      } else if (key === "ArrowLeft" && s.currentIndex > 0) {
         e.preventDefault();
-        handlePrev();
+        s.handlePrev();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  });
+  }, []);
 
   const getQuestionLabel = () => (isExplorePhase ? "探索模式" : "捕捉中");
 

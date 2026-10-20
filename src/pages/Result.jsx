@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RotateCcw, Zap, HeartHandshake, ArrowRightLeft } from "lucide-react";
+import { RotateCcw, Zap, HeartHandshake, ArrowRightLeft, ArrowLeft } from "lucide-react";
 import TraitSpace2D from "../components/TraitSpace2D";
 import GlassButton from "../components/GlassButton";
 import { DIMENSION_PAIRS, determineSuppressedTraits } from "../utils/blurEngine";
@@ -28,7 +28,7 @@ const tabContentVariants = {
   exit: { opacity: 0, y: -8 },
 };
 
-export default function Result({ result, onRestart, record, publicView = false, onCompare, onOpenMy, onPermissions, account, justFinished = false }) {
+export default function Result({ result, onRestart, record, publicView = false, onCompare, onOpenMy, onPermissions, account, justFinished = false, restartLabel = "返回主页" }) {
   const [activeTab, setActiveTab] = useState("cloud");
   const [activePairIndex, setActivePairIndex] = useState(0);
   const [hoveredArchetype, setHoveredArchetype] = useState(null);
@@ -636,7 +636,7 @@ export default function Result({ result, onRestart, record, publicView = false, 
           transition={{ delay: 1.0 }}
           className="mt-auto pt-8 w-full"
         >
-          {!publicView && record && <ShareControls record={record} sharing={false} onPermissions={onPermissions}
+          {!publicView && record && <ShareControls record={record} onPermissions={onPermissions}
             onCreate={() => setInviteOpen(true)} createLabel="给这份画像一个身份" />}
           {!publicView && !record && <p role="status" className="text-xs text-blur-text-muted">本机存储空间不足，本次画像暂未存档。</p>}
           <div className="mt-4 flex flex-wrap items-center justify-center md:justify-start gap-3">
@@ -644,8 +644,8 @@ export default function Result({ result, onRestart, record, publicView = false, 
             {!publicView && onOpenMy && <GlassButton variant="secondary" onClick={onOpenMy}>我的空间</GlassButton>}
             <GlassButton variant="ghost" onClick={onRestart}>
               <span className="flex items-center gap-2">
-                <RotateCcw size={14} />
-                返回主页
+                {restartLabel === "返回主页" ? <RotateCcw size={14} /> : <ArrowLeft size={14} />}
+                {restartLabel}
               </span>
             </GlassButton>
           </div>

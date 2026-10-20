@@ -53,7 +53,7 @@ export default function FriendProfile({ publicId, account, mode, onBack, onCreat
           {portrait && profile ? <>
             <section className="pp-portrait"><div className="pp-portrait-art"><div className="pp-art-label"><span>ta 现在用这份画像介绍自己</span></div><PortraitField profile={profile} color={accent} /><span className="pp-art-date">{new Date(portrait.createdAt).toLocaleDateString('zh-CN')}<i />{portrait.answerCount} 题</span></div>
               <div className="pp-portrait-copy"><p className="pp-eyebrow">当下的画像</p><h2>{profile.title}<span>{profile.roleBadge}</span></h2><p className="pp-subtitle">{profile.subtitle}</p><p className="pp-description">{profile.roleSummary}</p><button className="pp-primary" onClick={onCompare}>看看我们有什么不同<ArrowRight size={15} /></button><button className="pp-text-button pp-change" onClick={() => setFull(!full)}>{full ? '收起完整画像' : '读读 ta 的画像'}</button></div>
-            </section>{full && <Result result={portrait.result} publicView onRestart={onBack} onCompare={onCompare} />}
+            </section>{full && <Result result={portrait.result} publicView onRestart={() => setFull(false)} restartLabel="收起完整画像" onCompare={onCompare} />}
           </> : <section className="pp-empty"><PortraitMark color={accent} /><h2>这里先留个空白。</h2><p>朋友还没有展示画像，或者暂时收起了它。你们的连接仍然在。</p></section>}
         </>}
   </div></div>;

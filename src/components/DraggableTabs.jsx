@@ -122,7 +122,7 @@ export default function DraggableTabs({
     <div
       ref={containerRef}
       className={`relative flex rounded-2xl glass p-1 select-none ${className}`}
-      style={{ touchAction: "none" }}
+      style={{ touchAction: "pan-y" }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

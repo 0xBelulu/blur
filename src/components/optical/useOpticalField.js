@@ -368,8 +368,6 @@ export function useOpticalField({
 
       state.mouseX = clientX;
       state.mouseY = clientY;
-      state.mouseNormalizedX = (clientX / (window.innerWidth || 1)) * 2 - 1;
-      state.mouseNormalizedY = (clientY / (window.innerHeight || 1)) * 2 - 1;
       state.hasInteracted = true;
       state.lastInteractionTime = performance.now();
 
@@ -383,6 +381,11 @@ export function useOpticalField({
       if (scopeRef.current === "container") {
         const { w, h } = sizeRef.current;
         if (w && h && (point.x < 0 || point.y < 0 || point.x > w || point.y > h)) return;
+        state.mouseNormalizedX = w ? Math.max(-1, Math.min(1, (point.x / w) * 2 - 1)) : 0;
+        state.mouseNormalizedY = h ? Math.max(-1, Math.min(1, (point.y / h) * 2 - 1)) : 0;
+      } else {
+        state.mouseNormalizedX = (clientX / (window.innerWidth || 1)) * 2 - 1;
+        state.mouseNormalizedY = (clientY / (window.innerHeight || 1)) * 2 - 1;
       }
 
       const hit = focusOnClosest(point);

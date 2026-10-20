@@ -4,6 +4,7 @@ import GlassButton from './GlassButton';
 import RecordBadges from './RecordBadges';
 import { publishRecord, revokeShare, shareUrl, syncRecord, removeCloudCopy, refreshCloudHistory } from '../utils/cloud';
 import { getAccountInfo } from '../utils/identity';
+import { selectPortrait } from '../utils/people';
 import { copyText, COPY_MANUAL_HINT } from '../utils/clipboard';
 
 export default function ShareControls({ record, sharing = true, onPermissions, onCreate, createLabel = '把身份存到云端' }) {
@@ -28,7 +29,11 @@ export default function ShareControls({ record, sharing = true, onPermissions, o
       {getAccountInfo().registered ? <>
         <p className="text-blur-text-muted leading-relaxed">将这份记录保存到云端。展示结果的可见范围在「权限管理」中设置。</p>
         <GlassButton variant="secondary" disabled={busy} onClick={() => run(async () => {
-          await syncRecord(record); setMessage('云端副本已保存。');
+          await syncRecord(record);
+          if (getAccountInfo().registered && (!getAccountInfo().portraitId || getAccountInfo().displayRecordId === record.id)) {
+            try { await selectPortrait(record); } catch { /* sync itself succeeded */ }
+          }
+          setMessage('云端副本已保存。');
         })}><span className="flex items-center gap-2"><CloudUpload size={14} />{busy ? '正在同步…' : record.cloudId ? '重试同步' : '同步到云端'}</span></GlassButton>
       </> : <>
         <p className="text-blur-text-muted leading-relaxed">云端画像要归属一个能找回的身份。先把身份存到云端，再同步这一份。</p>

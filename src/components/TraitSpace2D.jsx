@@ -380,7 +380,7 @@ export default function TraitSpace2D({
         height: "auto",
         aspectRatio: "1 / 1",
         cursor: "default",
-        touchAction: "none",
+        touchAction: "pan-y",
       }}
     />
   );
