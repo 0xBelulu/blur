@@ -1,4 +1,5 @@
 import { publicRecord } from '../shared/profile.js';
+import { ACCENT_KEYS } from '../src/data/accents.js';
 import { HttpError, json, body } from './http.js';
 import { touchAccount } from './metrics.js';
 
@@ -32,14 +33,27 @@ export async function account(db, owner) {
   const portrait = row.portrait_id && await db.prepare('SELECT id FROM profiles WHERE id = ? AND owner_hash = ? AND deleted_at IS NULL')
     .bind(row.portrait_id, owner).first();
   return { id: owner.slice(0, 12), publicId: row.public_id, friendCode: row.friend_code,
-    nickname: row.nickname, bio: row.bio, createdAt: row.created_at,
+    nickname: row.nickname, bio: row.bio, createdAt: row.created_at, accent: row.accent || null,
     portraitId: portrait ? row.portrait_id : null, friendsVisible: !!portrait && !!row.friends_visible,
     requireFriendApproval: !!row.require_friend_approval,
     resultVisibility: row.result_visibility,
     hasPortraitSelection: row.portrait_id !== null };
 }
 
-function person(row) { return { publicId: row.public_id, nickname: row.nickname, bio: row.bio }; }
+function safePalette(value) {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) && parsed.length === 3 ? parsed : null;
+  } catch { return null; }
+}
+
+// accent 是本人选的主色；palette 是「跟随画像」时那份画像的原型色，
+// 只在对方画像对当前请求者可见时才会出现在查询结果里。
+function person(row) {
+  return { publicId: row.public_id, nickname: row.nickname, bio: row.bio,
+    accent: row.accent || null, palette: safePalette(row.palette) };
+}
 
 // Every cloud record must belong to an identity that can be recovered. Uploads
 // therefore require one: an account-less profile row would be unreachable if the
@@ -75,12 +89,24 @@ export async function peopleRoute(request, db, owner, path) {
     if (request.method === 'GET') return json(await account(db, owner));
     if (request.method === 'POST') {
       const input = await body(request);
+      if (input.accent !== undefined && input.accent !== null && !ACCENT_KEYS.includes(input.accent)) {
+        throw new HttpError(400, '请选择可用的主色');
+      }
+      // 只改主色时不必带昵称：它是外观偏好，不是身份资料。
+      if (input.nickname === undefined && input.accent !== undefined) {
+        const existing = await adoptExisting(db, owner);
+        if (!existing) throw new HttpError(404, '这个身份还没有存到云端');
+        if (existing.deleted_at) throw new HttpError(410, '这个身份已注销，不能再使用');
+        await db.prepare('UPDATE accounts SET accent = ? WHERE owner_hash = ?').bind(input.accent, owner).run();
+        return json(await account(db, owner));
+      }
       if (typeof input.nickname !== 'string' || input.nickname.trim().length > 24) throw new HttpError(400, '名字最多 24 个字');
       if (input.bio !== undefined && (typeof input.bio !== 'string' || input.bio.trim().length > 80)) throw new HttpError(400, '简介最多 80 个字');
       if (input.resultVisibility !== undefined && !['private', 'friends'].includes(input.resultVisibility)) throw new HttpError(400, '请选择可用的测试结果权限');
       await registerAccount(db, owner, input.nickname.trim(), input.bio?.trim() || '');
       if (input.bio === undefined) await db.prepare('UPDATE accounts SET nickname = ? WHERE owner_hash = ?').bind(input.nickname.trim(), owner).run();
       else await db.prepare('UPDATE accounts SET nickname = ?, bio = ? WHERE owner_hash = ?').bind(input.nickname.trim(), input.bio.trim(), owner).run();
+      if (input.accent !== undefined) await db.prepare('UPDATE accounts SET accent = ? WHERE owner_hash = ?').bind(input.accent, owner).run();
       if (input.resultVisibility !== undefined) await db.prepare(`UPDATE accounts SET result_visibility = ?, friends_visible = ? WHERE owner_hash = ?`)
         .bind(input.resultVisibility, input.resultVisibility === 'friends' ? 1 : 0, owner).run();
       return json(await account(db, owner));
@@ -100,8 +126,8 @@ export async function peopleRoute(request, db, owner, path) {
     // The row itself stays as a tombstone: it blocks resurrection and lets a
     // friend see "已注销" instead of a person silently disappearing.
     await db.prepare(`UPDATE accounts SET deleted_at = ?, nickname = '', bio = '', portrait_id = NULL,
-      friend_code = NULL, friends_visible = 0, require_friend_approval = 0, result_visibility = 'private'
-      WHERE owner_hash = ?`).bind(now, owner).run();
+      friend_code = NULL, friends_visible = 0, require_friend_approval = 0, result_visibility = 'private',
+      accent = NULL WHERE owner_hash = ?`).bind(now, owner).run();
     return json({ deleted: true });
   }
   if (path === '/api/account/privacy' && request.method === 'PUT') {
@@ -144,14 +170,18 @@ export async function peopleRoute(request, db, owner, path) {
   const lookup = path.match(/^\/api\/people\/by-code\/([A-Fa-f0-9-]{12,14})$/);
   if (lookup && request.method === 'GET') {
     const code = lookup[1].replaceAll('-', '').toUpperCase();
-    const row = await db.prepare('SELECT public_id, nickname, bio, require_friend_approval FROM accounts WHERE friend_code = ?').bind(code).first();
+    const row = await db.prepare('SELECT public_id, nickname, bio, accent, require_friend_approval FROM accounts WHERE friend_code = ?').bind(code).first();
     if (!row) throw new HttpError(404, '没有找到这个好友码，请检查后再试');
     return json({ ...person(row), requireFriendApproval: !!row.require_friend_approval });
   }
   if (path === '/api/friends' && request.method === 'GET') {
     const { results } = await db.prepare(`SELECT f.id, f.status, f.requester, f.created_at, f.accepted_at,
-      a.public_id, a.nickname, a.bio, a.deleted_at FROM friendships f JOIN accounts a
+      a.public_id, a.nickname, a.bio, a.accent, a.deleted_at,
+      json_extract(p.result_json, '$.archetype.color') AS palette
+      FROM friendships f JOIN accounts a
       ON a.owner_hash = CASE WHEN f.owner_a = ? THEN f.owner_b ELSE f.owner_a END
+      LEFT JOIN profiles p ON p.id = a.portrait_id AND p.owner_hash = a.owner_hash
+        AND p.deleted_at IS NULL AND a.friends_visible = 1
       WHERE f.owner_a = ? OR f.owner_b = ? ORDER BY f.created_at DESC`).bind(owner, owner, owner).all();
     return json({ connections: results.map((r) => ({ id: r.id, status: r.status,
       direction: r.requester === owner ? 'outgoing' : 'incoming', person: { ...person(r), deleted: !!r.deleted_at },
@@ -202,7 +232,8 @@ export async function peopleRoute(request, db, owner, path) {
   const profile = path.match(/^\/api\/friends\/([a-f0-9]{32})\/profile$/);
   if (profile && request.method === 'GET') {
     // Permission and projection are read in one query, including concurrent revocation.
-    const row = await db.prepare(`SELECT a.public_id, a.nickname AS person_name, a.bio, a.deleted_at AS person_deleted, p.*
+    const row = await db.prepare(`SELECT a.public_id, a.nickname AS person_name, a.bio, a.accent,
+      a.deleted_at AS person_deleted, json_extract(p.result_json, '$.archetype.color') AS palette, p.*
       FROM accounts a JOIN friendships f ON f.status = 'accepted'
       AND ((f.owner_a = ? AND f.owner_b = a.owner_hash) OR (f.owner_b = ? AND f.owner_a = a.owner_hash))
       LEFT JOIN profiles p ON p.id = a.portrait_id AND p.owner_hash = a.owner_hash AND p.deleted_at IS NULL AND a.friends_visible = 1
@@ -210,7 +241,8 @@ export async function peopleRoute(request, db, owner, path) {
     if (!row) throw new HttpError(403, '你们还不是好友，或这段连接已经解除');
     // p.* also carries a deleted_at, so the account's own tombstone is aliased above.
     if (row.person_deleted) throw new HttpError(410, '对方已注销这个身份');
-    return json({ person: { publicId: row.public_id, nickname: row.person_name, bio: row.bio }, portrait: row.id ? publicRecord({
+    return json({ person: { publicId: row.public_id, nickname: row.person_name, bio: row.bio,
+      accent: row.accent || null, palette: safePalette(row.palette) }, portrait: row.id ? publicRecord({
       id: row.id, createdAt: row.created_at, engineVersion: row.engine_version, questionVersion: row.question_version,
       answerCount: row.answer_count, nickname: row.person_name, result: JSON.parse(row.result_json),
     }) : null });

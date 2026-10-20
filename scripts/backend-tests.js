@@ -42,6 +42,7 @@ function database(t, legacy = false) {
     sqlite.exec(readFileSync(new URL('../migrations/0007_admin_tokens.sql', import.meta.url), 'utf8'));
     sqlite.exec(readFileSync(new URL('../migrations/0008_stats_snapshots.sql', import.meta.url), 'utf8'));
     sqlite.exec(readFileSync(new URL('../migrations/0009_account_deletion.sql', import.meta.url), 'utf8'));
+    sqlite.exec(readFileSync(new URL('../migrations/0010_accent.sql', import.meta.url), 'utf8'));
   }
   t.after(() => sqlite.close());
   return { sqlite, ...adapter(sqlite) };
@@ -545,11 +546,43 @@ test('friend-code lookup returns only invitation information; self and unknown c
   const db = database(t);
   const { a, b } = await pair(db);
   const found = await call(db, `/people/by-code/${b.friendCode}`);
-  assert.deepEqual(Object.keys(found.data).sort(), ['bio', 'nickname', 'publicId', 'requireFriendApproval']);
+  assert.deepEqual(Object.keys(found.data).sort(), ['accent', 'bio', 'nickname', 'palette', 'publicId', 'requireFriendApproval']);
   assert.equal(found.data.publicId, b.publicId);
   assert.equal((await call(db, '/people/by-code/000000000000')).status, 404);
   assert.equal((await call(db, '/friends', 'POST', { publicId: a.publicId })).status, 400);
   assert.equal((await call(db, '/friends', 'POST', { publicId: 'bad' })).status, 400);
+});
+
+test('accent is an account-level preference: follow by default, validated, and carried to friends', async (t) => {
+  const db = database(t);
+  const { a, b } = await pair(db);
+  assert.equal(a.accent, null, '未选择时为空，等价于跟随画像');
+
+  // 只改主色不必带昵称，也不能顺手清掉名字。
+  const saved = await call(db, '/account', 'POST', { accent: 'clay' });
+  assert.equal(saved.status, 200);
+  assert.equal(saved.data.accent, 'clay');
+  assert.equal(saved.data.nickname, '小林');
+
+  // 色板外的值不落库。
+  assert.equal((await call(db, '/account', 'POST', { accent: 'neon' })).status, 400);
+  assert.equal((await call(db, '/account')).data.accent, 'clay');
+
+  // 未上云的身份没有账号行可写。
+  assert.equal((await call(db, '/account', 'POST', { accent: 'clay' }, 'c'.repeat(64))).status, 404);
+
+  // 好友列表带上对方的主色，以及「跟随画像」时要用的原型色。
+  await call(db, '/records/portrait', 'PUT', record, bob);
+  await call(db, '/account/portrait', 'PUT', { portraitId: 'portrait', friendsVisible: true }, bob);
+  await call(db, '/friends', 'POST', { publicId: b.publicId });
+  const listed = (await call(db, '/friends')).data.connections.find((c) => c.person.publicId === b.publicId);
+  assert.equal(listed.person.accent, null);
+  assert.deepEqual(listed.person.palette, result.archetype.color);
+
+  // 删除身份时一并清空，墓碑不保留外观偏好。
+  await call(db, '/account', 'DELETE', { confirm: 'DELETE' });
+  const ownerHash = createHash('sha256').update(alice).digest('hex');
+  assert.equal(db.sqlite.prepare('SELECT accent FROM accounts WHERE owner_hash = ?').get(ownerHash).accent, null);
 });
 
 test('legacy clients without code proof keep manual confirmation and cannot bypass it using public IDs', async (t) => {

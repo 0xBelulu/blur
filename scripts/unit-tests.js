@@ -15,6 +15,9 @@ import {
   DIMENSION_PAIRS,
 } from "../src/utils/blurEngine.js";
 import { DIMENSIONS, DIMENSION_KEYS } from "../src/data/dimensions.js";
+import {
+  ACCENTS, ACCENT_KEYS, DEFAULT_INK, FOLLOW, markShades, personAccent, resolveAccent,
+} from "../src/data/accents.js";
 import { ARCHETYPE_PROFILES } from "../src/data/archetypeProfiles.js";
 import { getDualSynergy, DUAL_SYNERGIES } from "../src/data/dualArchetypes.js";
 import {
@@ -260,6 +263,68 @@ test("historyStorage retains local-only records beyond 30", () => {
   }
   const records = getHistoryRecords();
   assertEqual(records.length, 35, "Local-only records must not be silently discarded");
+});
+
+/* ── 主色：色板跨度与解析 ───────────────────────────────────────────────── */
+
+function lab(rgb) {
+  const lin = (v) => { const c = v / 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+  const [r, g, b] = rgb.map(lin);
+  const x = r * 0.4124 + g * 0.3576 + b * 0.1805;
+  const y = r * 0.2126 + g * 0.7152 + b * 0.0722;
+  const z = r * 0.0193 + g * 0.1192 + b * 0.9505;
+  const f = (t) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116);
+  const fx = f(x / 0.95047), fy = f(y), fz = f(z / 1.08883);
+  return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+}
+function deltaE(a, b) {
+  const la = lab(a), lb = lab(b);
+  return Math.hypot(la[0] - lb[0], la[1] - lb[1], la[2] - lb[2]);
+}
+
+test("accent palette keeps a perceivable spread", () => {
+  // 原型色只有 19.5 的平均色差，压进 59px 头像后多数低于可辨阈值。
+  // 色板必须拉开：任意两色 ΔE ≥ 14，这样合成后仍 ≥ 9。
+  let closest = { distance: Infinity };
+  for (let i = 0; i < ACCENTS.length; i++) {
+    for (let j = i + 1; j < ACCENTS.length; j++) {
+      const distance = deltaE(ACCENTS[i].rgb, ACCENTS[j].rgb);
+      if (distance < closest.distance) closest = { distance, pair: `${ACCENTS[i].name}/${ACCENTS[j].name}` };
+    }
+  }
+  assert(closest.distance >= 14, `色板最接近的一对 ${closest.pair} 只有 ΔE ${closest.distance.toFixed(1)}，低于 14`);
+});
+
+test("accent keys are unique and follow is reserved", () => {
+  const keys = ACCENTS.map((accent) => accent.key);
+  assertEqual(new Set(keys).size, keys.length, "色板 key 不能重复");
+  assert(!keys.includes(FOLLOW), "follow 是保留值，不能被色板占用");
+  assertEqual(ACCENT_KEYS[0], FOLLOW, "白名单第一项应是 follow");
+  assertEqual(ACCENT_KEYS.length, ACCENTS.length + 1, "白名单应包含 follow 与全部色板");
+});
+
+test("resolveAccent follows the portrait until a color is chosen", () => {
+  const profile = ARCHETYPE_PROFILES.mist;
+  assertDeepEqual(resolveAccent({}, profile), profile.color, "没选择时应跟随画像");
+  assertDeepEqual(resolveAccent({ accent: FOLLOW }, profile), profile.color, "follow 等价于没选择");
+  assertDeepEqual(resolveAccent({ accent: "clay" }, profile), [196, 143, 119], "选择了就用色板色");
+  assertDeepEqual(resolveAccent({ accent: "retired" }, profile), profile.color, "未知色值应回退原型色");
+  assertDeepEqual(resolveAccent({ accent: "retired" }, null), DEFAULT_INK, "连画像都没有时用默认灰");
+});
+
+test("personAccent prefers the chosen color, then the visible portrait palette", () => {
+  assertDeepEqual(personAccent({ accent: "lake", palette: [180, 185, 195] }), [96, 142, 136], "自己选的主色优先");
+  assertDeepEqual(personAccent({ accent: null, palette: [180, 185, 195] }), [180, 185, 195], "没选时用对方的原型色");
+  assertDeepEqual(personAccent({}), DEFAULT_INK, "什么都拿不到时用默认灰");
+});
+
+test("markShades derives three tones from one color", () => {
+  const shades = markShades([96, 142, 136]);
+  const tones = [shades.ink, shades.light, shades.dark].map((value) => value.split(",").map(Number));
+  assertEqual(tones.length, 3, "头像应有三团");
+  assert(tones[1][0] > tones[0][0], "第二团应比主色亮");
+  assert(tones[2][0] < tones[0][0], "第三团应比主色暗");
+  tones.flat().forEach((channel) => assert(channel >= 0 && channel <= 255, "色值必须在 0–255 之间"));
 });
 
 /* ── Summary ─────────────────────────────────────────────────────────────── */

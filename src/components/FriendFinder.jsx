@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArrowRight, Check } from 'lucide-react';
 import { PortraitMark } from './PersonalElements';
+import { personAccent } from '../data/accents.js';
 import { friendAction, readPeople } from '../utils/people';
 import { getIdentityToken } from '../utils/identity';
 
@@ -34,7 +35,7 @@ export default function FriendFinder({ initialCode = '', onChanged }) {
     </form>
     {!person && !message && <p className="pp-finder-hint">12 位好友码，或整条邀请链接，都可以。</p>}
     {person && <div className="pp-found">
-      <div className="pp-found-person"><PortraitMark /><div><h3>{person.nickname || '还没起名字'}</h3><p>{person.bio || '还没写介绍。'}</p></div></div>
+      <div className="pp-found-person"><PortraitMark color={personAccent(person)} /><div><h3>{person.nickname || '还没起名字'}</h3><p>{person.bio || '还没写介绍。'}</p></div></div>
       {!sent && <button className="pp-primary" disabled={busy} onClick={async () => {
         const token = getIdentityToken(); setBusy(true); setMessage('');
         try {

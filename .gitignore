@@ -32,3 +32,6 @@ dist-ssr
 PROJECT.md
 TEST_INFRA.md
 TEST_READY.md
+
+# Playwright CLI artifacts
+.playwright-cli/

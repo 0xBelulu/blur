@@ -30,9 +30,9 @@
 @media(max-width:650px){.pp-cloud-state{margin-top:8px;font-size:10.5px}}
 .pp-identity h1{margin:0;font-weight:500;font-size:30px;line-height:1.35;letter-spacing:.03em;overflow-wrap:anywhere}
 .pp-mark{position:relative;display:inline-block;width:59px;height:59px;flex-shrink:0;border-radius:50%;background:rgba(255,255,255,.24);border:1px solid rgba(var(--ink),.28);isolation:isolate;overflow:hidden}
-.pp-mark i{position:absolute;width:70%;height:70%;border-radius:50%;filter:blur(7px);background:rgba(var(--ink),.7);top:3%;left:4%}
-.pp-mark i:nth-child(2){top:33%;left:37%;background:rgba(196,165,137,.48)}
-.pp-mark i:nth-child(3){top:36%;left:5%;background:rgba(143,181,196,.5)}
+.pp-mark i{position:absolute;width:70%;height:70%;border-radius:50%;filter:blur(7px);background:rgba(var(--ink),.85);top:3%;left:4%}
+.pp-mark i:nth-child(2){top:33%;left:37%;background:rgba(var(--ink-light),.55)}
+.pp-mark i:nth-child(3){top:36%;left:5%;background:rgba(var(--ink-dark),.5)}
 .pp-bio{grid-column:1 / -1;padding-left:79px;margin:16px 0 0;font-size:14px;line-height:1.9;color:#756d66}
 .pp-tabs{display:flex;gap:33px;border-bottom:1px solid var(--line)}
 .pp-tabs button{position:relative;border:0;background:none;padding:13px 0 15px;color:var(--muted);font-size:13px;white-space:nowrap}
@@ -46,7 +46,7 @@
 .pp-art-label{position:absolute;left:20px;right:20px;top:17px;display:flex;align-items:center;justify-content:space-between;font-size:10px;color:#837b73;z-index:1}
 .pp-sequence{font-size:9px;letter-spacing:.1em;color:#a69c92}
 .pp-field{position:relative;width:310px;height:310px;isolation:isolate;flex-shrink:0}
-.pp-wash{position:absolute;inset:12%;border-radius:50%;background:radial-gradient(ellipse at 35% 28%,rgba(255,255,255,.4),transparent 70%),radial-gradient(ellipse at 52% 66%,rgba(var(--ink),.62),transparent 65%),radial-gradient(ellipse at 27% 70%,rgba(143,181,196,.38),transparent 62%),radial-gradient(ellipse at 70% 20%,rgba(196,165,137,.37),transparent 64%);filter:blur(13px);animation:pp-breathe 9s ease-in-out infinite alternate}
+.pp-wash{position:absolute;inset:12%;border-radius:50%;background:radial-gradient(ellipse at 35% 28%,rgba(255,255,255,.4),transparent 70%),radial-gradient(ellipse at 52% 66%,rgba(var(--ink),.74),transparent 65%),radial-gradient(ellipse at 27% 70%,rgba(143,181,196,.28),transparent 62%),radial-gradient(ellipse at 70% 20%,rgba(196,165,137,.26),transparent 64%);filter:blur(13px);animation:pp-breathe 9s ease-in-out infinite alternate}
 .pp-orbit{position:absolute;border:1px solid rgba(var(--ink),.34);border-radius:50%;inset:13%;transform:rotate(-25deg) scaleY(.9)}
 .pp-orbit-two{inset:8%;border-color:rgba(var(--ink),.2);transform:rotate(32deg) scaleX(.87)}
 .pp-orbit-three{inset:20%;border-color:rgba(255,255,255,.6);transform:rotate(60deg) scaleX(.9)}
@@ -296,3 +296,28 @@
 @media(max-width:650px){.pp-header{gap:10px}.pp-header-lead{gap:13px}.pp-exit{font-size:11px!important;padding:7px 12px 7px 10px;gap:5px}.pp-exit svg{width:13px;height:13px}}
 @media(max-width:650px){.pp-dialog-inner{padding:26px 22px 28px}.pp-dialog h2{font-size:22px;margin:4px 0 18px}.pp-account-head{gap:13px}.pp-account-mark{width:38px;height:38px}.pp-account-name{font-size:22px}.pp-account-note{font-size:10.5px}.pp-account-label{font-size:9.5px}.pp-entry{padding:14px 0}}
 @media(max-width:650px){.pp-invite-row{gap:16px;padding:18px 0}.pp-invite-code{font-size:22px}.pp-invite-actions{gap:16px}.pp-invite-actions .pp-outline{min-height:42px;padding:10px 15px;font-size:11.5px!important}.pp-invite-actions .pp-text-button{font-size:11px!important}.pp-connect-foot{font-size:10.5px}.pp-finder form{gap:10px}.pp-finder input{font-size:13px;padding:9px 0}.pp-finder .pp-outline{min-height:38px;padding:8px 13px;font-size:11px!important}.pp-friend-group{margin-top:30px}.pp-friend-group .pp-friend{padding:22px 0}.pp-record-info h3{gap:9px}.pp-record-meta>.pp-record-status::before{margin:0 6px}.pp-record-status{font-size:10px}}
+
+/* 主色：编辑资料里的一行，默认跟随画像 */
+.pp-accent{margin:22px 0 4px}
+.pp-accent-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.pp-accent-head .pp-mark{width:44px;height:44px}
+.pp-accent-copy{display:flex;flex-direction:column;gap:1px;min-width:0}
+.pp-accent-label{font-size:11px;color:var(--muted);letter-spacing:.04em}
+.pp-accent-copy strong{font-size:13px;font-weight:500;color:var(--text);line-height:1.5}
+.pp-swatches{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:10px 2px;align-items:start}
+.pp-follow{grid-column:1/-1;display:flex;align-items:center;gap:11px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.34);text-align:left;transition:border-color .18s ease,background .18s ease}
+.pp-follow:hover{background:rgba(255,255,255,.66)}
+.pp-follow[aria-checked="true"]{border-color:rgba(var(--dot),.55);background:rgba(var(--dot),.07)}
+.pp-follow .pp-swatch-dot{flex-shrink:0;width:26px;height:26px}
+.pp-follow-copy{display:flex;flex-direction:column;gap:1px;min-width:0}
+.pp-follow-copy strong{font-size:11.5px;font-weight:500;color:var(--text)}
+.pp-follow-copy small{font-size:10px;color:#948a80;line-height:1.5}
+.pp-follow-check{margin-left:auto;flex-shrink:0;color:#857596}
+.pp-swatch{display:flex;flex-direction:column;align-items:center;gap:6px;padding:3px 1px;border:0;background:none;border-radius:8px}
+.pp-swatch-dot{width:30px;height:30px;border-radius:50%;background:rgba(var(--dot),.82);box-shadow:inset 0 0 0 1px rgba(var(--dot),.5);transition:box-shadow .18s ease,transform .18s ease}
+.pp-swatch:hover .pp-swatch-dot{transform:scale(1.06)}
+.pp-swatch[aria-checked="true"] .pp-swatch-dot{box-shadow:0 0 0 2px #f7f4ef,0 0 0 3.5px rgba(var(--dot),.85),inset 0 0 0 1px rgba(var(--dot),.5)}
+.pp-swatch-dot.is-follow{background:rgba(var(--dot),.3);border:1px dashed rgba(var(--dot),.72);box-shadow:none}
+.pp-swatch-name{font-size:10px;color:var(--muted);letter-spacing:.02em;white-space:nowrap}
+.pp-swatch[aria-checked="true"] .pp-swatch-name{color:var(--text)}
+@media(max-width:650px){.pp-swatches{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 2px}}

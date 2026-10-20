@@ -94,7 +94,8 @@ export async function purgeGhosts(db, options = {}) {
     nickname = '', share_id = NULL WHERE owner_hash IN (SELECT owner_hash FROM accounts WHERE ${DORMANT})`)
     .bind(now, dormantCutoff).run();
   await db.prepare(`UPDATE accounts SET deleted_at = ?, nickname = '', bio = '', portrait_id = NULL,
-    friend_code = NULL, friends_visible = 0, require_friend_approval = 0, result_visibility = 'private'
+    friend_code = NULL, friends_visible = 0, require_friend_approval = 0, result_visibility = 'private',
+    accent = NULL
     WHERE owner_hash IN (SELECT owner_hash FROM accounts WHERE ${DORMANT})`)
     .bind(now, dormantCutoff).run();
   affected.dormantTombstoned = found.dormant;

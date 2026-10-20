@@ -6,6 +6,7 @@ import {
   getIdentityToken, identityId, ensureLocalIdentity, getAccountInfo, updateAccountInfo,
   formatRecoveryKey, parseRecoveryKey, adoptIdentity, forgetDeviceIdentity,
 } from './identity.js';
+import { ACCENT_KEYS, FOLLOW } from '../data/accents.js';
 
 const operations = new Map();
 const ACCOUNT_OPERATION = Symbol('account');
@@ -347,4 +348,19 @@ export async function saveProfile({ nickname, bio = '' }, create = false) {
 
 export async function saveBio(bio) {
   return saveProfile({ nickname: getAccountInfo().nickname || '', bio });
+}
+
+/**
+ * 主色是账号级的外观偏好：没上云就只存在这台设备，
+ * 上云后跟着身份走，好友看到的也是这一个颜色。
+ */
+export async function saveAccent(accent) {
+  const value = ACCENT_KEYS.includes(accent) ? accent : FOLLOW;
+  await ensureLocalIdentity();
+  if (!getAccountInfo().registered) return updateAccountInfo({ accent: value });
+  return identityOperation(`accent:${value}`, async (ctx) => {
+    const account = await api('/account', { token: ctx.token, method: 'POST', body: { accent: value } });
+    assertIdentity(ctx);
+    return updateAccountInfo({ ...account, registered: true, checkStatus: 'verified' });
+  });
 }

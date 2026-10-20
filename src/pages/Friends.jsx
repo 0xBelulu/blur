@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, Copy, RefreshCw } from 'lucide-react';
 import { PersonalModal, PortraitMark } from '../components/PersonalElements';
+import { personAccent } from '../data/accents.js';
 import FriendFinder from '../components/FriendFinder';
 import { readPeople, friendAction, friendCode, inviteUrl } from '../utils/people';
 
@@ -78,7 +79,7 @@ export default function Friends({ account, onCreate, onFriend, onBackup, onSetti
     {pending.length > 0 && <section className="pp-friend-group">
       <div className="pp-friend-group-head"><h3>等待回应</h3><span>{pending.length}</span></div>
       {pending.map((c) => <article key={c.id} className="pp-friend" data-deleted={c.person.deleted ? 'true' : undefined}>
-        <PortraitMark /><div className="pp-friend-info"><h3>{c.person.deleted ? '已注销的身份' : (c.person.nickname || '还没起名字')}</h3><p>{c.person.deleted ? '这个身份已被删除。' : c.person.bio}</p><small>{c.person.deleted ? '等待清理' : c.direction === 'incoming' ? '想和你成为好友' : '已送出申请，等待对方接受'}</small></div>
+        <PortraitMark color={personAccent(c.person)} /><div className="pp-friend-info"><h3>{c.person.deleted ? '已注销的身份' : (c.person.nickname || '还没起名字')}</h3><p>{c.person.deleted ? '这个身份已被删除。' : c.person.bio}</p><small>{c.person.deleted ? '等待清理' : c.direction === 'incoming' ? '想和你成为好友' : '已送出申请，等待对方接受'}</small></div>
         <div className="pp-row-actions">{c.direction === 'incoming' && !c.person.deleted && <button className="pp-outline" disabled={busy} onClick={() => mutate(c, true)}>接受</button>}
           <button className="pp-text-button" disabled={busy} onClick={() => mutate(c)}>{c.direction === 'incoming' ? '暂不接受' : '取消申请'}</button></div>
       </article>)}
@@ -88,7 +89,7 @@ export default function Friends({ account, onCreate, onFriend, onBackup, onSetti
       <div className="pp-friend-group-head"><h3>已经是好友</h3><span>{friends.length || ''}</span>
         <button className="pp-icon-button" onClick={reload} title="刷新好友列表" aria-label="刷新好友列表"><RefreshCw size={13} /></button></div>
       {friends.map((c) => <article className="pp-friend" key={c.id} data-deleted={c.person.deleted ? 'true' : undefined}>
-        <PortraitMark /><div className="pp-friend-info">
+        <PortraitMark color={personAccent(c.person)} /><div className="pp-friend-info">
           <h3>{c.person.deleted ? <span className="pp-friend-deleted">已注销的身份</span> : <button className="pp-name-button" onClick={() => onFriend(c.person.publicId)}>{c.person.nickname || '还没起名字'}</button>}</h3>
           <p>{c.person.deleted ? '这个身份已被删除，画像与好友码都不再可用。' : (c.person.bio || '还没写介绍。')}</p>
           <small>{c.person.deleted ? '30 天后会自动移除' : `${new Date(c.acceptedAt).toLocaleDateString('zh-CN')} 成为好友`}</small>

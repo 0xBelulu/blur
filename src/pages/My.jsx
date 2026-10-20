@@ -4,8 +4,10 @@ import AccountPanel from '../components/AccountPanel';
 import ShareControls from '../components/ShareControls';
 import RecordBadges from '../components/RecordBadges';
 import { PersonalModal, PortraitField, PortraitMark, CloudState } from '../components/PersonalElements';
+import AccentPicker from '../components/AccentPicker';
 import { recordArchetype, displayRecord } from '../utils/portraits';
-import { saveProfile } from '../utils/cloud';
+import { resolveAccent, FOLLOW } from '../data/accents.js';
+import { saveProfile, saveAccent } from '../utils/cloud';
 import { selectPortrait } from '../utils/people';
 import Friends from './Friends';
 import Settings from './Settings';
@@ -21,15 +23,18 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
   const [message, setMessage] = useState('');
   const [draftName, setDraftName] = useState('');
   const [draftBio, setDraftBio] = useState('');
+  const [draftAccent, setDraftAccent] = useState(FOLLOW);
   const [choice, setChoice] = useState(null);
   const [filter, setFilter] = useState('all');
   const selected = displayRecord(records, account);
   const profile = recordArchetype(selected);
+  // 表达层：头像与光场用主色；记录列表的小圆点仍用原型色（信息层）。
+  const accent = resolveAccent(account, profile);
   const managed = records.find((r) => r.id === modal?.recordId);
   const displayed = records.filter((r) => filter === 'all' || (filter === 'local' ? r.localPresent && !r.cloudId : filter === 'cloud' ? r.cloudId : r.shareId));
   const open = (type, recordId) => {
     setMessage(''); setModal({ type, recordId });
-    if (type === 'edit') { setDraftName(account.nickname || ''); setDraftBio(account.bio || ''); }
+    if (type === 'edit') { setDraftName(account.nickname || ''); setDraftBio(account.bio || ''); setDraftAccent(account.accent || FOLLOW); }
     if (type === 'choose') setChoice(selected?.id || null);
   };
   const run = async (action, close = false) => {
@@ -49,7 +54,7 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
         <button className="pp-text-button pp-backup" onClick={settings}><SettingsIcon size={17} />设置</button>
       </header>
       <section className="pp-identity" aria-label="个人介绍">
-        <div className="pp-person-head"><PortraitMark color={profile?.color} /><div><p className="pp-eyebrow">我的空间</p><h1>{account.nickname || '还没起名字'}</h1>
+        <div className="pp-person-head"><PortraitMark color={accent} /><div><p className="pp-eyebrow">我的空间</p><h1>{account.nickname || '还没起名字'}</h1>
           <CloudState registered={account.registered} cloudRecords={records.filter((r) => r.cloudId).length} /></div></div>
         <button className="pp-text-button" onClick={() => open('edit')}><Pencil size={14} />编辑资料</button>
         <p className="pp-bio">{account.bio || '写一点关于自己的事，或先留个空白。'}</p>
@@ -66,7 +71,7 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
               <section className="pp-portrait" aria-label="当前展示画像">
                 <div className="pp-portrait-art">
                   <div className="pp-art-label"><span>现在，我用这份画像介绍自己</span><span className="pp-sequence">{String(records.indexOf(selected) + 1).padStart(2, '0')} — {String(records.length).padStart(2, '0')}</span></div>
-                  <PortraitField key={selected.id} profile={profile} />
+                  <PortraitField key={selected.id} profile={profile} color={accent} />
                   <span className="pp-art-date">{date(selected)} <i />{selected.answerCount} 题</span>
                 </div>
                 <div className="pp-portrait-copy" key={selected.id}>
@@ -131,10 +136,15 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
       </main>
       {message && !modal && <p className="pp-status" role="status">{message}</p>}
       {modal && <PersonalModal title={({ edit: '写一点关于你', identity: '身份与备份', backup: '保存恢复密钥', choose: '哪一份更像现在的你？', record: '这一次的记录', clear: '清空本机记录？' })[modal.type]} onClose={() => setModal(null)} busy={busy}>
-        {modal.type === 'edit' && <form onSubmit={(e) => { e.preventDefault(); run(() => saveProfile({ nickname: draftName, bio: draftBio }), true); }}>
+        {modal.type === 'edit' && <form onSubmit={(e) => { e.preventDefault(); run(async () => {
+          await saveProfile({ nickname: draftName, bio: draftBio });
+          // 主色是外观偏好，改过才单独写一次，避免每次保存资料都多发一个请求。
+          if (draftAccent !== (account.accent || FOLLOW)) await saveAccent(draftAccent);
+        }, true); }}>
           <label>展示名字<input value={draftName} onChange={(e) => setDraftName(e.target.value)} maxLength={24} required /></label>
           <label>关于我<textarea value={draftBio} onChange={(e) => setDraftBio(e.target.value)} maxLength={80} rows={3} placeholder="一句普通的话也很好。" /></label>
-          <p className="pp-helper">{account.registered ? '名字和简介会随身份保存，好友可以看到。' : '先保存在这个浏览器。存到云端后，可以和朋友连接。'}</p>
+          <AccentPicker value={draftAccent} profile={profile} onChange={setDraftAccent} />
+          <p className="pp-helper">{account.registered ? '名字、简介和主色会随身份保存，好友可以看到。' : '先保存在这个浏览器。存到云端后，可以和朋友连接。'}</p>
           <button className="pp-primary" disabled={busy || !draftName.trim()}>{busy ? '正在保存…' : '保存资料'}<Check size={14} /></button>
         </form>}
         {modal.type === 'choose' && <>

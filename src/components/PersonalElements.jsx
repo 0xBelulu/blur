@@ -1,9 +1,11 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { ModalDismiss } from './modalDismiss';
+import { DEFAULT_INK, markShades } from '../data/accents.js';
 
-export function PortraitMark({ color = [180, 185, 195] }) {
-  return <span className="pp-mark" style={{ '--ink': color.join(',') }} aria-hidden="true"><i /><i /><i /></span>;
+export function PortraitMark({ color = DEFAULT_INK }) {
+  const shades = markShades(color || DEFAULT_INK);
+  return <span className="pp-mark" style={{ '--ink': shades.ink, '--ink-light': shades.light, '--ink-dark': shades.dark }} aria-hidden="true"><i /><i /><i /></span>;
 }
 
 // The one place that answers "is this account only here, or is there something
@@ -18,8 +20,8 @@ export function CloudState({ registered, cloudRecords = 0 }) {
   </p>;
 }
 
-export function PortraitField({ profile }) {
-  return <div className="pp-field" style={{ '--ink': (profile.color || [180, 185, 195]).join(',') }} aria-hidden="true">
+export function PortraitField({ profile, color }) {
+  return <div className="pp-field" style={{ '--ink': (color || profile.color || DEFAULT_INK).join(',') }} aria-hidden="true">
     <div className="pp-wash" /><div className="pp-orbit pp-orbit-one" /><div className="pp-orbit pp-orbit-two" /><div className="pp-orbit pp-orbit-three" />
     <span className="pp-field-symbol">{profile.symbol}</span><span className="pp-field-cross cross-one">+</span><span className="pp-field-cross cross-two">+</span><span className="pp-field-dot" />
   </div>;
