@@ -29,10 +29,10 @@
 .pp-cloud-state.is-local i{background:#c0b4a8}
 @media(max-width:650px){.pp-cloud-state{margin-top:8px;font-size:10.5px}}
 .pp-identity h1{margin:0;font-weight:500;font-size:30px;line-height:1.35;letter-spacing:.03em;overflow-wrap:anywhere}
-.pp-mark{position:relative;display:inline-block;width:59px;height:59px;flex-shrink:0;border-radius:50%;background:rgba(255,255,255,.24);border:1px solid rgba(var(--ink),.28);isolation:isolate;overflow:hidden}
-.pp-mark i{position:absolute;width:70%;height:70%;border-radius:50%;filter:blur(7px);background:rgba(var(--ink),.85);top:3%;left:4%}
-.pp-mark i:nth-child(2){top:33%;left:37%;background:rgba(var(--ink-light),.55)}
-.pp-mark i:nth-child(3){top:36%;left:5%;background:rgba(var(--ink-dark),.5)}
+.pp-mark{position:relative;display:inline-block;width:59px;height:59px;flex-shrink:0;border-radius:50%;background:rgba(255,255,255,.2);border:1px solid rgba(var(--ink),.22);isolation:isolate;overflow:hidden}
+/* 与 .pp-wash 同一套构造：一层径向渐变 + 模糊，只是缩到 59px。
+   右上角的暖色来自主色的补色——冷底压一点暖，才不会变成一颗单色的球。 */
+.pp-mark-wash{position:absolute;inset:0;filter:blur(4px);background:radial-gradient(ellipse at 32% 26%,rgba(255,255,255,.62),transparent 60%),radial-gradient(ellipse at 54% 66%,rgba(var(--ink),.82),transparent 66%),radial-gradient(ellipse at 74% 26%,rgba(var(--ink-counter),.5),transparent 60%),radial-gradient(ellipse at 22% 74%,rgba(var(--ink-dark),.5),transparent 58%)}
 .pp-bio{grid-column:1 / -1;padding-left:79px;margin:16px 0 0;font-size:14px;line-height:1.9;color:#756d66}
 .pp-tabs{display:flex;gap:33px;border-bottom:1px solid var(--line)}
 .pp-tabs button{position:relative;border:0;background:none;padding:13px 0 15px;color:var(--muted);font-size:13px;white-space:nowrap}

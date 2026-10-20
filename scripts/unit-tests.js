@@ -318,12 +318,15 @@ test("personAccent prefers the chosen color, then the visible portrait palette",
   assertDeepEqual(personAccent({}), DEFAULT_INK, "什么都拿不到时用默认灰");
 });
 
-test("markShades derives three tones from one color", () => {
+test("markShades derives four stops including the counter color", () => {
   const shades = markShades([96, 142, 136]);
-  const tones = [shades.ink, shades.light, shades.dark].map((value) => value.split(",").map(Number));
-  assertEqual(tones.length, 3, "头像应有三团");
-  assert(tones[1][0] > tones[0][0], "第二团应比主色亮");
-  assert(tones[2][0] < tones[0][0], "第三团应比主色暗");
+  const tones = [shades.ink, shades.light, shades.dark, shades.counter].map((value) => value.split(",").map(Number));
+  assertEqual(tones.length, 4, "头像应有四个色标");
+  assert(tones[1][0] > tones[0][0], "提亮色应比主色亮");
+  assert(tones[2][0] < tones[0][0], "压暗色应比主色暗");
+  // 补色要真的换到对面：湖水偏绿，补色应偏红。这是光场冷暖关系的来源。
+  assert(tones[3][0] > tones[3][1], "补色的红通道应高于绿通道");
+  assert(deltaE(tones[3], tones[0]) > 20, "补色与主色的色差要够大，否则等于没加");
   tones.flat().forEach((channel) => assert(channel >= 0 && channel <= 255, "色值必须在 0–255 之间"));
 });
 

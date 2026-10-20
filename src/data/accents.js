@@ -67,14 +67,57 @@ export function shiftColor(rgb, factor, offset = 0) {
   return rgb.map((channel) => clamp(channel * factor + offset));
 }
 
+function rgbToHsl([r, g, b]) {
+  const red = r / 255, green = g / 255, blue = b / 255;
+  const max = Math.max(red, green, blue), min = Math.min(red, green, blue);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h;
+  if (max === red) h = (green - blue) / d + (green < blue ? 6 : 0);
+  else if (max === green) h = (blue - red) / d + 2;
+  else h = (red - green) / d + 4;
+  return [h / 6, s, l];
+}
+
+function hslToRgb([h, s, l]) {
+  if (s === 0) { const value = clamp(l * 255); return [value, value, value]; }
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  const channel = (t) => {
+    const hue = (t + 1) % 1;
+    if (hue < 1 / 6) return p + (q - p) * 6 * hue;
+    if (hue < 1 / 2) return q;
+    if (hue < 2 / 3) return p + (q - p) * (2 / 3 - hue) * 6;
+    return p;
+  };
+  return [channel(h + 1 / 3), channel(h), channel(h - 1 / 3)].map((v) => clamp(v * 255));
+}
+
 /**
- * 头像的三个色团全部由主色推导：主色、提亮、压暗。
- * 以前第二、三团写死暖沙与天青，等于给所有头像盖同一层底。
+ * 补色：光场之所以好看，是因为冷底压了一块暖色（实测两者相差 169°）。
+ * 头像沿用同一构造，所以这里按主色算补色，而不是再写死一个暖沙。
+ * 饱和度收一点、明度提一点，避免在 59px 里显得脏。
+ */
+export function complementOf(rgb) {
+  const [h, s, l] = rgbToHsl(rgb);
+  return hslToRgb([(h + 0.5) % 1, Math.min(1, s * 0.85), Math.min(1, l + 0.06)]);
+}
+
+function towardWhite(rgb, amount) {
+  return rgb.map((channel) => clamp(channel + (255 - channel) * amount));
+}
+
+/**
+ * 头像的四个色标：主色、提亮、压暗、补色。
+ * 和 `.pp-wash` 用的是同一套构造（一层径向渐变 + 模糊），只是尺寸小。
  */
 export function markShades(rgb = DEFAULT_INK) {
   return {
     ink: rgb.join(','),
-    light: shiftColor(rgb, 1.18, 8).join(','),
+    light: towardWhite(rgb, 0.45).join(','),
     dark: shiftColor(rgb, 0.82).join(','),
+    counter: complementOf(rgb).join(','),
   };
 }

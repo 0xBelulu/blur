@@ -168,17 +168,24 @@ export function resolveAccent(account, profile) {
 
 `--ink` 的传递链本身不用改：`PortraitMark` 和 `PortraitField` 已经接收 `color` 数组并写成 `--ink`，只是调用方从传 `profile.color` 改成传 `resolveAccent(...)`。
 
-真正要改的是 `.pp-mark` 的三个圆。现在第一个用 `rgba(var(--ink),.7)`，另外两个**硬编码**暖沙 `rgba(196,165,137,.48)` 和天青 `rgba(143,181,196,.5)`。人格色只占三个色团里的一个，另两个恒定贡献暖与冷，所以任何主色进去都会被拉回同一个中间调。
+真正要改的是 `.pp-mark`。最初第一个圆用 `rgba(var(--ink),.7)`，另外两个**硬编码**暖沙 `rgba(196,165,137,.48)` 和天青 `rgba(143,181,196,.5)`：人格色只占三个色团里的一个，另两个恒定贡献暖与冷，所以任何主色进去都会被拉回同一个中间调。
 
-改法：三个圆全部由主色推导，取消固定色。
+改成与 `.pp-wash` **同一套构造**——一层径向渐变加模糊，只是缩到 59px：
 
-| 色团 | 现状 | 改后 |
-| --- | --- | --- |
-| 第一团（左上，主色） | `rgba(var(--ink), .7)` | `rgba(var(--ink), .85)` |
-| 第二团（右下，提亮） | 暖沙 `.48` | `rgba(var(--ink-light), .55)`，`ink-light = min(255, ink × 1.18 + 8)` |
-| 第三团（左下，压暗） | 天青 `.5` | `rgba(var(--ink-dark), .5)`，`ink-dark = ink × 0.82` |
+```
+background:
+  radial-gradient(ellipse at 32% 26%, rgba(255,255,255,.62), transparent 60%),
+  radial-gradient(ellipse at 54% 66%, rgba(var(--ink),.82), transparent 66%),
+  radial-gradient(ellipse at 74% 26%, rgba(var(--ink-counter),.5), transparent 60%),
+  radial-gradient(ellipse at 22% 74%, rgba(var(--ink-dark),.5), transparent 58%);
+filter: blur(4px);
+```
 
-实测效果：雾 ↔ 底片的头像 ΔE 从 1.85 升到 3.43。提升有限，因为**头像只能放大色板的差异，不能创造差异**——底子还是那两个相近的原型色。所以「放宽色板跨度」才是主因，这一条只是把损失从 3 倍收回到 2 倍。
+关键是右上角那个 `--ink-counter`。光场之所以好看，是因为冷底压了一块暖色——实测 `.pp-wash` 的冷色 `H197` 与暖色 `H28` 相差 169°，基本就是补色。所以这里按主色算补色，而不是再写死一个暖沙：蓝主色自动得到暖橙，陶土主色自动得到冷蓝，任何主色下都有冷暖关系。
+
+模糊从 7px 降到 4px：原来的模糊半径是色团的 17%，是光场的三倍多，59px 里散不开，只会糊成一颗实心球。
+
+**试过但否掉的方案**：用三个离散模糊圆（主色 / 补色 / 压暗）。放大看有层次，但 59px 下三团之间会露出边界，读起来像一块没化开的颜料，而不是一片连续的雾；渐变版虽然更"光滑"，但它是同一个连续场，和光场是同一件事。
 
 同时修好友列表：`Friends.jsx` 的两处 `<PortraitMark />` 和 `FriendFinder.jsx` 的一处都补上颜色。这是独立于主色功能的缺陷，即使不做主色也应该修——现在好友列表里所有人头像完全一致。
 

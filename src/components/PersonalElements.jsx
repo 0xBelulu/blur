@@ -5,7 +5,7 @@ import { DEFAULT_INK, markShades } from '../data/accents.js';
 
 export function PortraitMark({ color = DEFAULT_INK }) {
   const shades = markShades(color || DEFAULT_INK);
-  return <span className="pp-mark" style={{ '--ink': shades.ink, '--ink-light': shades.light, '--ink-dark': shades.dark }} aria-hidden="true"><i /><i /><i /></span>;
+  return <span className="pp-mark" style={{ '--ink': shades.ink, '--ink-light': shades.light, '--ink-dark': shades.dark, '--ink-counter': shades.counter }} aria-hidden="true"><span className="pp-mark-wash" /></span>;
 }
 
 // The one place that answers "is this account only here, or is there something
