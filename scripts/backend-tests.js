@@ -63,9 +63,11 @@ async function call(db, path, method = 'GET', body, token = alice) {
 
 test('private snapshots are immutable and isolated by owner', async (t) => {
   const db = database(t);
+  await call(db, '/account', 'POST', { nickname: '甲' });
   assert.equal((await call(db, '/records/test', 'PUT', record)).status, 200);
   const changed = { ...record, result: { ...result, archetype: { ...result.archetype, title: 'changed' } } };
   assert.equal((await call(db, '/records/test', 'PUT', changed)).data.result.archetype.title, result.archetype.title);
+  await call(db, '/account', 'POST', { nickname: '乙' }, bob);
   assert.equal((await call(db, '/records/test', 'PUT', record, bob)).status, 404);
   assert.equal((await call(db, '/records/test', 'DELETE', undefined, bob)).status, 404);
   assert.equal((await call(db, '/records', 'GET', undefined, bob)).data.records.length, 0);
@@ -76,6 +78,7 @@ test('private snapshots are immutable and isolated by owner', async (t) => {
 
 test('sharing is idempotent, public projection excludes private nested fields', async (t) => {
   const db = database(t);
+  await call(db, '/account', 'POST', { nickname: '测试' });
   const polluted = structuredClone(record);
   polluted.result.archetype.rawAnswers = ['secret'];
   polluted.result.similarities[0].profile.ownerToken = 'secret';
@@ -94,6 +97,7 @@ test('sharing is idempotent, public projection excludes private nested fields', 
 
 test('revoking takes effect immediately and republishing cannot restore an old link', async (t) => {
   const db = database(t);
+  await call(db, '/account', 'POST', { nickname: '测试' });
   await call(db, '/records/test', 'PUT', record);
   const { data: first } = await call(db, '/records/test/share', 'POST', { nickname: '' });
   assert.equal((await call(db, '/records/test/share', 'DELETE', undefined, bob)).status, 404);
@@ -106,6 +110,7 @@ test('revoking takes effect immediately and republishing cannot restore an old l
 
 test('deletion removes private content and prevents delayed upload resurrection', async (t) => {
   const db = database(t);
+  await call(db, '/account', 'POST', { nickname: '测试' });
   await call(db, '/records/test', 'PUT', record);
   const { data: shared } = await call(db, '/records/test/share', 'POST', { nickname: '' });
   await call(db, '/records/test', 'DELETE');
@@ -187,6 +192,7 @@ test('explicit sync is private and idempotent; offline retries require another e
   const db = database(t);
   const connection = browser(t, db);
   const saved = saveHistoryRecord(answers, result);
+  await saveProfile({ nickname: '同步测试' }, true);
   connection.offline();
   await assert.rejects(syncRecord(saved));
   assert.equal(getHistoryRecords()[0].syncStatus, 'failed');
@@ -211,6 +217,7 @@ test('offline revocation and cloud deletion remain pending until explicitly retr
   const db = database(t);
   const connection = browser(t, db);
   const saved = saveHistoryRecord(answers, result);
+  await saveProfile({ nickname: '云端测试' }, true);
   await syncRecord(saved);
   await publishRecord(saved, '我');
   const published = getHistoryRecords()[0];
@@ -238,6 +245,7 @@ test('cloud deletion keeps local data; resync uses a new id and old links stay d
   const db = database(t);
   browser(t, db);
   const saved = saveHistoryRecord(answers, result);
+  await saveProfile({ nickname: '云端测试' }, true);
   await syncRecord(saved);
   const first = await publishRecord(saved, '我');
   await removeCloudCopy(saved);
@@ -255,6 +263,7 @@ test('history refresh recovers a share whose publish response was lost', async (
   const db = database(t);
   browser(t, db);
   const saved = saveHistoryRecord(answers, result);
+  await saveProfile({ nickname: '云端测试' }, true);
   await syncRecord(saved);
   const send = globalThis.fetch;
   globalThis.fetch = async (path, options) => {
@@ -295,6 +304,7 @@ test('local deletion leaves a private cloud summary and preserves sharing', asyn
   const db = database(t);
   browser(t, db);
   const saved = saveHistoryRecord(answers, result);
+  await saveProfile({ nickname: '云端测试' }, true);
   await syncRecord(saved);
   const shared = await publishRecord(saved, '我');
   removeLocalRecord(saved.id);
@@ -315,6 +325,7 @@ test('removing a cloud-only portrait downloads and saves it before remote deleti
   const db = database(t);
   const connection = browser(t, db);
   const saved = saveHistoryRecord(answers, result);
+  await saveProfile({ nickname: '云端测试' }, true);
   await syncRecord(saved);
   const cloudId = getHistoryRecords()[0].cloudId;
   removeLocalRecord(saved.id);
@@ -331,6 +342,7 @@ test('failed verification shows uncertainty and a remote deletion is reconciled 
   const db = database(t);
   const connection = browser(t, db);
   const saved = saveHistoryRecord(answers, result);
+  await saveProfile({ nickname: '云端测试' }, true);
   await syncRecord(saved);
   await publishRecord(saved, '我');
   const cloudId = getHistoryRecords()[0].cloudId;
@@ -350,6 +362,7 @@ test('a stale cloud id can be explicitly synced again after deletion elsewhere',
   const db = database(t);
   browser(t, db);
   const saved = saveHistoryRecord(answers, result);
+  await saveProfile({ nickname: '云端测试' }, true);
   await syncRecord(saved);
   const cloudId = getHistoryRecords()[0].cloudId;
   await call(db, `/records/${cloudId}`, 'DELETE', undefined, getIdentityToken());
@@ -377,28 +390,28 @@ test('an identity can exist without portraits, and a local nickname alone create
   assert.equal((await call(db, '/account', 'GET', undefined, getIdentityToken())).data.nickname, '新昵称');
 });
 
-test('syncing a portrait neither creates nor renames a cloud identity', async (t) => {
+test('an unregistered device cannot sync a portrait at all', async (t) => {
   const db = database(t);
   browser(t, db);
   await saveNickname('小林');
   const saved = saveHistoryRecord(answers, result);
-  await syncRecord(saved);
-  await refreshCloudHistory();
+  await assert.rejects(syncRecord(saved), /先把身份存到云端/);
+  // Nothing reached the cloud, and the local record keeps no phantom cloud id.
+  assert.equal(db.sqlite.prepare('SELECT COUNT(*) AS n FROM accounts').get().n, 0);
+  assert.equal(db.sqlite.prepare('SELECT COUNT(*) AS n FROM profiles').get().n, 0);
   assert.equal(getAccountInfo().registered, false);
   assert.equal(getAccountInfo().nickname, '小林');
-  assert.equal(db.sqlite.prepare('SELECT COUNT(*) AS n FROM accounts').get().n, 0);
-  assert.equal(getHistoryRecords()[0].shareId, null);
-  // The record is still on the cloud: sharing a portrait does not need an identity.
-  assert.ok(getHistoryRecords()[0].cloudId);
+  assert.equal(getHistoryRecords()[0].cloudId, null);
+  assert.equal(getHistoryRecords()[0].syncStatus, 'local');
 });
 
 test('cross-device recovery lists summaries, keeps device-local portraits and never uploads them', async (t) => {
   const db = database(t);
   const connection = browser(t, db);
   const original = saveHistoryRecord(answers, result);
+  await saveProfile({ nickname: '我' }, true);
   await syncRecord(original);
   await publishRecord(original, '我');
-  await saveProfile({ nickname: '我' }, true);
   const key = await exportRecoveryKey();
   const originalToken = getIdentityToken();
   connection.storage.clear();
@@ -446,6 +459,7 @@ test('pending mutations block identity switching and stale refresh cannot undo a
   const db = database(t);
   const connection = browser(t, db);
   const saved = saveHistoryRecord(answers, result);
+  await saveProfile({ nickname: '云端测试' }, true);
   await syncRecord(saved);
   const send = globalThis.fetch;
   let release;
@@ -488,11 +502,15 @@ test('additive migration preserves legacy portraits, share links and anonymous o
   assert.equal((await call(db, `/shares/${shareId}`)).status, 200);
   assert.equal((await call(db, '/records/legacy')).data.cloudId, 'legacy');
   db.sqlite.prepare('UPDATE profiles SET local_id = NULL WHERE id = ?').run('legacy');
+  // Re-uploading needs an identity now; reading never creates one.
+  assert.equal((await call(db, '/records/legacy', 'PUT', record)).status, 409);
+  await call(db, '/account', 'POST', { nickname: '迁移后' });
   assert.equal((await call(db, '/records/legacy', 'PUT', record)).status, 200);
 });
 
 test('duplicate cloud uploads of one local portrait collapse to one active snapshot', async (t) => {
   const db = database(t);
+  await call(db, '/account', 'POST', { nickname: '测试' });
   const first = await call(db, '/records/cloud-a', 'PUT', { ...record, localId: 'local-a' });
   const retry = await call(db, '/records/cloud-b', 'PUT', { ...record, localId: 'local-a' });
   assert.equal(first.data.cloudId, retry.data.cloudId);
@@ -1021,9 +1039,9 @@ test('anonymous counters aggregate by day and store no identity', async (t) => {
 
 test('admin stats stay closed without an issued token and expose aggregates only', async (t) => {
   const db = database(t);
+  await call(db, '/account', 'POST', { nickname: '小林' });
   await call(db, '/records/test', 'PUT', record);
   await call(db, '/records/test/share', 'POST', { nickname: '小林' });
-  await call(db, '/account', 'POST', { nickname: '小林' });
   await call(db, '/metrics/event', 'POST', { event: 'test_completed' }, '');
 
   const adminToken = 'k'.repeat(32);
@@ -1095,8 +1113,8 @@ test('activity tracking degrades safely when 0006 is not yet applied', async (t)
   t.after(() => sqlite.close());
   const db = adapter(sqlite);
   // Code deployed ahead of its migration must still read and write identity data.
-  assert.equal((await call(db, '/records/test', 'PUT', record)).status, 200);
   assert.equal((await call(db, '/account', 'POST', { nickname: '降级测试' })).status, 200);
+  assert.equal((await call(db, '/records/test', 'PUT', record)).status, 200);
   assert.equal((await call(db, '/account')).status, 200);
   assert.equal((await call(db, '/records', 'GET')).data.records.length, 1);
 });

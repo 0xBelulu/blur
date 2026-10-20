@@ -107,7 +107,10 @@ export function syncRecord(record) {
       return saved;
     } catch (error) {
       if (getIdentityToken() === ctx.token && current(local.id)) {
-        write(local, error.status === 404 ? withoutCloud(current(local.id)) : { syncStatus: 'failed', cloudSession: null });
+        // 404 and 409 both mean "this record never reached the cloud", so the
+        // local copy must not keep a cloud id that can never be verified.
+        write(local, error.status === 404 || error.status === 409
+          ? withoutCloud(current(local.id)) : { syncStatus: 'failed', cloudSession: null });
       }
       throw error;
     }

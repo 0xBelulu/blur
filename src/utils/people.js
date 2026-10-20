@@ -4,7 +4,7 @@ import { getHistoryRecords } from './historyStorage.js';
 
 export async function readPeople(path, signal) {
   const token = getIdentityToken();
-  if (!token || !getAccountInfo().registered) throw new Error('先创建一个身份，就可以和朋友连接了');
+  if (!token || !getAccountInfo().registered) throw new Error('先把身份存到云端，就可以和朋友连接了');
   const data = await api(path, { token, signal });
   if (getIdentityToken() !== token) throw new Error('身份已切换，请重新读取');
   return data;

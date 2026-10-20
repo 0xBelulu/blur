@@ -148,7 +148,7 @@ export default function My({ records = [], account = {}, notice, onBack, onOpen,
         {modal.type === 'backup' && <AccountPanel key={account.id || 'guest'} account={account} initialView="backup" />}
         {modal.type === 'record' && (managed ? <>
           <p className="pp-dialog-description">{date(managed)} · {managed.answerCount} 题 · {recordArchetype(managed)?.title}</p>
-          <ShareControls record={managed} sharing={false} onPermissions={() => { setModal(null); settings(); }} />
+          <ShareControls record={managed} sharing={false} onPermissions={() => { setModal(null); settings(); }} onCreate={onCreateIdentity} />
           {managed.localPresent && <details className="pp-danger"><summary>删除这份本机记录</summary><p>云端副本和公开链接保持原有状态。</p><button className="pp-outline" onClick={() => { onDeleteLocal(managed.id); setModal(null); }}>确认删除本机记录</button></details>}
         </> : <p className="pp-helper">这份记录已移除。</p>)}
         {modal.type === 'clear' && <><p className="pp-dialog-description">仅清除这个浏览器保存的画像与答案，云端副本和公开链接不变。本机独有的记录将无法找回。</p><button className="pp-outline" onClick={() => { onClearLocal(); setModal(null); }}>确认清空本机记录</button></>}

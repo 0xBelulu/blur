@@ -5,7 +5,7 @@ import RecordBadges from './RecordBadges';
 import { publishRecord, revokeShare, shareUrl, syncRecord, removeCloudCopy, refreshCloudHistory } from '../utils/cloud';
 import { getAccountInfo } from '../utils/identity';
 
-export default function ShareControls({ record, sharing = true, onPermissions }) {
+export default function ShareControls({ record, sharing = true, onPermissions, onCreate, createLabel = '把身份存到云端' }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [nickname, setNickname] = useState(record.nickname || getAccountInfo().nickname || '');
@@ -24,10 +24,17 @@ export default function ShareControls({ record, sharing = true, onPermissions })
     {!sharing && onPermissions && <button className="text-blur-text-muted underline cursor-pointer" onClick={onPermissions}>权限管理</button>}
     {record.pendingAction && <p role="status" className="text-amber-800 leading-relaxed">云端操作尚未确认，分享可能仍处于开启状态。请重试或核实云端状态。</p>}
     {!synchronized && !record.pendingAction && record.localPresent && <div className="space-y-3">
-      <p className="text-blur-text-muted leading-relaxed">将这份记录保存到云端。展示结果的可见范围在「权限管理」中设置。</p>
-      <GlassButton variant="secondary" disabled={busy} onClick={() => run(async () => {
-        await syncRecord(record); setMessage('云端副本已保存。');
-      })}><span className="flex items-center gap-2"><CloudUpload size={14} />{busy ? '正在同步…' : record.cloudId ? '重试同步' : '同步到云端'}</span></GlassButton>
+      {getAccountInfo().registered ? <>
+        <p className="text-blur-text-muted leading-relaxed">将这份记录保存到云端。展示结果的可见范围在「权限管理」中设置。</p>
+        <GlassButton variant="secondary" disabled={busy} onClick={() => run(async () => {
+          await syncRecord(record); setMessage('云端副本已保存。');
+        })}><span className="flex items-center gap-2"><CloudUpload size={14} />{busy ? '正在同步…' : record.cloudId ? '重试同步' : '同步到云端'}</span></GlassButton>
+      </> : <>
+        <p className="text-blur-text-muted leading-relaxed">云端画像要归属一个能找回的身份。先把身份存到云端，再同步这一份。</p>
+        {onCreate && <GlassButton variant="secondary" disabled={busy} onClick={onCreate}>
+          <span className="flex items-center gap-2"><CloudUpload size={14} />{createLabel}</span>
+        </GlassButton>}
+      </>}
     </div>}
     {sharing && <>
     {synchronized && !link && (!record.pendingAction || record.pendingAction === 'publish') && <div className="space-y-3">

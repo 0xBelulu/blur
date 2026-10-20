@@ -41,13 +41,15 @@ export async function account(db, owner) {
 
 function person(row) { return { publicId: row.public_id, nickname: row.nickname, bio: row.bio }; }
 
-// Uploads no longer create an identity, but they must not resurrect a deleted
-// one either. Tolerates 0009 being absent, like registerAccount above.
-export async function assertIdentityWritable(db, owner) {
+// Every cloud record must belong to an identity that can be recovered. Uploads
+// therefore require one: an account-less profile row would be unreachable if the
+// device is lost, and the ghost cleanup (which walks accounts) could never see it.
+export async function requireCloudIdentity(db, owner) {
   let row;
   try { row = await db.prepare('SELECT deleted_at FROM accounts WHERE owner_hash = ?').bind(owner).first(); }
-  catch { return; }
-  if (row?.deleted_at) throw new HttpError(410, '这个身份已注销，不能再使用');
+  catch { row = await db.prepare('SELECT owner_hash FROM accounts WHERE owner_hash = ?').bind(owner).first(); }
+  if (!row) throw new HttpError(409, '先把身份存到云端，再同步这份画像');
+  if (row.deleted_at) throw new HttpError(410, '这个身份已注销，不能再使用');
 }
 
 // Deletion only: a credential from before accounts existed can own cloud records
