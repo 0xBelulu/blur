@@ -1,13 +1,13 @@
 import { questions } from '../src/data/questions.js';
-import fs from 'fs';
 
-const single = questions.filter(q => q.type === 'single');
-let out = '';
-for (const q of single) {
-  out += `Q${q.id} (${q.text.length}字: ${q.text})\n`;
-  for (const opt of q.options) {
-    out += `  [${opt.id}] (${opt.text.length}字): ${opt.text}\n`;
+// 题库审阅辅助：把单选题目与选项连同字数打到 stdout，方便检查文案长度。
+// 不落盘——需要留档就自己重定向：
+//   node scripts/audit-review.mjs > /tmp/single-audit.txt
+const lines = [];
+for (const question of questions.filter((q) => q.type === 'single')) {
+  lines.push(`Q${question.id} (${question.text.length}字: ${question.text})`);
+  for (const option of question.options) {
+    lines.push(`  [${option.id}] (${option.text.length}字): ${option.text}`);
   }
 }
-fs.writeFileSync('scripts/single-audit.txt', out, 'utf8');
-console.log('Written utf8');
+console.log(lines.join('\n'));

@@ -1,18 +1,20 @@
+import { randomHex, sha256Hex } from '../../shared/hex.js';
+
 const TOKEN_KEY = 'blur.identity.v1';
 const ACCOUNT_KEY = 'blur.account.v1';
 
 export function getIdentityToken(create = false) {
   let token = localStorage.getItem(TOKEN_KEY);
   if (!token && create) {
-    token = Array.from(crypto.getRandomValues(new Uint8Array(32)), (byte) => byte.toString(16).padStart(2, '0')).join('');
+    token = randomHex(32);
     localStorage.setItem(TOKEN_KEY, token);
   }
   return token;
 }
 
+// 与服务端 ownerHash 的前 12 位必须一致，否则本机 id 和云端 id 会对不上。
 export async function identityId(token) {
-  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
-  return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, '0')).join('').slice(0, 12);
+  return (await sha256Hex(token)).slice(0, 12);
 }
 
 export function getAccountInfo() {

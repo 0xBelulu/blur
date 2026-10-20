@@ -1,5 +1,5 @@
 import { publicRecord } from '../shared/profile.js';
-import { ACCENT_KEYS } from '../src/data/accents.js';
+import { ACCENT_KEYS } from '../shared/accents.js';
 import { HttpError, json, body } from './http.js';
 import { touchAccount } from './metrics.js';
 

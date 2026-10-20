@@ -1,4 +1,5 @@
 import { publicRecord, publicResult } from '../shared/profile.js';
+import { sha256Hex } from '../shared/hex.js';
 
 import { HttpError, json, body } from './http.js';
 import { metricsRoute } from './metrics.js';
@@ -7,8 +8,7 @@ import { peopleRoute, requireCloudIdentity } from './people.js';
 async function ownerHash(request) {
   const token = request.headers.get('Authorization')?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];
   if (!token) throw new HttpError(401, '无法识别本机身份，请刷新页面后重试');
-  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
-  return Array.from(new Uint8Array(hash), (b) => b.toString(16).padStart(2, '0')).join('');
+  return sha256Hex(token);
 }
 
 function fromRow(row) {
@@ -29,8 +29,13 @@ function summaryFromRow(row) {
   };
 }
 
+// 本机 id 与云端 id 都可能出现在路径里：PUT 用本机 id 回查，其余接口用云端 id。
+// 两种都必须能命中，所以是 (id OR local_id)，不是 COALESCE——后者会优先取
+// local_id，反而让按云端 id 寻址全部 404。
 async function ownedRecord(db, id, owner) {
-  const row = await db.prepare('SELECT * FROM profiles WHERE id = ? AND owner_hash = ? AND deleted_at IS NULL').bind(id, owner).first();
+  const row = await db.prepare(`SELECT * FROM profiles
+    WHERE (id = ? OR local_id = ?) AND owner_hash = ? AND deleted_at IS NULL`)
+    .bind(id, id, owner).first();
   if (!row) throw new HttpError(404, '记录不存在');
   return row;
 }
@@ -96,8 +101,9 @@ async function route(request, env) {
   if (!share && request.method === 'GET') return json(fromRow(row));
   if (!share && request.method === 'DELETE') {
     // A minimal tombstone prevents a delayed upload from recreating deleted data.
+    // 用 row.id 而不是路径里的 id：路径可能是 local_id。
     await env.DB.prepare("UPDATE profiles SET deleted_at = ?, answers_json = '{}', result_json = '{}', nickname = '', share_id = NULL WHERE id = ? AND owner_hash = ?")
-      .bind(Date.now(), id, owner).run();
+      .bind(Date.now(), row.id, owner).run();
     return json({ deleted: true });
   }
   if (share && request.method === 'POST') {
@@ -107,11 +113,11 @@ async function route(request, env) {
     }
     const shareId = crypto.randomUUID().replaceAll('-', '');
     await env.DB.prepare('UPDATE profiles SET share_id = COALESCE(share_id, ?), nickname = ? WHERE id = ? AND owner_hash = ? AND deleted_at IS NULL')
-      .bind(shareId, input.nickname.trim(), id, owner).run();
-    return json(fromRow(await ownedRecord(env.DB, id, owner)));
+      .bind(shareId, input.nickname.trim(), row.id, owner).run();
+    return json(fromRow(await ownedRecord(env.DB, row.id, owner)));
   }
   if (share && request.method === 'DELETE') {
-    await env.DB.prepare('UPDATE profiles SET share_id = NULL WHERE id = ? AND owner_hash = ?').bind(id, owner).run();
+    await env.DB.prepare('UPDATE profiles SET share_id = NULL WHERE id = ? AND owner_hash = ?').bind(row.id, owner).run();
     return json({ revoked: true });
   }
   throw new HttpError(405, '不支持此操作');

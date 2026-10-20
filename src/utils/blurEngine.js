@@ -470,23 +470,22 @@ export function generateResult(answers, questions = defaultQuestions) {
     direction: d.direction,
   }));
 
+  // 只返回真正被消费的字段。结果会整份 JSON 进 localStorage，
+  // 每个多余别名都是一次重复序列化：`topTags`/`archetypeScores`/`rawAnswers`
+  // 曾经和 tagDetails/archetypeProbabilities/answers 指向同一份数据，
+  // 在本地存了两遍，而 shared/profile.js 上传时又会把它们全部剥掉。
   return {
     archetype,
     archetypeKey,
-    primaryArchetype: archetype,
     secondaryArchetype,
     isDualResonance,
     dualSynergy,
     tagDetails,
-    topTags: tagDetails,
     suppressedTraits,
     scoredTraits: scoredDims.slice(0, 10),
     dimensionScores,
     userVector,
     similarities,
     archetypeProbabilities,
-    archetypeScores: archetypeProbabilities,
-    rawAnswers: answers,
-    specialNarratives: [],
   };
 }

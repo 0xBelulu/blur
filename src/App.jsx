@@ -21,7 +21,7 @@ import Admin from './pages/Admin';
 import { generateResult, solveProfile } from './utils/blurEngine';
 import { buildPersonaSymbols, revealAt } from './utils/personaSymbols';
 import { questions } from './data/questions';
-import { getHistoryRecords, getAllHistoryRecords, saveHistoryRecord, removeLocalRecord } from './utils/historyStorage';
+import { getHistoryRecords, getAllHistoryRecords, saveHistoryRecord, removeLocalRecord, EVICTION_EVENT } from './utils/historyStorage';
 import { flushPending, refreshCloudHistory, downloadRecord, signOut, deleteIdentity } from './utils/cloud';
 import { getAccountInfo, ensureLocalIdentity, updateAccountInfo } from './utils/identity';
 import { selectPortrait } from './utils/people';
@@ -92,9 +92,15 @@ export default function App() {
       const next = readRoute();
       setRoute((previous) => nextPageRoute(previous, next));
     };
+    // 淘汰只可能发生在配额写满时，用户必须知道有旧记录让位了，而不是以为数据还在。
+    const evicted = (event) => {
+      const count = event.detail?.evicted || 1;
+      setNotice(`本机存储空间不足，已清理 ${count} 份最旧记录来保存新的画像。云端副本与分享状态不受影响。`);
+    };
     window.addEventListener('blur-history-change', changed);
     window.addEventListener('blur-account-change', changed);
     window.addEventListener('storage', changed);
+    window.addEventListener(EVICTION_EVENT, evicted);
     window.addEventListener('popstate', back);
     window.addEventListener('hashchange', back);
     // Adopt the existing latest portrait once when upgrading an older browser.
@@ -108,6 +114,7 @@ export default function App() {
       window.removeEventListener('blur-history-change', changed);
       window.removeEventListener('blur-account-change', changed);
       window.removeEventListener('storage', changed);
+      window.removeEventListener(EVICTION_EVENT, evicted);
       window.removeEventListener('popstate', back);
       window.removeEventListener('hashchange', back);
     };
@@ -144,11 +151,23 @@ export default function App() {
   };
 
   const complete = (answers) => {
+    // 评分本身只要 ~1ms，先算完再进 loading：算不出来就没必要让用户白等 3.5 秒，
+    // 也不该把一个可能抛异常的调用塞进定时器里（那里的异常没人接得住）。
+    let result;
+    try {
+      result = generateResult(answers, questions);
+    } catch {
+      setNotice('这次画像没有算出来，请重新作答一次。');
+      navigate('landing');
+      return;
+    }
+    // 完成事件在入口就发：答完所有题就是完成，不该取决于用户有没有看完动画。
+    // 之前放在定时器里，标签页切到后台会被节流，后台的完成率因此系统性偏低。
+    recordEvent('test_completed');
     navigate('loading');
     clearTimeout(loadingTimer.current);
+    // 定时器现在只负责「最短动画时长」，不再承担计算。
     loadingTimer.current = setTimeout(() => {
-      recordEvent('test_completed');
-      const result = generateResult(answers, questions);
       const saved = saveHistoryRecord(answers, result);
       const target = comparisonTarget.current;
       comparisonTarget.current = null;

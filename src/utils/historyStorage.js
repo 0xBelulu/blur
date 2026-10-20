@@ -21,12 +21,43 @@ function readRecords() {
   } catch { return []; }
 }
 
-function writeRecords(records) {
+// 本机空间不足时确实丢掉了东西，界面需要说出来，不能静默。
+export const EVICTION_EVENT = 'blur-history-evicted';
+
+function persist(records) {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-    window.dispatchEvent?.(new Event('blur-history-change'));
     return true;
   } catch { return false; }
+}
+
+// 淘汰顺序：先丢云端摘要（还能重新下载），再丢最旧的本机画像。
+// 带 pendingAction 的记录正在和云端协商，丢它会留下无法核实的中间态；
+// 本次要写入的那条（keep）也不参与淘汰——用户刚做完的画像不该是第一个牺牲品。
+function evictionOrder(records, keep) {
+  return records
+    .filter((record) => !record.pendingAction && record.id !== keep)
+    .sort((a, b) => (a.localPresent ? 1 : 0) - (b.localPresent ? 1 : 0)
+      || (a.createdAt || 0) - (b.createdAt || 0));
+}
+
+function writeRecords(records, { keep } = {}) {
+  if (persist(records)) {
+    window.dispatchEvent?.(new Event('blur-history-change'));
+    return true;
+  }
+  // localStorage 没有事务：写不下就按上面的顺序一份一份让位，直到写得进去。
+  const order = evictionOrder(records, keep);
+  let kept = records;
+  for (let evicted = 1; evicted <= order.length && kept.length > 1; evicted += 1) {
+    const victim = order[evicted - 1];
+    kept = kept.filter((record) => record !== victim);
+    if (!persist(kept)) continue;
+    window.dispatchEvent?.(new Event('blur-history-change'));
+    window.dispatchEvent?.(new CustomEvent(EVICTION_EVENT, { detail: { evicted } }));
+    return true;
+  }
+  return false;
 }
 
 export function getHistoryRecords() {
@@ -41,7 +72,7 @@ export function updateHistoryRecord(id, changes) {
   const record = records.find((item) => item.id === id);
   if (!record) return null;
   Object.assign(record, changes);
-  return writeRecords(records) ? record : null;
+  return writeRecords(records, { keep: id }) ? record : null;
 }
 
 export function saveHistoryRecord(answers, result) {
@@ -53,8 +84,8 @@ export function saveHistoryRecord(answers, result) {
     preview: { title: result.archetype?.title, symbol: result.archetype?.symbol },
     localPresent: true, cloudId: null, syncStatus: 'local',
   };
-  // Never silently discard a local-only portrait to make room for another one.
-  return writeRecords([record, ...readRecords()]) ? record : null;
+  // 空间不足时宁可淘汰旧记录，也不能丢掉这次刚做完的画像。
+  return writeRecords([record, ...readRecords()], { keep: record.id }) ? record : null;
 }
 
 export function deleteHistoryRecord(id) {

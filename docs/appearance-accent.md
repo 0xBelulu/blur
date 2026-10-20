@@ -134,7 +134,7 @@ ALTER TABLE accounts ADD COLUMN accent TEXT;
 ### 解析与降级
 
 ```js
-// src/data/accents.js
+// shared/accents.js
 export const ACCENTS = [/* key, name, rgb */];
 export const ACCENT_KEYS = ACCENTS.map((a) => a.key);
 
@@ -147,7 +147,7 @@ export function resolveAccent(account, profile) {
 
 调用方只有四处：`My.jsx`（头像与光场）、`FriendProfile.jsx`（对方的 `person.accent`）、`SharedProfile.jsx`（如渲染主色）、以及预览态。解析函数保持纯函数，不读 localStorage，方便单测。
 
-服务端白名单从 `src/data/accents.js` 导入——`shared/profile.js` 已经有 `shared → src/data` 的引用先例（`DIMENSION_KEYS`），不新增反向依赖。
+服务端白名单从 `shared/accents.js` 导入。`shared/` 不再反向依赖 `src/`：`DIMENSION_KEYS` 已随这次整理移到 `shared/dimensions.js`，`src/data/dimensions.js` 转出它，并有单测断言键序一致。
 
 ## 交互
 
@@ -206,7 +206,7 @@ filter: blur(4px);
 
 | 文件 | 改动 |
 | --- | --- |
-| `src/data/accents.js` | 新增：色板、`ACCENT_KEYS`、`resolveAccent`、`personAccent`、`markShades` |
+| `shared/accents.js` | 新增：色板、`ACCENT_KEYS`、`resolveAccent`、`personAccent`、`markShades`（前后端共用，服务端只取 `ACCENT_KEYS`） |
 | `src/components/AccentPicker.jsx` | 新增：受控选择器（头像预览 + 跟随行 + 8 色网格），不含保存逻辑 |
 | `src/pages/My.jsx` | 编辑资料弹窗内接入选择器；三处 `profile?.color` 改为 `resolveAccent(account, profile)`；保存资料时一并提交主色 |
 | `src/pages/FriendProfile.jsx` | 用 `data.person.accent` 解析，回退原型色 |

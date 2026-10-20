@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
 import { PortraitMark } from './PersonalElements';
-import { ACCENTS, DEFAULT_INK, FOLLOW, accentSummary, resolveAccent } from '../data/accents.js';
+import { ACCENTS, DEFAULT_INK, FOLLOW, accentSummary, resolveAccent } from '../../shared/accents.js';
 
 /**
  * 主色选择器，放在「编辑资料」里：名字、简介、主色是同一件事——你希望别人怎么看到你。

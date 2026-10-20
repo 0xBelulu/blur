@@ -6,7 +6,7 @@ import {
   getIdentityToken, identityId, ensureLocalIdentity, getAccountInfo, updateAccountInfo,
   formatRecoveryKey, parseRecoveryKey, adoptIdentity, forgetDeviceIdentity,
 } from './identity.js';
-import { ACCENT_KEYS, FOLLOW } from '../data/accents.js';
+import { ACCENT_KEYS, FOLLOW } from '../../shared/accents.js';
 
 const operations = new Map();
 const ACCOUNT_OPERATION = Symbol('account');
@@ -33,6 +33,21 @@ export function identityOperation(action, callback) {
   return promise;
 }
 
+// 服务端对未处理异常一律返回 503 和一句通用文案（刻意的，避免泄露内部结构）。
+// 但 401/409/410 这类状态是明确的：把它们也读成「云端暂不可用」，
+// 用户会一直重试，而不是去恢复身份。
+const STATUS_FALLBACK = {
+  400: '这次请求的内容不被接受，请检查后重试',
+  401: '本机身份凭证无效，请恢复身份或退出后重新进入',
+  403: '没有权限执行这个操作',
+  404: '云端没有找到这份数据，可能已被移除',
+  409: '请先完成上一步操作',
+  410: '这个身份已注销，不能再使用',
+  413: '数据过大，云端拒绝接收',
+  415: '请求格式不正确',
+  429: '操作太频繁，请稍后重试',
+};
+
 export async function api(path, { method = 'GET', body, publicAccess = false, signal, token } = {}) {
   let response;
   try {
@@ -44,10 +59,16 @@ export async function api(path, { method = 'GET', body, publicAccess = false, si
       },
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
-  } catch { throw new Error('连接云端失败，本机画像仍可正常使用，请稍后重试'); }
+  } catch (cause) {
+    const timedOut = cause?.name === 'TimeoutError' || cause?.name === 'AbortError';
+    throw new Error(timedOut
+      ? '云端响应超时，本机画像仍可正常使用，请稍后重试'
+      : '连接云端失败，本机画像仍可正常使用，请稍后重试', { cause });
+  }
   const data = await response.json().catch(() => null);
   if (!response.ok || !data) {
-    const error = new Error(data?.message || '云端暂不可用，本机画像仍可正常使用');
+    const error = new Error(data?.message || STATUS_FALLBACK[response.status]
+      || '云端暂不可用，本机画像仍可正常使用');
     error.status = response.status;
     error.requestId = data?.requestId || response.headers.get('X-Request-Id');
     throw error;

@@ -6,7 +6,7 @@ import RecordBadges from '../components/RecordBadges';
 import { PersonalModal, PortraitField, PortraitMark, CloudState } from '../components/PersonalElements';
 import AccentPicker from '../components/AccentPicker';
 import { recordArchetype, displayRecord } from '../utils/portraits';
-import { resolveAccent, FOLLOW } from '../data/accents.js';
+import { resolveAccent, FOLLOW } from '../../shared/accents.js';
 import { saveProfile, saveAccent } from '../utils/cloud';
 import { selectPortrait } from '../utils/people';
 import Friends from './Friends';

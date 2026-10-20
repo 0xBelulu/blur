@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ArrowRight, Check } from 'lucide-react';
 import { PortraitMark } from './PersonalElements';
-import { personAccent } from '../data/accents.js';
+import { personAccent } from '../../shared/accents.js';
 import { friendAction, readPeople } from '../utils/people';
 import { getIdentityToken } from '../utils/identity';
 

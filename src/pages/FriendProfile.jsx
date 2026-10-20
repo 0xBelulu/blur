@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
 import { PortraitField, PortraitMark } from '../components/PersonalElements';
 import { readPeople } from '../utils/people';
-import { personAccent } from '../data/accents.js';
+import { personAccent } from '../../shared/accents.js';
 import { canCompare } from '../../shared/profile';
 import Comparison from './Comparison';
 import Result from './Result';

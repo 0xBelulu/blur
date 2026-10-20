@@ -9,6 +9,38 @@ import { buildPersonaSymbols, revealAt } from "../utils/personaSymbols";
 
 const REQUIRED_COUNT = 10;
 
+// 作答草稿：72 题要十几分钟，刷新、崩溃、手机上被系统回收标签页都不该清零。
+// 只放 sessionStorage —— 关掉标签页就该忘掉，这不是存档。
+const DRAFT_KEY = 'blur.draft.v1';
+const DRAFT_TTL_MS = 12 * 60 * 60 * 1000;
+
+function readDraft() {
+  try {
+    const raw = window.sessionStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const draft = JSON.parse(raw);
+    if (!draft || !Array.isArray(draft.order) || !Array.isArray(draft.answers)) return null;
+    if (Date.now() - (draft.updatedAt || 0) > DRAFT_TTL_MS) return null;
+    return draft;
+  } catch { return null; }
+}
+
+function clearDraft() {
+  try { window.sessionStorage.removeItem(DRAFT_KEY); } catch { /* 无所谓 */ }
+}
+
+/**
+ * 题目顺序必须一起存：answers 是按位置索引的，重新洗牌后再恢复会把
+ * 上一题的答案挂到另一道题上——那比丢失更糟。
+ */
+function restoreOrder(draft) {
+  if (!draft?.order) return null;
+  const byId = new Map(questions.map((question) => [question.id, question]));
+  const restored = draft.order.map((id) => byId.get(id));
+  const valid = restored.length === questions.length && restored.every(Boolean);
+  return valid ? restored : null;
+}
+
 function fisherYatesShuffle(array) {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -58,14 +90,33 @@ function shuffleQuestions(questionList) {
 }
 
 export default function Test({ onComplete, onSymbolsChange, onExit }) {
-  const shuffledQuestions = useMemo(() => shuffleQuestions(questions), []);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState([]);
-  const [selectedOption, setSelectedOption] = useState(null);
-  const [rankOrder, setRankOrder] = useState([]);
-  const [scaleValue, setScaleValue] = useState(null);
+  const [draft] = useState(readDraft);
+  // 只有「题目顺序完整还原」时才能恢复答案：answers 是按位置索引的，
+  // 题库变过（题目增减/改 id）就必须整份丢弃，否则会把上一题的答案挂到另一道题上。
+  const restoredOrder = useMemo(() => restoreOrder(draft), [draft]);
+  const restored = Boolean(restoredOrder);
+  const shuffledQuestions = useMemo(
+    () => restoredOrder || shuffleQuestions(questions),
+    [restoredOrder],
+  );
+
+  const startIndex = restored
+    ? Math.min(Math.max(draft?.currentIndex ?? 0, 0), shuffledQuestions.length - 1) : 0;
+  const startAnswer = restored ? draft?.answers?.[startIndex] || null : null;
+  const resumed = restored && draft.answers.some(Boolean);
+
+  const [currentIndex, setCurrentIndex] = useState(startIndex);
+  const [answers, setAnswers] = useState(() => (restored ? draft.answers : []));
+  const [selectedOption, setSelectedOption] = useState(() =>
+    startAnswer?.type === "single" && startAnswer.optionId ? { id: startAnswer.optionId } : null);
+  const [rankOrder, setRankOrder] = useState(() =>
+    startAnswer?.type === "rank" ? startAnswer.rankOrder || [] : []);
+  const [scaleValue, setScaleValue] = useState(() =>
+    startAnswer?.type === "scale" ? startAnswer.value ?? null : null);
   const [isTransition, setIsTransition] = useState(false);
-  const [hasShownTransition, setHasShownTransition] = useState(false);
+  const [hasShownTransition, setHasShownTransition] = useState(() =>
+    restored ? Boolean(draft?.hasShownTransition) : false);
+  const [showResume, setShowResume] = useState(resumed);
 
   const currentQuestion = shuffledQuestions[currentIndex] || shuffledQuestions[0];
   const isRankQuestion = currentQuestion?.type === "rank";
@@ -84,6 +135,17 @@ export default function Test({ onComplete, onSymbolsChange, onExit }) {
   );
   // The persistent app background only updates when saved answers change.
   useEffect(() => { onSymbolsChange(symbols); }, [symbols, onSymbolsChange]);
+
+  // 每答一题落一次草稿。写入失败（隐私模式、配额）不影响作答本身。
+  useEffect(() => {
+    if (!answers.some(Boolean)) return;
+    try {
+      window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
+        order: shuffledQuestions.map((question) => question.id),
+        answers, currentIndex, hasShownTransition, updatedAt: Date.now(),
+      }));
+    } catch { /* 草稿是尽力而为，丢了也只是回到原来的行为 */ }
+  }, [answers, currentIndex, hasShownTransition, shuffledQuestions]);
 
   const restoreState = (answer, question) => {
     if (!answer || !question) {
@@ -133,7 +195,20 @@ export default function Test({ onComplete, onSymbolsChange, onExit }) {
 
   const finishTest = (finalAnswers) => {
     const valid = finalAnswers.filter(Boolean);
+    clearDraft();
     onComplete(valid);
+  };
+
+  const restart = () => {
+    clearDraft();
+    setAnswers([]);
+    setCurrentIndex(0);
+    setHasShownTransition(false);
+    setIsTransition(false);
+    setSelectedOption(null);
+    setRankOrder([]);
+    setScaleValue(null);
+    setShowResume(false);
   };
 
   const buildAnswer = (question, currentRankOrder, currentScaleValue, currentSelectedOption) => {
@@ -308,6 +383,22 @@ export default function Test({ onComplete, onSymbolsChange, onExit }) {
   return (
     <>
       <div className="relative z-10 flex-1 flex flex-col px-6 py-8 min-h-[100svh] max-w-lg mx-auto w-full">
+
+        {/* 恢复草稿时说清楚「这是上次的进度」，并给一个反悔的出口 */}
+        {showResume && !isTransition && currentIndex === startIndex && (
+          <div className="mb-6 flex items-center justify-between gap-3 rounded-xl border border-blur-border/70 bg-white/40 px-3.5 py-2.5">
+            <span className="text-[11px] text-blur-text-muted">
+              已恢复上次作答 · 第 {currentIndex + 1} 题
+            </span>
+            <button
+              type="button"
+              onClick={restart}
+              className="text-[11px] text-blur-accent hover:underline cursor-pointer shrink-0"
+            >
+              重新开始
+            </button>
+          </div>
+        )}
 
         {/* 进度与特征捕捉提示 */}
         {!isTransition && (

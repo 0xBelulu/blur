@@ -17,7 +17,7 @@ import {
 import { DIMENSIONS, DIMENSION_KEYS } from "../src/data/dimensions.js";
 import {
   ACCENTS, ACCENT_KEYS, DEFAULT_INK, FOLLOW, markShades, personAccent, resolveAccent,
-} from "../src/data/accents.js";
+} from "../shared/accents.js";
 import { ARCHETYPE_PROFILES } from "../src/data/archetypeProfiles.js";
 import { getDualSynergy, DUAL_SYNERGIES } from "../src/data/dualArchetypes.js";
 import {
@@ -25,7 +25,9 @@ import {
   getHistoryRecords,
   deleteHistoryRecord,
   clearHistoryRecords,
+  EVICTION_EVENT,
 } from "../src/utils/historyStorage.js";
+import { resonanceScale, probabilityPercent } from "../src/utils/resonance.js";
 import {
   shouldInvite,
   noteInviteShown,
@@ -183,6 +185,11 @@ test("determineSuppressedTraits extracts correct shadowed dimensions", () => {
   }
 });
 
+test("DIMENSIONS 的键序与 shared 里的契约逐项一致", () => {
+  assertDeepEqual(Object.keys(DIMENSIONS), DIMENSION_KEYS,
+    "维度 key 的顺序被改动：向量按这个顺序累加，历史记录依赖它保持稳定");
+});
+
 test("DIMENSION_PAIRS contains 5 valid pairs with valid dimension keys", () => {
   assertEqual(DIMENSION_PAIRS.length, 5);
   for (const pair of DIMENSION_PAIRS) {
@@ -285,6 +292,87 @@ test("historyStorage retains local-only records beyond 30", () => {
   }
   const records = getHistoryRecords();
   assertEqual(records.length, 35, "Local-only records must not be silently discarded");
+});
+
+// 会真的抛 QuotaExceededError 的存储，用来验证淘汰路径。
+function quotaStorage(limit) {
+  const map = new Map();
+  let used = 0;
+  return {
+    getItem: (key) => map.get(key) ?? null,
+    setItem: (key, value) => {
+      const next = String(value);
+      const previous = map.get(key);
+      const delta = next.length - (previous ? previous.length : 0);
+      if (used + delta > limit) {
+        const error = new Error("QuotaExceededError");
+        error.name = "QuotaExceededError";
+        throw error;
+      }
+      used += delta;
+      map.set(key, next);
+    },
+    removeItem: (key) => {
+      const previous = map.get(key);
+      if (previous) used -= previous.length;
+      map.delete(key);
+    },
+    clear: () => { map.clear(); used = 0; },
+  };
+}
+
+test("配额写满时淘汰最旧记录，而不是丢掉刚做完的那份画像", () => {
+  const original = globalThis.window;
+  const dispatched = [];
+  globalThis.window = {
+    localStorage: quotaStorage(6000),
+    dispatchEvent: (event) => dispatched.push(event.type),
+  };
+  try {
+    const mockResult = { archetype: { title: "晶体".repeat(8), symbol: "💎" } };
+    const saved = [];
+    for (let i = 0; i < 40; i += 1) {
+      saved.push(saveHistoryRecord([{ questionId: i, value: 4 }], mockResult));
+    }
+    const newest = saved[saved.length - 1];
+    assert(newest !== null, "最新一份必须保存成功，不能因为空间不足返回 null");
+    const ids = getHistoryRecords().map((record) => record.id);
+    assert(ids.includes(newest.id), "刚保存的画像不能被淘汰");
+    assert(ids.length < 40, "配额不足时应当确实淘汰了旧记录");
+    assert(dispatched.includes(EVICTION_EVENT), "淘汰必须通知界面，不能静默丢数据");
+  } finally {
+    globalThis.window = original;
+    clearHistoryRecords();
+  }
+});
+
+/* ── 光谱共振读数 ───────────────────────────────────────────────────────── */
+
+test("相对共振度没有 10% 地板：最低就是 0，最高是 100", () => {
+  const scale = resonanceScale([{ prob: 0.3 }, { prob: 0.05 }, { prob: 0.15 }]);
+  assertEqual(Math.round(scale(0.3)), 100, "最高的原型必须是 100");
+  assertEqual(Math.round(scale(0.05)), 0, "最低的原型必须是 0，不能是写死的 10");
+  assert(scale(0.15) > 0 && scale(0.15) < 100, "中间档位必须落在开区间内");
+});
+
+test("概率全部相等时共振度退化为 0，不产生 NaN", () => {
+  const scale = resonanceScale([{ prob: 0.1 }, { prob: 0.1 }]);
+  assert(!Number.isNaN(scale(0.1)), "等概率不能除零得到 NaN");
+  assertEqual(scale(0.1), 0, "没有区分度时应当是 0");
+});
+
+test("probabilityPercent 返回真实占比，供需要概率语义的地方使用", () => {
+  assertEqual(probabilityPercent(0.283), 28);
+  assertEqual(probabilityPercent(undefined), 0);
+});
+
+test("结果不再携带与已有字段重复的别名", () => {
+  const result = generateResult([{ questionId: 1, type: "scale", value: 5 }]);
+  for (const field of ["topTags", "primaryArchetype", "archetypeScores", "rawAnswers", "specialNarratives"]) {
+    assert(result[field] === undefined, `${field} 与已有字段重复，不应再出现在结果里`);
+  }
+  assert(Array.isArray(result.tagDetails), "tagDetails 仍然要在");
+  assert(Array.isArray(result.archetypeProbabilities), "archetypeProbabilities 仍然要在");
 });
 
 /* ── 主色：色板跨度与解析 ───────────────────────────────────────────────── */

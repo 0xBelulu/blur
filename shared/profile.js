@@ -1,4 +1,4 @@
-import { DIMENSION_KEYS } from '../src/data/dimensions.js';
+import { DIMENSION_KEYS } from './dimensions.js';
 
 // Bump these when scoring or the question bank changes. Stored results stay snapshots.
 export const ENGINE_VERSION = 'dimension-engine-v1';

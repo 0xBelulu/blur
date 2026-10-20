@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, Copy, RefreshCw } from 'lucide-react';
 import { PersonalModal, PortraitMark } from '../components/PersonalElements';
-import { personAccent } from '../data/accents.js';
+import { personAccent } from '../../shared/accents.js';
 import FriendFinder from '../components/FriendFinder';
 import { readPeople, friendAction, friendCode, inviteUrl } from '../utils/people';
 import { copyText, COPY_MANUAL_HINT } from '../utils/clipboard';

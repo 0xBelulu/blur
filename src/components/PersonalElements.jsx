@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { ModalDismiss } from './modalDismiss';
-import { DEFAULT_INK, markShades } from '../data/accents.js';
+import { DEFAULT_INK, markShades } from '../../shared/accents.js';
 
 export function PortraitMark({ color = DEFAULT_INK }) {
   const shades = markShades(color || DEFAULT_INK);

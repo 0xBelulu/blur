@@ -4,6 +4,7 @@ import { RotateCcw, Zap, HeartHandshake, ArrowRightLeft } from "lucide-react";
 import TraitSpace2D from "../components/TraitSpace2D";
 import GlassButton from "../components/GlassButton";
 import { DIMENSION_PAIRS, determineSuppressedTraits } from "../utils/blurEngine";
+import { resonanceScale } from "../utils/resonance";
 import TraitRadar from "../components/TraitRadar";
 import DimensionMeters from "../components/DimensionMeters";
 import ProgressBar from "../components/ProgressBar";
@@ -83,21 +84,16 @@ export default function Result({ result, onRestart, record, publicView = false, 
 
   const activePair = DIMENSION_PAIRS[activePairIndex];
 
-  // Soft scale for resonance percentage display
-  const minProb = Math.min(...similarities.map((s) => s.prob));
-  const maxProb = Math.max(...similarities.map((s) => s.prob), 0.01);
-  const softScale = (p) => {
-    const normalized = (p - minProb) / (maxProb - minProb);
-    const compressed = Math.pow(normalized, 0.7);
-    return Math.max(10, compressed * 100);
-  };
+  // 相对共振度（0–100）。唯一实现在 utils/resonance.js，与侧栏量表共用。
+  const scale = resonanceScale(similarities);
 
   const top1 = similarities[0];
   const top2 = similarities[1];
-  const pct1 = Math.round(softScale(top1.prob));
-  const pct2 = top2 ? Math.round(softScale(top2.prob)) : 0;
-  const isDual =
-    isDualResonance || (top2 && (Math.abs(top1.prob - top2.prob) <= 0.08 || Math.abs(pct1 - pct2) <= 8));
+  const pct1 = Math.round(scale(top1.prob));
+  const pct2 = top2 ? Math.round(scale(top2.prob)) : 0;
+  // 双原型的判定只在 blurEngine 里做一次。这里曾经另写了一份基于 pct 的阈值，
+  // 而 pct 是上面这个相对刻度算出来的，等于在失真的尺度上二次判定。
+  const isDual = isDualResonance;
 
   return (
     <>
@@ -609,7 +605,7 @@ export default function Result({ result, onRestart, record, publicView = false, 
                     特质分布
                   </p>
                   {scoredTraits.slice(0, 8).map((trait, i) => {
-                    const maxScore = scoredTraits[0].score;
+                    const maxScore = scoredTraits[0]?.score || 1;
                     const pct = Math.max(5, (trait.score / maxScore) * 100);
                     return (
                       <motion.div

@@ -30,7 +30,6 @@ import {
   RANDOM_BASELINES,
   RANDOM_STDS,
 } from "../src/utils/blurEngine.js";
-import { WEIGHT_CONFIG } from "../src/config/weightConfig.js";
 
 /* ── CLI Arguments ───────────────────────────────────────────────────────── */
 const args = process.argv.slice(2);
@@ -670,27 +669,30 @@ function runTier3() {
     recordFail(currentTierKey, "3.6 Softmax Probability Distribution", err);
   }
 
-  // 3.7 Configuration Single-Source Consistency Check
+  // 3.7 Scoring Weight Baseline Snapshot
+  // 权重是产品定义的一部分：改一个数就会改变所有人的结果，必须先重跑
+  // `node scripts/compute-baselines.js --trials 20000 --apply` 重新校准 μ/σ，
+  // 再同步更新这里的基线。
+  // 旧版本这条断言拿 blurEngine 的权重和 weightConfig.js 比，而后者是
+  // 直接从 blurEngine import 的同一个数组引用——恒真，永远不会失败。
+  // 现在锁的是具体数值，改权重会真的红。
   try {
-    const legacyScaleVals = WEIGHT_CONFIG?.scaleWeights?.values;
-    const legacyRankVals = WEIGHT_CONFIG?.rankWeights?.values;
-    const engineScaleVals = scaleWeights;
-    const engineRankVals = rankWeights;
+    const expectedScale = [0, -1.2, -0.6, 0.0, 0.6, 1.2];
+    const expectedRank = [1.0, 0.4, 0.0, -0.6];
 
-    const scaleSynced = JSON.stringify(legacyScaleVals) === JSON.stringify(engineScaleVals);
-    const rankSynced = JSON.stringify(legacyRankVals) === JSON.stringify(engineRankVals);
-
-    if (scaleSynced && rankSynced) {
-      recordPass(currentTierKey, "3.7 Configuration Single-Source Consistency", "weightConfig.js matches blurEngine.js definitions");
-    } else {
-      recordWarn(
-        currentTierKey,
-        "3.7 Configuration Single-Source Consistency",
-        `Code drift detected: weightConfig.js [scale=${JSON.stringify(legacyScaleVals)}] differs from blurEngine.js [scale=${JSON.stringify(engineScaleVals)}]. Update weightConfig.js to align with blurEngine.js single source.`
-      );
-    }
+    assert(
+      JSON.stringify(scaleWeights) === JSON.stringify(expectedScale),
+      `scaleWeights 已改动：${JSON.stringify(scaleWeights)}，基线是 ${JSON.stringify(expectedScale)}。改权重必须重跑 compute-baselines 并更新本基线。`
+    );
+    assert(
+      JSON.stringify(rankWeights) === JSON.stringify(expectedRank),
+      `rankWeights 已改动：${JSON.stringify(rankWeights)}，基线是 ${JSON.stringify(expectedRank)}。`
+    );
+    assert(scaleWeights.length === 6, "scaleWeights 长度必须对应量表 1–5（含 0 位）");
+    assert(rankWeights.length === 4, "rankWeights 长度必须对应排序 4 个选项");
+    recordPass(currentTierKey, "3.7 Scoring Weight Baseline Snapshot", "scale/rank 权重与已校准基线逐项一致");
   } catch (err) {
-    recordWarn(currentTierKey, "3.7 Configuration Single-Source Consistency", `Check skipped: ${err.message}`);
+    recordFail(currentTierKey, "3.7 Scoring Weight Baseline Snapshot", err);
   }
 }
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ArrowRight, Sparkles } from "lucide-react";
+import { resonanceScale } from "../utils/resonance";
 
 const SHOW_COUNT = 5;
 
@@ -19,15 +20,7 @@ export default function DimensionMeters({
 
   if (!similarities || similarities.length === 0) return null;
 
-  const minProb = Math.min(...similarities.map((s) => s.prob));
-  const maxProb = Math.max(...similarities.map((s) => s.prob), 0.01);
-
-  // 完全软的归一化：没有硬编码上下限，用幂次压缩让分布平缓
-  const softScale = (p) => {
-    const normalized = (p - minProb) / (maxProb - minProb);
-    const compressed = Math.pow(normalized, 0.7);
-    return Math.max(10, compressed * 100);
-  };
+  const scale = resonanceScale(similarities);
 
   const displayItems = expandedList ? similarities : similarities.slice(0, SHOW_COUNT);
 
@@ -39,7 +32,7 @@ export default function DimensionMeters({
     <div className="w-full">
       <div className="w-full space-y-2">
         {displayItems.map(({ key, prob, profile }, i) => {
-          const pct = softScale(prob);
+          const pct = scale(prob);
           const isActive = activeKey === key || selectedKey === key;
           const isItemExpanded = expandedItemKey === key;
           const displayPct = Math.round(pct);

@@ -1,5 +1,6 @@
 import { HttpError, json, body } from './http.js';
 import { purgeGhosts, countGhosts } from './ghosts.js';
+import { sha256Hex } from '../shared/hex.js';
 
 // Public counters are deliberately a closed set. An unknown name is rejected so
 // the table cannot grow arbitrary keys from the browser.
@@ -24,18 +25,13 @@ export async function touchAccount(db, owner) {
   } catch { /* Retention is optional; the account read still succeeds. */ }
 }
 
-async function sha256(value) {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
-}
-
 // Admin access is deliberately outside the user identity system: a leaked user
 // token can never reach this route, and there is no is_admin flag to escalate.
 async function requireAdmin(request, db) {
   const provided = request.headers.get('Authorization')?.match(/^Bearer ([A-Za-z0-9_-]{24,200})$/)?.[1];
   if (!provided) throw new HttpError(401, '需要后台访问令牌');
   const row = await db.prepare('SELECT token_hash FROM admin_tokens WHERE token_hash = ?')
-    .bind(await sha256(provided)).first();
+    .bind(await sha256Hex(provided)).first();
   if (row) return;
   const configured = await db.prepare('SELECT 1 AS ok FROM admin_tokens LIMIT 1').bind().first();
   throw new HttpError(configured ? 401 : 503,
