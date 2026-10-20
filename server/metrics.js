@@ -84,6 +84,7 @@ async function cloudSnapshot(db, day, now) {
       tombstonedAccounts: Number(totals?.tombstonedAccounts || 0),
       ghostCandidates: ghosts.orphan,
       dormantCandidates: ghosts.dormant,
+      unownedProfiles: ghosts.unownedProfiles,
       profiles: Number(totals?.profiles || 0),
       liveShares: Number(totals?.liveShares || 0),
       friendships: Number(totals?.friendships || 0),
@@ -154,7 +155,7 @@ export async function metricsRoute(request, env, path) {
     if (request.method !== 'POST') throw new HttpError(405, '不支持此操作');
     await requireAdmin(request, env.DB);
     const input = await body(request);
-    const allowed = ['dryRun', 'orphanDays', 'dormantDays', 'tombstoneDays'];
+    const allowed = ['dryRun', 'orphanDays', 'dormantDays', 'tombstoneDays', 'unownedDays'];
     if (Object.keys(input).some((key) => !allowed.includes(key))) throw new HttpError(400, '未知的清理参数');
     if (input.dryRun !== undefined && typeof input.dryRun !== 'boolean') throw new HttpError(400, '请选择是否实际执行');
     return json(await purgeGhosts(env.DB, input));

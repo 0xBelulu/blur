@@ -150,7 +150,8 @@ export default function Admin({ onBack }) {
         <dl className="mt-3 divide-y divide-blur-border/60 text-sm">
           {[['现存身份', cloud.accounts], ['设置展示画像', cloud.accountsWithPortrait], ['云端画像', cloud.profiles],
             ['好友关系', cloud.friendships], ['已接受', cloud.acceptedFriendships],
-            ['已注销墓碑', cloud.tombstonedAccounts], ['待清理的幽灵身份', cloud.ghostCandidates]].map(([label, value]) =>
+            ['已注销墓碑', cloud.tombstonedAccounts], ['待清理的幽灵身份', cloud.ghostCandidates],
+            ['无主画像', cloud.unownedProfiles]].map(([label, value]) =>
             <div key={label} className="flex items-baseline justify-between py-2.5">
               <dt className="text-blur-text-muted">{label}</dt>
               <dd className="tabular-nums text-blur-text">{format(value)}</dd>

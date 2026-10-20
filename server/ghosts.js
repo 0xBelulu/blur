@@ -5,7 +5,7 @@ const DAY_MS = 86_400_000;
 // Three tiers, ordered from safest to most destructive. The numbers are policy,
 // not physics: they live here so the endpoint, the script and the dashboard
 // cannot drift apart.
-export const GHOST_POLICY = { orphanDays: 30, dormantDays: 180, tombstoneDays: 30 };
+export const GHOST_POLICY = { orphanDays: 30, dormantDays: 180, tombstoneDays: 30, unownedDays: 30 };
 
 // An orphan never had content or a relationship. Deleting it loses nothing.
 const ORPHAN = `deleted_at IS NULL
@@ -24,6 +24,12 @@ const DORMANT = `deleted_at IS NULL
 // A tombstone has already had its grace period; now the row itself can go.
 const EXPIRED = 'deleted_at IS NOT NULL AND deleted_at < ?';
 
+// A portrait with no identity at all. Uploads require an identity now, so these
+// can only come from the old implicit-registration window or a rollback. They are
+// unrecoverable (no key opens them) and the account walk above cannot see them.
+const UNOWNED_PROFILE = `deleted_at IS NULL AND created_at < ?
+  AND NOT EXISTS (SELECT 1 FROM accounts a WHERE a.owner_hash = profiles.owner_hash)`;
+
 function policy(overrides = {}) {
   const merged = { ...GHOST_POLICY };
   for (const key of Object.keys(GHOST_POLICY)) {
@@ -40,6 +46,11 @@ async function count(db, predicate, ...args) {
   return Number(row?.n || 0);
 }
 
+async function countProfiles(db, predicate, ...args) {
+  const row = await db.prepare(`SELECT COUNT(*) AS n FROM profiles WHERE ${predicate}`).bind(...args).first();
+  return Number(row?.n || 0);
+}
+
 // Counting and mutating must use the same predicate, so the cutoff timestamps
 // are derived once per run and reused verbatim.
 export async function countGhosts(db, { now = Date.now(), ...overrides } = {}) {
@@ -47,11 +58,13 @@ export async function countGhosts(db, { now = Date.now(), ...overrides } = {}) {
   const orphanCutoff = now - limits.orphanDays * DAY_MS;
   const dormantCutoff = now - limits.dormantDays * DAY_MS;
   const tombstoneCutoff = now - limits.tombstoneDays * DAY_MS;
+  const unownedCutoff = now - limits.unownedDays * DAY_MS;
   return {
     policy: limits,
     orphan: await count(db, ORPHAN, orphanCutoff, orphanCutoff),
     dormant: await count(db, DORMANT, dormantCutoff),
     expiredTombstones: await count(db, EXPIRED, tombstoneCutoff),
+    unownedProfiles: await countProfiles(db, UNOWNED_PROFILE, unownedCutoff),
   };
 }
 
@@ -61,12 +74,14 @@ export async function purgeGhosts(db, options = {}) {
   const orphanCutoff = now - limits.orphanDays * DAY_MS;
   const dormantCutoff = now - limits.dormantDays * DAY_MS;
   const tombstoneCutoff = now - limits.tombstoneDays * DAY_MS;
+  const unownedCutoff = now - limits.unownedDays * DAY_MS;
   const found = {
     orphan: await count(db, ORPHAN, orphanCutoff, orphanCutoff),
     dormant: await count(db, DORMANT, dormantCutoff),
     expiredTombstones: await count(db, EXPIRED, tombstoneCutoff),
+    unownedProfiles: await countProfiles(db, UNOWNED_PROFILE, unownedCutoff),
   };
-  const affected = { orphanDeleted: 0, dormantTombstoned: 0, tombstonePurged: 0 };
+  const affected = { orphanDeleted: 0, dormantTombstoned: 0, tombstonePurged: 0, unownedPurged: 0 };
   if (dryRun) return { dryRun: true, policy: limits, found, affected };
 
   // Orphans first: they are pure noise, and removing them shrinks the set the
@@ -94,6 +109,11 @@ export async function purgeGhosts(db, options = {}) {
   await db.prepare(`DELETE FROM accounts WHERE owner_hash IN (SELECT owner_hash FROM accounts WHERE ${EXPIRED})`)
     .bind(tombstoneCutoff).run();
   affected.tombstonePurged = found.expiredTombstones;
+
+  // Last: portraits that never belonged to an identity. Their account walk entry
+  // does not exist, so nothing above could ever reach them.
+  await db.prepare(`DELETE FROM profiles WHERE ${UNOWNED_PROFILE}`).bind(unownedCutoff).run();
+  affected.unownedPurged = found.unownedProfiles;
 
   return { dryRun: false, policy: limits, found, affected };
 }

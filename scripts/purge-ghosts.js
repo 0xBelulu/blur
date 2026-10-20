@@ -18,7 +18,7 @@ if (!/^https?:\/\//.test(base) || (base.startsWith('http://') && !/^http:\/\/(12
 }
 
 const payload = { dryRun: !apply };
-for (const [name, key] of [['--orphan-days', 'orphanDays'], ['--dormant-days', 'dormantDays'], ['--tombstone-days', 'tombstoneDays']]) {
+for (const [name, key] of [['--orphan-days', 'orphanDays'], ['--dormant-days', 'dormantDays'], ['--tombstone-days', 'tombstoneDays'], ['--unowned-days', 'unownedDays']]) {
   const raw = flag(name);
   if (raw === undefined) continue;
   const value = Number.parseInt(raw, 10);
@@ -49,10 +49,10 @@ if (!response.ok || !data) {
 
 const { policy, found, affected } = data;
 console.log(`\n模式：${data.dryRun ? '只读检查（未写入）' : '实际执行'}`);
-console.log(`策略：孤儿 ${policy.orphanDays} 天 · 休眠 ${policy.dormantDays} 天 · 墓碑保留 ${policy.tombstoneDays} 天`);
-console.log(`命中：孤儿 ${found.orphan} · 休眠 ${found.dormant} · 过期墓碑 ${found.expiredTombstones}`);
+console.log(`策略：孤儿 ${policy.orphanDays} 天 · 休眠 ${policy.dormantDays} 天 · 墓碑保留 ${policy.tombstoneDays} 天 · 无主画像 ${policy.unownedDays} 天`);
+console.log(`命中：孤儿 ${found.orphan} · 休眠 ${found.dormant} · 过期墓碑 ${found.expiredTombstones} · 无主画像 ${found.unownedProfiles}`);
 if (data.dryRun) {
   console.log('\n确认无误后加 --apply 再运行一次。孤儿会被删除，休眠身份会清空内容并留下墓碑。\n');
 } else {
-  console.log(`已处理：删除孤儿 ${affected.orphanDeleted} · 墓碑化 ${affected.dormantTombstoned} · 清除过期墓碑 ${affected.tombstonePurged}\n`);
+  console.log(`已处理：删除孤儿 ${affected.orphanDeleted} · 墓碑化 ${affected.dormantTombstoned} · 清除过期墓碑 ${affected.tombstonePurged} · 清除无主画像 ${affected.unownedPurged}\n`);
 }

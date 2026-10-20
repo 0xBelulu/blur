@@ -1231,6 +1231,10 @@ test('ghost cleanup is read-only by default and only touches abandoned identitie
   db.sqlite.prepare('UPDATE accounts SET created_at = ?, last_seen_at = NULL WHERE owner_hash = ?').run(now - 40 * day, owner(orphan));
   db.sqlite.prepare('UPDATE accounts SET created_at = ?, last_seen_at = ? WHERE owner_hash = ?').run(now - 200 * day, now - 200 * day, owner(dormant));
   db.sqlite.prepare('UPDATE accounts SET deleted_at = ? WHERE owner_hash = ?').run(now - 40 * day, owner(expired));
+  // A portrait from the old implicit-registration window has no identity at all.
+  db.sqlite.prepare(`INSERT INTO profiles (id, owner_hash, created_at, engine_version, question_version,
+    answer_count, answers_json, result_json) VALUES ('unowned', ?, ?, ?, ?, 10, '{}', '{}')`)
+    .run(owner('9'.repeat(64)), now - 40 * day, ENGINE_VERSION, QUESTION_VERSION);
 
   const dry = await call(db, '/admin/ghosts/purge', 'POST', { dryRun: true }, adminToken);
   assert.equal(dry.status, 200);
@@ -1238,6 +1242,7 @@ test('ghost cleanup is read-only by default and only touches abandoned identitie
   assert.equal(dry.data.found.orphan, 1);
   assert.equal(dry.data.found.dormant, 1);
   assert.equal(dry.data.found.expiredTombstones, 1);
+  assert.equal(dry.data.found.unownedProfiles, 1);
   assert.equal(db.sqlite.prepare('SELECT COUNT(*) AS n FROM accounts').get().n, 4);
 
   assert.equal((await call(db, '/admin/ghosts/purge', 'POST', {}, '2'.repeat(32))).status, 401);
@@ -1246,7 +1251,8 @@ test('ghost cleanup is read-only by default and only touches abandoned identitie
   assert.equal((await call(db, '/admin/ghosts/purge', 'POST', { unrelated: 1 }, adminToken)).status, 400);
 
   const applied = await call(db, '/admin/ghosts/purge', 'POST', { dryRun: false }, adminToken);
-  assert.deepEqual(applied.data.affected, { orphanDeleted: 1, dormantTombstoned: 1, tombstonePurged: 1 });
+  assert.deepEqual(applied.data.affected, { orphanDeleted: 1, dormantTombstoned: 1, tombstonePurged: 1, unownedPurged: 1 });
+  assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS n FROM profiles WHERE id = 'unowned'").get().n, 0);
   assert.equal(db.sqlite.prepare('SELECT COUNT(*) AS n FROM accounts').get().n, 2);
   assert.equal((await call(db, '/account', 'GET', undefined, active)).status, 200);
   assert.equal((await call(db, '/account', 'GET', undefined, dormant)).status, 410);
@@ -1258,7 +1264,7 @@ test('ghost cleanup is read-only by default and only touches abandoned identitie
 
   // Idempotent: a second pass finds nothing and changes nothing.
   const again = await call(db, '/admin/ghosts/purge', 'POST', { dryRun: false }, adminToken);
-  assert.deepEqual(again.data.affected, { orphanDeleted: 0, dormantTombstoned: 0, tombstonePurged: 0 });
+  assert.deepEqual(again.data.affected, { orphanDeleted: 0, dormantTombstoned: 0, tombstonePurged: 0, unownedPurged: 0 });
 });
 
 test('reading never creates an identity, and deleting one still adopts a legacy owner', async (t) => {
