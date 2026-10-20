@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, ArrowUpRight, Download, Fingerprint } from 'luci
 import { useModalDismiss } from './modalDismiss';
 import { exportRecoveryKey, restoreIdentity } from '../utils/cloud';
 import { updateAccountInfo } from '../utils/identity';
+import { copyText, COPY_MANUAL_HINT } from '../utils/clipboard';
 import { friendCode } from '../utils/people';
 
 export default function AccountPanel({ account, onCreate, initialView = 'menu', onSignOut }) {
@@ -101,7 +102,8 @@ export default function AccountPanel({ account, onCreate, initialView = 'menu', 
           className="pp-key" onFocus={(event) => event.target.select()} />
         <div className="pp-account-links">
           <button className="pp-text-button" onClick={() => run(async () => {
-            await navigator.clipboard.writeText(recoveryKey); updateAccountInfo({ backupSavedAt: Date.now() }); setMessage('密钥已复制，请自己存好');
+            if (await copyText(recoveryKey) === 'manual') { setMessage(COPY_MANUAL_HINT); return; }
+            updateAccountInfo({ backupSavedAt: Date.now() }); setMessage('密钥已复制，请自己存好');
           })}>复制密钥</button>
           <button className="pp-text-button" onClick={() => {
             const url = URL.createObjectURL(new Blob([recoveryKey], { type: 'text/plain;charset=utf-8' }));

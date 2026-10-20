@@ -4,6 +4,7 @@ import { PersonalModal, PortraitMark } from '../components/PersonalElements';
 import { personAccent } from '../data/accents.js';
 import FriendFinder from '../components/FriendFinder';
 import { readPeople, friendAction, friendCode, inviteUrl } from '../utils/people';
+import { copyText, COPY_MANUAL_HINT } from '../utils/clipboard';
 
 export default function Friends({ account, onCreate, onFriend, onBackup, onSettings }) {
   const [connections, setConnections] = useState(null);
@@ -31,7 +32,9 @@ export default function Friends({ account, onCreate, onFriend, onBackup, onSetti
     await friendAction(`/friends/${c.id}${accept ? '/accept' : ''}`, accept ? 'POST' : 'DELETE');
     setModal(null); reload();
   });
-  const copy = (text, done) => run(async () => { await navigator.clipboard.writeText(text); setMessage(done); });
+  const copy = (text, done) => run(async () => {
+    setMessage((await copyText(text)) === 'manual' ? COPY_MANUAL_HINT : done);
+  });
   if (!account.registered) return <section className="pp-empty">
     <PortraitMark /><h2>把朋友留在这里。</h2><p>把身份存到云端，拿到自己的好友码。无需邮箱或密码。</p>
     <button className="pp-primary" onClick={onCreate}>把身份存到云端<ArrowRight size={16} /></button>

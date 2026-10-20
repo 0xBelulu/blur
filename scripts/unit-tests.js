@@ -34,6 +34,7 @@ import {
   INVITE_SNOOZE_MS,
   INVITE_MAX_DISMISSALS,
 } from "../src/utils/identityInvite.js";
+import { copyText, COPY_MANUAL_HINT } from "../src/utils/clipboard.js";
 
 let totalTests = 0;
 let passedTests = 0;
@@ -55,6 +56,19 @@ function test(name, fn) {
 function assert(condition, message) {
   if (!condition) {
     throw new Error(message || "Assertion failed");
+  }
+}
+
+async function testAsync(name, fn) {
+  totalTests++;
+  try {
+    await fn();
+    passedTests++;
+    console.log(`  ✓ ${name}`);
+  } catch (err) {
+    failedTests++;
+    console.error(`  ✗ ${name}`);
+    console.error(`    Error: ${err.message}`);
   }
 }
 
@@ -402,6 +416,110 @@ test("blocked storage never breaks the result page", () => {
   noteInviteShown("x", broken);
   noteInviteDismissed(broken);
   noteInviteCreated(broken);
+});
+
+/* ── 复制：降级路径 ──────────────────────────────────────────────────────── */
+console.log("\n[6] Clipboard Fallback:");
+
+function fakeDoc(options = {}) {
+  const nodes = [];
+  const calls = { attributes: [], selection: null, command: null, selected: false };
+  const doc = {
+    activeElement: options.activeElement ?? null,
+    body: {
+      appendChild(node) { nodes.push(node); return node; },
+      removeChild(node) { const index = nodes.indexOf(node); if (index >= 0) nodes.splice(index, 1); return node; },
+    },
+    createElement() {
+      const field = {
+        value: "",
+        style: {},
+        setAttribute(name, value) { calls.attributes.push([name, value]); },
+        select() { calls.selected = true; },
+        setSelectionRange(start, end) { calls.selection = [start, end]; },
+        focus() {},
+        remove() { const index = nodes.indexOf(field); if (index >= 0) nodes.splice(index, 1); },
+      };
+      return field;
+    },
+    execCommand(command) {
+      calls.command = command;
+      if (options.copyThrows) throw new Error("copy blocked");
+      return options.copyWorks !== false;
+    },
+  };
+  return { doc, nodes, calls };
+}
+
+const rejectingClipboard = () => ({ clipboard: { writeText: async () => {
+  const error = new Error("denied");
+  error.name = "NotAllowedError";
+  throw error;
+} } });
+
+await testAsync("可用的 clipboard 直接复制，不创建兜底元素", async () => {
+  let written = null;
+  const { doc, nodes } = fakeDoc();
+  const how = await copyText("BLUR-abc", { nav: { clipboard: { writeText: async (value) => { written = value; } } }, doc });
+  assertEqual(how, "clipboard");
+  assertEqual(written, "BLUR-abc");
+  assertEqual(nodes.length, 0, "成功后不应留下 textarea");
+});
+
+await testAsync("clipboard 被拒绝后落到 execCommand", async () => {
+  const { doc, nodes, calls } = fakeDoc();
+  assertEqual(await copyText("BLUR-abc", { nav: rejectingClipboard(), doc }), "legacy");
+  assertEqual(calls.command, "copy");
+  assertEqual(nodes.length, 0, "兜底 textarea 应被清理");
+});
+
+await testAsync("没有 clipboard 时直接走 execCommand", async () => {
+  const { doc } = fakeDoc();
+  assertEqual(await copyText("x", { nav: {}, doc }), "legacy");
+});
+
+await testAsync("两条路都失败时报告 manual，而不是抛错", async () => {
+  const { doc } = fakeDoc({ copyWorks: false });
+  assertEqual(await copyText("x", { nav: rejectingClipboard(), doc }), "manual");
+});
+
+await testAsync("execCommand 抛错时报告 manual 并清理元素", async () => {
+  const { doc, nodes } = fakeDoc({ copyThrows: true });
+  assertEqual(await copyText("x", { nav: {}, doc }), "manual");
+  assertEqual(nodes.length, 0, "抛错后也要清理 textarea");
+});
+
+await testAsync("没有 document 时报告 manual，不抛错", async () => {
+  assertEqual(await copyText("x", { nav: {}, doc: undefined }), "manual");
+});
+
+await testAsync("空文本不算复制成功", async () => {
+  let touched = false;
+  const { doc, nodes } = fakeDoc();
+  const how = await copyText("", { nav: { clipboard: { writeText: async () => { touched = true; } } }, doc });
+  assertEqual(how, "manual");
+  assertEqual(touched, false, "空文本不该调用剪贴板");
+  assertEqual(nodes.length, 0);
+});
+
+await testAsync("老路径会选中全文并标记 readonly", async () => {
+  const { doc, calls } = fakeDoc();
+  await copyText("BLUR-key", { nav: {}, doc });
+  assertEqual(calls.selection[0], 0);
+  assertEqual(calls.selection[1], 8, "选区应覆盖完整密钥");
+  assert(calls.attributes.some(([name]) => name === "readonly"), "readonly 应设置，避免 iOS 弹键盘");
+  assert(calls.selected, "应先 select 再复制");
+});
+
+await testAsync("复制后把焦点还给原元素", async () => {
+  let restored = 0;
+  const { doc } = fakeDoc({ activeElement: { focus: () => { restored++; } } });
+  await copyText("x", { nav: {}, doc });
+  assertEqual(restored, 1, "应恢复一次焦点");
+});
+
+await testAsync("manual 的提示文案不是空的", async () => {
+  assert(typeof COPY_MANUAL_HINT === "string" && COPY_MANUAL_HINT.length > 0);
 });
 
 /* ── Summary ─────────────────────────────────────────────────────────────── */

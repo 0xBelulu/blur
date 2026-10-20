@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Check, Fingerprint } from 'lucide-react';
 import AccountPanel from '../components/AccountPanel';
 import { saveProfile, exportRecoveryKey } from '../utils/cloud';
 import { updateAccountInfo } from '../utils/identity';
+import { copyText, COPY_MANUAL_HINT } from '../utils/clipboard';
 import { friendCode } from '../utils/people';
 import './Personal.css';
 
@@ -31,7 +32,7 @@ export default function Identity({ account, onBack, onDone }) {
       {restore && <><AccountPanel key={account.id || 'guest'} account={account} initialView="restore" />{account.registered && <button className="pp-primary pp-spaced" onClick={onDone}>使用当前身份继续<ArrowRight size={15} /></button>}</>}
     </section> : <section className="pp-create pp-enter"><Check size={24} className="text-blur-accent" /><h1>你好，{account.nickname}。</h1><p className="pp-dialog-description">身份存好了。你的好友码是 {friendCode(account.friendCode)}。</p>
       <button className="pp-outline" disabled={busy} onClick={() => run(async () => { const recovery = await exportRecoveryKey(); setKey(recovery); setKeyOwner(account.id); })}>保存一份恢复密钥</button>
-      {key && keyOwner === account.id && <div><label>恢复密钥 · 请私下保管<textarea readOnly rows={3} value={key} onFocus={(e) => e.target.select()} /></label><button className="pp-outline" disabled={busy} onClick={() => run(async () => { await navigator.clipboard.writeText(key); updateAccountInfo({ backupSavedAt: Date.now() }); setError('密钥已复制，请妥善保存。'); })}>复制密钥</button></div>}
+      {key && keyOwner === account.id && <div><label>恢复密钥 · 请私下保管<textarea readOnly rows={3} value={key} onFocus={(e) => e.target.select()} /></label><button className="pp-outline" disabled={busy} onClick={() => run(async () => { if (await copyText(key) === 'manual') { setError(COPY_MANUAL_HINT); return; } updateAccountInfo({ backupSavedAt: Date.now() }); setError('密钥已复制，请妥善保存。'); })}>复制密钥</button></div>}
       <p className="pp-helper">好友码可以分享，恢复密钥相当于身份钥匙，请只留给自己。画像还没上云——到「我的空间」把想展示的那一份存到云端，朋友才看得到。</p>
       <button className="pp-primary" onClick={onDone}>继续<ArrowRight size={15} /></button>
     </section>}

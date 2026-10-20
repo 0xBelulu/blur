@@ -3,6 +3,7 @@ import { ArrowRight, Check, KeyRound } from 'lucide-react';
 import { PersonalModal } from './PersonalElements';
 import { saveProfile, exportRecoveryKey } from '../utils/cloud';
 import { updateAccountInfo } from '../utils/identity';
+import { copyText, COPY_MANUAL_HINT } from '../utils/clipboard';
 import { friendCode } from '../utils/people';
 import { noteInviteCreated, noteInviteDismissed } from '../utils/identityInvite';
 import '../pages/Personal.css';
@@ -56,11 +57,9 @@ export default function IdentityInvite({ open, account, result, onClose }) {
   };
   const copyKey = async () => {
     setMessage('');
-    try {
-      await navigator.clipboard.writeText(key);
-      updateAccountInfo({ backupSavedAt: Date.now() });
-      setMessage('密钥已复制，请妥善保存。');
-    } catch { setMessage('无法自动复制，请手动选中密钥。'); }
+    if (await copyText(key) === 'manual') { setMessage(COPY_MANUAL_HINT); return; }
+    updateAccountInfo({ backupSavedAt: Date.now() });
+    setMessage('密钥已复制，请妥善保存。');
   };
 
   const lead = created ? null : <div className="ii-lead">

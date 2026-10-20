@@ -4,6 +4,7 @@ import GlassButton from './GlassButton';
 import RecordBadges from './RecordBadges';
 import { publishRecord, revokeShare, shareUrl, syncRecord, removeCloudCopy, refreshCloudHistory } from '../utils/cloud';
 import { getAccountInfo } from '../utils/identity';
+import { copyText, COPY_MANUAL_HINT } from '../utils/clipboard';
 
 export default function ShareControls({ record, sharing = true, onPermissions, onCreate, createLabel = '把身份存到云端' }) {
   const [busy, setBusy] = useState(false);
@@ -52,7 +53,7 @@ export default function ShareControls({ record, sharing = true, onPermissions, o
     </div>}
     {link && <div className="flex flex-wrap gap-2">
       <GlassButton variant="secondary" disabled={busy || Boolean(record.pendingAction)} onClick={() => run(async () => {
-        await navigator.clipboard.writeText(link); setMessage('分享链接已复制');
+        setMessage((await copyText(link)) === 'manual' ? COPY_MANUAL_HINT : '分享链接已复制');
       })}><span className="flex items-center gap-2"><Copy size={14} />复制分享链接</span></GlassButton>
       {navigator.share && <GlassButton variant="secondary" disabled={busy || Boolean(record.pendingAction)} onClick={() => run(async () => {
         try { await navigator.share({ title: '查看我的性格 · Blur', url: link }); }
@@ -91,8 +92,8 @@ export default function ShareControls({ record, sharing = true, onPermissions, o
     {record.lastVerifiedAt && <p className="text-[10px] text-blur-text-light">上次云端确认：{new Date(record.lastVerifiedAt).toLocaleString('zh-CN')}</p>}
     {message && <p role="status" className="text-blur-text-muted leading-relaxed">{message}</p>}
     {!link && record.result && <button className="text-blur-text-muted underline cursor-pointer" disabled={busy} onClick={() => run(async () => {
-      await navigator.clipboard.writeText(`【Blur 人格画像】${record.result.archetype.title}\n${record.result.archetype.subtitle}`);
-      setMessage('已复制文字摘要，没有上传或公开画像');
+      const summary = `【Blur 人格画像】${record.result.archetype.title}\n${record.result.archetype.subtitle}`;
+      setMessage((await copyText(summary)) === 'manual' ? COPY_MANUAL_HINT : '已复制文字摘要，没有上传或公开画像');
     })}>仅复制文字摘要</button>}
   </div>;
 }
