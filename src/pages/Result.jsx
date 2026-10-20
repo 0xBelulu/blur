@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RotateCcw, Zap, HeartHandshake, ArrowRightLeft } from "lucide-react";
 import TraitSpace2D from "../components/TraitSpace2D";
@@ -9,6 +9,10 @@ import DimensionMeters from "../components/DimensionMeters";
 import ProgressBar from "../components/ProgressBar";
 import DraggableTabs from "../components/DraggableTabs";
 import ShareControls from "../components/ShareControls";
+import IdentityInvite from "../components/IdentityInvite";
+import { shouldInvite, noteInviteShown } from "../utils/identityInvite";
+
+const INVITE_DELAY = 1800;
 
 const TABS = [
   { key: "cloud", label: "画像" },
@@ -23,10 +27,28 @@ const tabContentVariants = {
   exit: { opacity: 0, y: -8 },
 };
 
-export default function Result({ result, onRestart, record, publicView = false, onCompare, onOpenMy, onPermissions }) {
+export default function Result({ result, onRestart, record, publicView = false, onCompare, onOpenMy, onPermissions, account, justFinished = false }) {
   const [activeTab, setActiveTab] = useState("cloud");
   const [activePairIndex, setActivePairIndex] = useState(0);
   const [hoveredArchetype, setHoveredArchetype] = useState(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const inviteAsked = useRef(false);
+
+  // Only a portrait that was just finished gets the invitation, and only once.
+  // The policy lives in identityInvite.js so a refusal is remembered per device.
+  // The "asked" mark moves inside the timer: StrictMode mounts effects twice,
+  // and the first pass is cleaned up before it ever gets to open anything.
+  useEffect(() => {
+    if (!justFinished || publicView || !record || account?.registered) return undefined;
+    if (inviteAsked.current === record.id) return undefined;
+    if (!shouldInvite({ account, recordId: record.id })) return undefined;
+    const timer = setTimeout(() => {
+      inviteAsked.current = record.id;
+      noteInviteShown(record.id);
+      setInviteOpen(true);
+    }, INVITE_DELAY);
+    return () => clearTimeout(timer);
+  }, [justFinished, publicView, record, account]);
 
   const {
     archetypeKey,
@@ -78,7 +100,8 @@ export default function Result({ result, onRestart, record, publicView = false, 
     isDualResonance || (top2 && (Math.abs(top1.prob - top2.prob) <= 0.08 || Math.abs(pct1 - pct2) <= 8));
 
   return (
-    <div className="flex-1 flex flex-col md:flex-row md:items-start md:justify-center gap-6 md:gap-10 px-6 py-8 md:py-12 max-w-5xl mx-auto w-full overflow-y-auto">
+    <>
+      <div className="flex-1 flex flex-col md:flex-row md:items-start md:justify-center gap-6 md:gap-10 px-6 py-8 md:py-12 max-w-5xl mx-auto w-full overflow-y-auto">
       {/* Left: Trait Space + Meters */}
       <div className="flex flex-col items-center md:items-start md:w-[420px] shrink-0">
         <motion.div
@@ -618,11 +641,11 @@ export default function Result({ result, onRestart, record, publicView = false, 
           className="mt-auto pt-8 w-full"
         >
           {!publicView && record && <ShareControls record={record} sharing={false} onPermissions={onPermissions}
-            onCreate={onOpenMy} createLabel="去我的空间存身份" />}
+            onCreate={() => setInviteOpen(true)} createLabel="给这份画像一个身份" />}
           {!publicView && !record && <p role="status" className="text-xs text-blur-text-muted">本机存储空间不足，本次画像暂未存档。</p>}
           <div className="mt-4 flex flex-wrap items-center justify-center md:justify-start gap-3">
             {publicView && <GlassButton onClick={onCompare}>和 ta 对比</GlassButton>}
-            {!publicView && onOpenMy && <GlassButton variant="secondary" onClick={onOpenMy}>我的画像与身份</GlassButton>}
+            {!publicView && onOpenMy && <GlassButton variant="secondary" onClick={onOpenMy}>我的空间</GlassButton>}
             <GlassButton variant="ghost" onClick={onRestart}>
               <span className="flex items-center gap-2">
                 <RotateCcw size={14} />
@@ -633,6 +656,9 @@ export default function Result({ result, onRestart, record, publicView = false, 
         </motion.div>
       </div>
     </div>
+    {!publicView && record && <IdentityInvite open={inviteOpen} account={account} result={result}
+      onClose={() => setInviteOpen(false)} />}
+  </>
   );
 }
 

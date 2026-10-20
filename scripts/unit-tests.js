@@ -26,6 +26,14 @@ import {
   deleteHistoryRecord,
   clearHistoryRecords,
 } from "../src/utils/historyStorage.js";
+import {
+  shouldInvite,
+  noteInviteShown,
+  noteInviteDismissed,
+  noteInviteCreated,
+  INVITE_SNOOZE_MS,
+  INVITE_MAX_DISMISSALS,
+} from "../src/utils/identityInvite.js";
 
 let totalTests = 0;
 let passedTests = 0;
@@ -328,6 +336,72 @@ test("markShades derives four stops including the counter color", () => {
   assert(tones[3][0] > tones[3][1], "补色的红通道应高于绿通道");
   assert(deltaE(tones[3], tones[0]) > 20, "补色与主色的色差要够大，否则等于没加");
   tones.flat().forEach((channel) => assert(channel >= 0 && channel <= 255, "色值必须在 0–255 之间"));
+});
+
+/* ── 结果页的身份邀请：一次机会，两次拒绝就停下 ────────────────────────── */
+console.log("\n[5] Post-result Identity Invite:");
+
+function memoryStorage() {
+  const map = new Map();
+  return {
+    getItem: (key) => (map.has(key) ? map.get(key) : null),
+    setItem: (key, value) => map.set(key, String(value)),
+    removeItem: (key) => map.delete(key),
+  };
+}
+
+test("a registered identity is never invited", () => {
+  const storage = memoryStorage();
+  assert(!shouldInvite({ account: { registered: true }, recordId: "a", storage }), "已存到云端不应再被邀请");
+  assert(!shouldInvite({ account: { registered: false }, recordId: "", storage }), "没有记录时没有邀请对象");
+});
+
+test("each finished portrait is invited at most once", () => {
+  const storage = memoryStorage();
+  const now = 1_700_000_000_000;
+  assert(shouldInvite({ account: {}, recordId: "a", now, storage }), "刚完成的画像应可以邀请");
+  noteInviteShown("a", storage);
+  assert(!shouldInvite({ account: {}, recordId: "a", now: now + 1000, storage }), "同一份画像不能重复弹");
+  assert(shouldInvite({ account: {}, recordId: "b", now: now + 1000, storage }), "新的画像可以再邀请");
+});
+
+test("a quiet refusal snoozes the invite for three days", () => {
+  const storage = memoryStorage();
+  const now = 1_700_000_000_000;
+  noteInviteDismissed(storage, now);
+  assert(!shouldInvite({ account: {}, recordId: "b", now: now + 1000, storage }), "拒绝后应进入冷静期");
+  assert(!shouldInvite({ account: {}, recordId: "b", now: now + INVITE_SNOOZE_MS - 1, storage }), "冷静期内不应自动出现");
+  assert(shouldInvite({ account: {}, recordId: "b", now: now + INVITE_SNOOZE_MS, storage }), "冷静期结束后可以再邀请一次");
+});
+
+test("two refusals end the automatic invitation", () => {
+  const storage = memoryStorage();
+  const now = 1_700_000_000_000;
+  for (let i = 0; i < INVITE_MAX_DISMISSALS; i++) noteInviteDismissed(storage, now + i);
+  assert(!shouldInvite({ account: {}, recordId: "c", now: now + 40 * 86_400_000, storage }), "两次拒绝后不应再自动弹");
+});
+
+test("creating an identity clears the invite memory", () => {
+  const storage = memoryStorage();
+  const now = 1_700_000_000_000;
+  noteInviteShown("a", storage);
+  noteInviteDismissed(storage, now);
+  noteInviteDismissed(storage, now);
+  assert(!shouldInvite({ account: {}, recordId: "z", now: now + 40 * 86_400_000, storage }), "清除前应处于停止状态");
+  noteInviteCreated(storage);
+  assert(shouldInvite({ account: {}, recordId: "z", now: now + 40 * 86_400_000, storage }), "创建过身份后应回到干净状态");
+});
+
+test("blocked storage never breaks the result page", () => {
+  const broken = {
+    getItem() { throw new Error("blocked"); },
+    setItem() { throw new Error("blocked"); },
+    removeItem() { throw new Error("blocked"); },
+  };
+  assert(shouldInvite({ account: {}, recordId: "x", storage: broken }), "存储被禁用时仍可邀请");
+  noteInviteShown("x", broken);
+  noteInviteDismissed(broken);
+  noteInviteCreated(broken);
 });
 
 /* ── Summary ─────────────────────────────────────────────────────────────── */

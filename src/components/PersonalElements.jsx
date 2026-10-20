@@ -27,7 +27,7 @@ export function PortraitField({ profile, color }) {
   </div>;
 }
 
-export function PersonalModal({ title, onClose, busy = false, children }) {
+export function PersonalModal({ title, lead, onClose, busy = false, children }) {
   const dialog = useRef(null);
   const [closing, setClosing] = useState(false);
   const closingRef = useRef(false);
@@ -77,6 +77,7 @@ export function PersonalModal({ title, onClose, busy = false, children }) {
     onClick={(event) => { if (event.target === dialog.current) close(); }}>
     <button className="pp-close" aria-label="关闭" disabled={busy} onClick={close}><X size={18} /></button>
     <div className="pp-dialog-inner">
+      {lead}
       <h2 id={label}>{title}</h2>
       <ModalDismiss.Provider value={dismiss}>{children}</ModalDismiss.Provider>
     </div>

@@ -55,6 +55,9 @@ export default function App() {
   const [records, setRecords] = useState(getHistoryRecords);
   const [account, setAccount] = useState(getAccountInfo);
   const [unsavedResult, setUnsavedResult] = useState(null);
+  // Only a portrait finished in this session may invite an identity; opening an
+  // old record from history must stay quiet.
+  const [justFinished, setJustFinished] = useState(false);
   const [notice, setNotice] = useState('');
   // The "next" page is reachable from two places; its back button returns to the one you came from.
   const [nextFrom, setNextFrom] = useState('landing');
@@ -121,6 +124,7 @@ export default function App() {
   const home = () => {
     clearTimeout(loadingTimer.current);
     comparisonTarget.current = null;
+    setJustFinished(false);
     navigate('landing');
   };
 
@@ -134,6 +138,7 @@ export default function App() {
     comparisonTarget.current = shareId;
     setComparisonRecordId(null);
     setUnsavedResult(null);
+    setJustFinished(false);
     setTestSymbols(INITIAL_TEST_SYMBOLS);
     navigate('test');
   };
@@ -149,6 +154,7 @@ export default function App() {
       comparisonTarget.current = null;
       if (!saved) {
         setUnsavedResult(result);
+        setJustFinished(false);
         setNotice('本机存储空间不足，画像暂未存档。请保留当前页面。');
         navigate('result');
         return;
@@ -158,7 +164,7 @@ export default function App() {
       }
       // Finishing a test never uploads anything. Saving to the cloud is explicit.
       if (target) { setComparisonRecordId(saved.id); navigate('compare', target); }
-      else navigate('result', saved.id);
+      else { setJustFinished(true); navigate('result', saved.id); }
     }, LOADING_DURATION);
   };
 
@@ -167,6 +173,7 @@ export default function App() {
   };
   const openRecord = async (item) => {
     try {
+      setJustFinished(false);
       if (!item.localPresent) await downloadRecord(item);
       setNotice(''); navigate('result', item.id);
     } catch (error) { setNotice(error.message); }
@@ -237,7 +244,8 @@ export default function App() {
     case 'test': content = <Test onComplete={complete} onSymbolsChange={setTestSymbols} onExit={home} />; break;
     case 'loading': content = <Loading />; break;
     case 'result': content = record?.result || unsavedResult
-      ? <Result result={record?.result || unsavedResult} record={record} onRestart={home} onOpenMy={openMy} onPermissions={() => navigate('me', 'settings')} />
+      ? <Result result={record?.result || unsavedResult} record={record} account={account} justFinished={justFinished}
+        onRestart={home} onOpenMy={openMy} onPermissions={() => navigate('me', 'settings')} />
       : myPage(); break;
     case 'view':
     case 'compare': content = <SharedProfile shareId={route.id} mode={route.screen} records={records} selectedRecordId={comparisonRecordId}

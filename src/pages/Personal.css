@@ -107,7 +107,7 @@
 .pp-dialog-inner{padding:32px 34px 34px;position:relative;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
 .pp-close{position:absolute;top:13px;right:13px;z-index:2;padding:6px;display:flex;border:0;background:rgba(247,244,239,.84);backdrop-filter:blur(6px);color:#92867b!important;border-radius:50%;transition:background .18s ease,color .18s ease}
 .pp-close:hover{background:rgba(119,106,95,.1);color:var(--text)!important}
-.pp-dialog h2{font-family:'Songti SC','STSong','SimSun',serif;font-size:23px;font-weight:400;margin:4px 0 20px;line-height:1.45;letter-spacing:.045em;color:#494440}
+.pp-dialog h2{font-family:'Songti SC','STSong','SimSun',serif;font-size:23px;font-weight:400;margin:4px 0 20px;line-height:1.45;letter-spacing:.045em;color:#494440;overflow-wrap:anywhere}
 .pp-dialog label{display:block;font-size:11px;margin:20px 0;color:var(--muted)}
 .pp-dialog input,.pp-dialog textarea{display:block;margin-top:9px;font:inherit;font-size:14px;color:var(--text);border:1px solid var(--line);background:rgba(255,255,255,.45);padding:12px 14px;width:100%;border-radius:6px;resize:vertical;outline-color:#9b8ec7;line-height:1.7}
 .pp-dialog input:disabled{cursor:not-allowed}
@@ -203,6 +203,16 @@
 .pp-invite-actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap;flex-shrink:0}
 .pp-invite-actions .pp-outline{min-height:40px;padding:9px 16px;font-size:12px!important;gap:8px}
 .pp-invite-actions .pp-text-button{font-size:11.5px!important;padding:0!important}
+/* 结果页的身份邀请：沿用个人空间的弹窗语言，只借这一次画像的符号和颜色 */
+.identity-invite{min-height:0}
+.ii-lead{display:flex;align-items:center;gap:14px;margin:0 0 16px}
+.ii-symbol{width:46px;height:46px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:22px;line-height:1;color:rgba(74,69,64,.62);border:1px solid rgba(var(--ii-ink,180,185,195),.3);background:radial-gradient(circle at 38% 32%,rgba(var(--ii-ink,180,185,195),.34),rgba(var(--ii-ink,180,185,195),.05) 72%)}
+.ii-lead p{margin:0;font-size:11px;line-height:1.9;color:var(--muted);letter-spacing:.02em}
+.ii-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;margin:4px 0 0}
+.ii-actions .pp-text-button{font-size:11.5px!important}
+.ii-done{display:flex;align-items:center;gap:8px;margin:0 0 14px;font-size:12px;color:#857596;letter-spacing:.02em}
+.ii-code{font-size:23px;margin:0 0 12px}
+.ii-code-label{margin-bottom:4px}
 .pp-connect-foot{margin:20px 0 0;font-size:11px;line-height:1.85;color:#948a80}
 .pp-finder form{display:flex;align-items:center;gap:12px;max-width:520px}
 .pp-finder input{flex:1;min-width:0;font:inherit;font-size:12px;letter-spacing:.04em;color:var(--text);border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;padding:8px 0;outline:none}
