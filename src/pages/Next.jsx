@@ -1,10 +1,12 @@
-import { motion, useReducedMotion } from "framer-motion";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
+import GlassButton from "../components/GlassButton";
+import Reveal from "../components/Reveal";
+import Eyebrow from "../components/Eyebrow";
+import ChromaticTitle from "../components/ChromaticTitle";
 
 /* 问卷入口。留空时页面依然完整，只是显示「准备中」而不是一个点不开的链接。 */
 const SURVEY_URL = "https://v.wjx.cn/vm/h46RF76.aspx#";
 
-const EASE = [0.22, 1, 0.36, 1];
 const TITLE_CLASS = "text-[2.3rem] leading-[1.1] tracking-tight font-medium md:text-[3.6rem]";
 
 /* 中文没有真正的斜体，浏览器合成出来的倾斜版本像排版事故。
@@ -24,25 +26,6 @@ const LAYERS = [
   { id: "L1", name: "两个人", note: "把画像发给一个人，两张并排", status: "现在就可以", action: "my" },
   { id: "L2", name: "所有人", note: "每份愿意公开的画像，成为场上一个点", status: "还没开放", action: null },
 ];
-
-function Reveal({ delay = 0, className = "", children }) {
-  const reduceMotion = useReducedMotion();
-  return (
-    <motion.div
-      // 和 About 页完全一致的入场参数。
-      // filter 不是浏览器可加速的属性，framer-motion 只能用主线程逐帧插值，
-      // 所以它能不能跑顺，取决于同一帧里还有谁在抢主线程。
-      initial={reduceMotion ? false : { opacity: 0, y: 20, filter: "blur(7px)" }}
-      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      viewport={{ once: true, margin: "-10% 0px -10% 0px" }}
-      transition={{ duration: 0.95, delay, ease: EASE }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
 /* ─── 章节标记：编号 + 小注 + 一条通到右缘的细线 ─── */
 function SectionTag({ index, label }) {
   return (
@@ -86,27 +69,12 @@ export default function Next({ onBack, onStart, onOpenMy }) {
           <div className="mx-auto w-full max-w-5xl px-5 pt-14 pb-10 md:px-10 md:pt-24 md:pb-14">
             <div className="grid gap-10 md:grid-cols-[1.1fr_0.9fr] md:items-center md:gap-14">
               <Reveal>
-                <div className="flex items-center gap-3 text-[11px] tracking-[0.32em] text-blur-text/85">
-                  <span className="h-px w-6 bg-blur-border/60" />
-                  <span>WHAT&apos;S NEXT / 未完成</span>
-                </div>
+                <Eyebrow>WHAT&apos;S NEXT / 未完成</Eyebrow>
 
                 <div className="relative mt-6 md:mt-8">
-                  <span
-                    aria-hidden="true"
-                    className={`${TITLE_CLASS} pointer-events-none absolute inset-0 select-none text-blur-accent/25 blur-[16px]`}
-                  >
-                    <TitleLines />
-                  </span>
-                  <span
-                    aria-hidden="true"
-                    className={`${TITLE_CLASS} pointer-events-none absolute inset-0 translate-x-[3px] translate-y-[2px] select-none text-blur-accent-cool/25 blur-[5px]`}
-                  >
-                    <TitleLines />
-                  </span>
-                  <h1 className={`${TITLE_CLASS} relative text-blur-text`}>
+                  <ChromaticTitle className={TITLE_CLASS} ghost={<TitleLines />}>
                     <TitleLines highlighted />
-                  </h1>
+                  </ChromaticTitle>
                 </div>
               </Reveal>
 
@@ -231,15 +199,10 @@ export default function Next({ onBack, onStart, onOpenMy }) {
 
             <Reveal delay={0.1} className="mt-8">
               {SURVEY_URL ? (
-                <a
-                  href={SURVEY_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex min-h-13 items-center gap-2 rounded-2xl glass-strong px-8 text-[15px] font-medium tracking-wide text-blur-text transition-all duration-300 hover:scale-[1.02] hover:shadow-lg active:scale-[0.96]"
-                >
+                <GlassButton href={SURVEY_URL} size="lg">
                   告诉我们你想要什么
                   <ArrowUpRight size={15} />
-                </a>
+                </GlassButton>
               ) : (
                 <span className="inline-flex min-h-13 cursor-not-allowed items-center rounded-2xl glass px-8 text-[15px] font-medium tracking-wide text-blur-text-muted/70">
                   问卷正在准备中

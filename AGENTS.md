@@ -46,6 +46,13 @@
 - **src/utils/palette.js** — 环境色（界面、光场、图表共用）的唯一 JS 来源：`INK` / `PAPER` / `ACCENT` / `SKY` / `GOLD` / `DEEP` + `rgba(rgb, a)` / `hex(rgb)`。`src/index.css` 的 `@theme` 是它的 CSS 镜像（Tailwind 只收字面量），**改色必须同时改两处**。这三层颜色分工不同，不要混用：信息层 = 原型色（不可改）、用户可选层 = `shared/accents.js` 的 8 色板、表达层 = 这里的环境色。旧代码里散落各处的 `rgba(155,142,199,…)` 字面量已经收口到这里，不要再写新的。光场四团洗染只用三个色相（蓝紫 / 天蓝 / 奶油金）+ 主色的深一档，没有粉色——粉色是画面发糊的来源。
 - **shared/accents.js** — 主色的唯一来源。8 色色板（命名沿用原型那套摄影/材料意象，不要用「天青」「藕紫」这类传统色名）+ `ACCENT_KEYS`（服务端白名单共用）+ `resolveAccent(account, profile)` + `personAccent(person, profile)` + `markShades(rgb)`。**颜色分两层**：信息层是原型色（`archetypeProfiles.color`，历史记录圆点、完整画像、分享用，不可改），表达层是主色（头像 `PortraitMark`、光场 `PortraitField`，默认 `follow` 跟随当前展示画像）。色板任意两色 ΔE ≥ 14，由 `scripts/unit-tests.js` 守卫——原型色只有平均 19.5，压进 59px 头像后多数低于可辨阈值，所以色板不能直接复用原型色。`accounts.accent` 存 key，`NULL` 与 `follow` 等价。
 - **Components** (12): `ArchetypeProfileChart`, `AtmosphereField` (watercolor gradient wash), `BlurCard`, `DimensionMeters`, `DraggableTabs`, `GlassButton`, `IdentityInvite` (post-result identity dialog: inline naming, friend code, recovery key), `ProgressBar`, `TraitRadar` (SVG), `TraitSpace2D` (interactive 2D canvas vector space), `TraitWeightChart`. 另有 `AccentPicker`（受控选择器，放在**编辑资料弹窗**里，和昵称、简介一起由「保存资料」提交；不要在设置里再开一个入口）。
+- **Shared UI primitives** — 这些存在的理由就是"别再抄一遍"。抄过一次的地方已经各自漂了（标题重影 14/4px vs 16/5px、小标 10px/75 vs 11px/85、CTA 两种尺寸）：
+  - `CatalogShell` — 原型 / 特质 / 题库三个目录页的外壳（返回头、虚线时间轴、横线纸纹、内容 padding）。新增目录页直接包它，不要复制 `Archetypes.jsx`。
+  - `AccordionCard` — 目录页那条可展开的卡片（`summary` + `children`），三页共用。
+  - `Reveal` / `useRevealProps`（`src/utils/motion.js`）— 章节入场的唯一实现，参数只此一份；`EASE` 也在这里。
+  - `ChromaticTitle` — 标题的色散重影。`blur` 用 em，跟着字号走，换页面不会再分叉。
+  - `Eyebrow` — 短线 + 全大写小标，`line="full"` 换成通栏细线。
+  - `GlassButton` — 只有 `md` / `lg` 两档尺寸；传 `href` 会渲染成 `<a>`（外链 CTA 用它，不要手写 `<a className="...glass-strong...">`）。
 - **src/components/optical/** — shared optical background, split into engine / shell / presets:
   - `useOpticalField.js` — physics only (camera, focus plane, parallax, gyro, tap-to-focus, RAF). No DOM; writes transform/filter/opacity into passed refs.
   - `OpticalStage.jsx` — render shell (container, stardust, symbols, reticle). Calls the hook. `scope="container"` embeds the field in the nearest positioned parent instead of the viewport; `symbolClassName` and `onFocusChange` are optional.

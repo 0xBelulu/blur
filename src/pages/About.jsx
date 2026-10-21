@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, ArrowUpRight, CircleDot, Hash, List, Sparkles } from "lucide-react";
 import GlassButton from "../components/GlassButton";
 import OpticalStage from "../components/optical/OpticalStage";
@@ -8,20 +8,11 @@ import { ARCHETYPE_SYMBOLS } from "../data/archetypeField";
 import { archetypeDescriptions, tagPool } from "../data/tags";
 import { ARCHETYPE_PROFILES } from "../data/archetypeProfiles";
 import { ACCENT, SKY, GOLD, rgba } from "../utils/palette.js";
+import { useRevealProps } from "../utils/motion.js";
+import Eyebrow from "../components/Eyebrow";
+import ChromaticTitle from "../components/ChromaticTitle";
 
-const EASE = [0.22, 1, 0.36, 1];
 const TITLE_CLASS = "text-[3.1rem] leading-[1.04] md:text-[5.4rem] tracking-tight font-medium";
-
-/* 章节入场：从失焦到聚焦 */
-function useReveal() {
-  const reduceMotion = useReducedMotion();
-  return (delay = 0) => ({
-    initial: reduceMotion ? false : { opacity: 0, y: 20, filter: "blur(7px)" },
-    whileInView: { opacity: 1, y: 0, filter: "blur(0px)" },
-    viewport: { once: true, margin: "-10% 0px -10% 0px" },
-    transition: { duration: 0.95, delay, ease: EASE },
-  });
-}
 
 /* ─── 镜头刻度：页面自己的视觉签名 ─── */
 function ApertureMark({ className = "" }) {
@@ -253,7 +244,7 @@ function TraitFragments({ onOpen }) {
 }
 
 export default function About({ onBack, onStart, onOpenArchetypes, onOpenTraits, onOpenQuestions, onOpenNext }) {
-  const reveal = useReveal();
+  const reveal = useRevealProps();
   const progressRef = useRef(null);
   const aboutRef = useRef(null);
   const archetypesRef = useRef(null);
@@ -302,21 +293,12 @@ export default function About({ onBack, onStart, onOpenArchetypes, onOpenTraits,
             <ApertureMark className="animate-slow-spin pointer-events-none absolute -right-16 top-2 h-64 w-64 text-blur-accent/40 md:-right-10 md:top-6 md:h-80 md:w-80" />
 
             <motion.div {...reveal(0)} className="relative">
-              <div className="flex items-center gap-3 text-[10px] tracking-[0.32em] text-blur-text/75">
-                <span className="h-px w-6 bg-blur-border/60" />
-                <span>FIELD NOTES / 001</span>
-              </div>
+              <Eyebrow>FIELD NOTES / 001</Eyebrow>
 
               <div className="relative mt-6 md:mt-8">
-                <span aria-hidden="true" className={`${TITLE_CLASS} pointer-events-none absolute inset-0 select-none text-blur-accent/25 blur-[14px]`}>
-                  探索 Blur
-                </span>
-                <span aria-hidden="true" className={`${TITLE_CLASS} pointer-events-none absolute inset-0 translate-x-[3px] translate-y-[2px] select-none text-blur-accent-cool/25 blur-[4px]`}>
-                  探索 Blur
-                </span>
-                <h1 className={`${TITLE_CLASS} relative text-blur-text`}>
+                <ChromaticTitle className={TITLE_CLASS} ghost="探索 Blur">
                   探索 <span className="font-light italic text-blur-text/75">Blur</span>
-                </h1>
+                </ChromaticTitle>
               </div>
 
               <p className="mt-6 max-w-sm text-[13px] leading-[1.95] text-blur-text/85 md:mt-7 md:text-[14px]">
