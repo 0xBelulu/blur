@@ -7,6 +7,7 @@ import { handleRequest } from '../server/api.js';
 import { generateResult } from '../src/utils/blurEngine.js';
 import { questions } from '../src/data/questions.js';
 import { publicResult, ENGINE_VERSION, QUESTION_VERSION, canCompare } from '../shared/profile.js';
+import { PROJECTION_VERSION, projectVector } from '../shared/projection.js';
 import { getHistoryRecords, getAllHistoryRecords, saveHistoryRecord, updateHistoryRecord, removeLocalRecord, CLOUD_SESSION } from '../src/utils/historyStorage.js';
 import { syncRecord, publishRecord, revokeShare, removeCloudCopy, flushPending, refreshCloudHistory, downloadRecord, saveNickname, saveProfile, exportRecoveryKey, restoreIdentity, signOut, deleteIdentity } from '../src/utils/cloud.js';
 import { selectPortrait, readPeople, friendAction, savePrivacy, resetFriendCode, saveResultVisibility } from '../src/utils/people.js';
@@ -1315,4 +1316,56 @@ test('reading never creates an identity, and deleting one still adopts a legacy 
   assert.equal((await call(db, '/account', 'DELETE', { confirm: 'DELETE' })).status, 200);
   assert.equal((await call(db, '/records')).data.records.length, 0);
   assert.equal(db.sqlite.prepare('SELECT COUNT(*) AS n FROM accounts WHERE deleted_at IS NOT NULL').get().n, 1);
+});
+
+test('the star map only publishes anonymous coordinates of displayed portraits', async (t) => {
+  const db = database(t);
+  const empty = await call(db, '/community/field', 'GET', undefined, '');
+  assert.equal(empty.status, 200);
+  assert.deepEqual(empty.data, { version: PROJECTION_VERSION, total: 0, points: [], you: null });
+
+  const { a } = await pair(db);
+  await call(db, '/records/one', 'PUT', record);
+  await call(db, '/account/portrait', 'PUT', { portraitId: 'one' });
+
+  // 匿名请求：只有一个坐标，没有任何身份字段。
+  const anonymous = await call(db, '/community/field', 'GET', undefined, '');
+  assert.equal(anonymous.data.total, 1);
+  assert.equal(anonymous.data.points.length, 1);
+  assert.equal(anonymous.data.you, null);
+  const [x, y] = anonymous.data.points[0];
+  const expected = projectVector(result.userVector);
+  assert.ok(Math.abs(x - expected.x) < 0.002 && Math.abs(y - expected.y) < 0.002, '坐标应当来自服务端投影');
+  assert.ok(Math.abs(x) <= 1 && Math.abs(y) <= 1);
+  const payload = JSON.stringify(anonymous.data);
+  for (const field of ['owner_hash', 'nickname', 'publicId', 'friendCode', 'portraitId', 'createdAt', 'archetype']) {
+    assert.ok(!payload.includes(field), `星图响应不应包含 ${field}`);
+  }
+  assert.ok(!payload.includes(a.publicId) && !payload.includes(a.nickname));
+
+  // 带凭证：自己的那一个点单独给出，不再混在 points 里。
+  const mine = await call(db, '/community/field');
+  assert.equal(mine.data.total, 1);
+  assert.equal(mine.data.points.length, 0);
+  assert.ok(Math.abs(mine.data.you.x - expected.x) < 0.002);
+  assert.equal(mine.data.you.archetype, result.archetype.title);
+
+  // 「仅我可见」就没有点。
+  await call(db, '/account/privacy', 'PUT', { resultVisibility: 'private' });
+  assert.equal((await call(db, '/community/field', 'GET', undefined, '')).data.total, 0);
+  await call(db, '/account/privacy', 'PUT', { resultVisibility: 'friends' });
+  assert.equal((await call(db, '/community/field', 'GET', undefined, '')).data.total, 1);
+
+  // 云端记录被删除，点也跟着消失。
+  await call(db, '/records/one', 'DELETE');
+  assert.equal((await call(db, '/community/field', 'GET', undefined, '')).data.total, 0);
+
+  // 注销身份同样是下线，不是留下一个空壳。
+  await call(db, '/records/two', 'PUT', record);
+  await call(db, '/account/portrait', 'PUT', { portraitId: 'two' });
+  assert.equal((await call(db, '/community/field', 'GET', undefined, '')).data.total, 1);
+  await call(db, '/account', 'DELETE', { confirm: 'DELETE' });
+  assert.equal((await call(db, '/community/field', 'GET', undefined, '')).data.total, 0);
+
+  assert.equal((await call(db, '/community/field', 'POST', {})).status, 405);
 });

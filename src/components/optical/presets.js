@@ -58,6 +58,8 @@ export const PAGE_BACKGROUND_PRESETS = {
   invite: { atmosphere: 0.62, sky: 0.5 },
   friend: { atmosphere: 0.7, sky: 0.6 },
   together: { atmosphere: 0.7, sky: 0.6 },
+  // 星图自己就是一片尘埃，背景只留一层薄水彩：两层星点叠在一起会变成噪点
+  community: { atmosphere: 0.55, sky: 0.22 },
   archetypes: { atmosphere: 0.42, wash: 'catalog' },
   traits: { atmosphere: 0.42, wash: 'catalog' },
   questions: { atmosphere: 0.42, wash: 'catalog' },

@@ -17,6 +17,7 @@ import SharedProfile from './pages/SharedProfile';
 import Identity from './pages/Identity';
 import Invite from './pages/Invite';
 import FriendProfile from './pages/FriendProfile';
+import Community from './pages/Community';
 import Admin from './pages/Admin';
 import { generateResult, solveProfile } from './utils/blurEngine';
 import { buildPersonaSymbols, revealAt } from './utils/personaSymbols';
@@ -45,7 +46,7 @@ function readRoute() {
   if (screen === 'result') return getHistoryRecords().some((record) => record.id === id && record.localPresent)
     ? { screen, id } : { screen: 'me' };
   if (screen === 'history') return { screen: 'me' };
-  return { screen: ['about', 'next', 'archetypes', 'traits', 'questions', 'me', 'admin'].includes(screen) ? screen : 'landing' };
+  return { screen: ['about', 'next', 'archetypes', 'traits', 'questions', 'me', 'community', 'admin'].includes(screen) ? screen : 'landing' };
 }
 
 export default function App() {
@@ -139,7 +140,7 @@ export default function App() {
   };
 
   const openNext = (from) => {
-    setNextFrom(from === 'about' ? 'about' : 'landing');
+    setNextFrom(['about', 'community'].includes(from) ? from : 'landing');
     navigate('next');
   };
 
@@ -246,11 +247,14 @@ export default function App() {
   let content;
   switch (route.screen) {
     case 'about': content = <About onBack={home} onStart={() => start()} onOpenArchetypes={() => navigate('archetypes')} onOpenTraits={() => navigate('traits')} onOpenQuestions={() => navigate('questions')} onOpenNext={() => openNext('about')} />; break;
-    case 'next': content = <Next onBack={() => navigate(nextFrom)} onStart={() => start()} onOpenMy={openMy} />; break;
+    case 'next': content = <Next onBack={() => navigate(nextFrom)} onStart={() => start()} onOpenMy={openMy}
+      onOpenCommunity={() => navigate('community')} />; break;
     case 'archetypes': content = <Archetypes onBack={() => navigate('about')} />; break;
     case 'traits': content = <Traits onBack={() => navigate('about')} />; break;
     case 'questions': content = <Questions onBack={() => navigate('about')} />; break;
     case 'me': content = myPage(); break;
+    case 'community': content = <Community records={records} account={account} onBack={home} onOpenMy={openMy}
+      onOpenNext={() => openNext('community')} onStart={() => start()} />; break;
     case 'admin': content = <Admin onBack={home} />; break;
     case 'identity': content = <Identity account={account} onBack={openMy} onDone={() => {
       const [target, id] = (route.id || 'profile').split('-');
@@ -275,7 +279,8 @@ export default function App() {
       onLoaded={(profile) => setPeer({ shareId: route.id, profile })}
       onHome={home} onCompare={() => { setComparisonRecordId(null); navigate('compare', route.id); }} onView={() => navigate('view', route.id)}
       onStart={() => start(route.id)} />; break;
-    default: content = <Landing onStart={() => start()} onExplore={() => navigate('about')} onOpenMy={openMy} onOpenNext={() => openNext('landing')} />;
+    default: content = <Landing onStart={() => start()} onExplore={() => navigate('about')} onOpenMy={openMy}
+      onOpenCommunity={() => navigate('community')} onOpenNext={() => openNext('landing')} />;
   }
 
   return <div className="relative isolate min-h-[100svh] bg-blur-bg">

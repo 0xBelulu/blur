@@ -24,7 +24,7 @@ function TitleLines({ highlighted = false }) {
 const LAYERS = [
   { id: "L0", name: "一个人", note: "做完测试，你有了一个坐标", status: "已经有了", action: "start" },
   { id: "L1", name: "两个人", note: "把画像发给一个人，两张并排", status: "现在就可以", action: "my" },
-  { id: "L2", name: "所有人", note: "每份愿意公开的画像，成为场上一个点", status: "还没开放", action: null },
+  { id: "L2", name: "所有人", note: "每份展示中的画像，成为场上一个点", status: "现在可以进去", action: "community" },
 ];
 /* ─── 章节标记：编号 + 小注 + 一条通到右缘的细线 ─── */
 function SectionTag({ index, label }) {
@@ -37,10 +37,11 @@ function SectionTag({ index, label }) {
   );
 }
 
-export default function Next({ onBack, onStart, onOpenMy }) {
+export default function Next({ onBack, onStart, onOpenMy, onOpenCommunity }) {
   const handleLayer = (action) => {
     if (action === "start") onStart();
     else if (action === "my") onOpenMy();
+    else if (action === "community") onOpenCommunity();
   };
 
   return (
@@ -110,7 +111,7 @@ export default function Next({ onBack, onStart, onOpenMy }) {
             </Reveal>
             <Reveal delay={0.06} className="mt-4">
               <p className="max-w-2xl text-[15px] leading-[1.8] text-blur-text/90 md:text-[16px]">
-                这件事有三个层。只有前两层是真的，第三层还是我们想做的。
+                这件事有三个层。三层现在都能走进去，只是第三层还很稀疏。
               </p>
             </Reveal>
 

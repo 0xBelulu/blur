@@ -2,6 +2,12 @@ export class HttpError extends Error {
   constructor(status, message) { super(message); this.status = status; }
 }
 
+// 身份凭证的形状校验只有这一处。匿名接口（星图）也用它判断「这次请求带没带人」，
+// 所以返回 null 而不是抛错——要不要 401 由调用方决定。
+export function readToken(request) {
+  return request.headers.get('Authorization')?.match(/^Bearer ([a-f0-9]{64})$/)?.[1] || null;
+}
+
 export function json(data, status = 200) {
   return Response.json(data, { status, headers: {
     'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',

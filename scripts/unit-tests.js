@@ -37,6 +37,9 @@ import {
   INVITE_MAX_DISMISSALS,
 } from "../src/utils/identityInvite.js";
 import { copyText, COPY_MANUAL_HINT } from "../src/utils/clipboard.js";
+import {
+  PROJECTION_AXES, PROJECTION_MEAN, PROJECTION_SPAN, axisTendency, projectVector,
+} from "../shared/projection.js";
 
 let totalTests = 0;
 let passedTests = 0;
@@ -608,6 +611,81 @@ await testAsync("复制后把焦点还给原元素", async () => {
 
 await testAsync("manual 的提示文案不是空的", async () => {
   assert(typeof COPY_MANUAL_HINT === "string" && COPY_MANUAL_HINT.length > 0);
+});
+
+/* ── 星图投影 ─────────────────────────────────────────────────────────────── */
+console.log("\n[星图] 二维投影基底:");
+
+const dotOf = (a, b) => a.reduce((sum, value, index) => sum + value * b[index], 0);
+const normOf = (a) => Math.sqrt(dotOf(a, a));
+const zeroVector = () => Object.fromEntries(DIMENSION_KEYS.map((key) => [key, 0]));
+
+test("两个投影轴都是单位向量", () => {
+  assert(Math.abs(normOf(PROJECTION_AXES.x) - 1) < 1e-3, `x 轴长度 ${normOf(PROJECTION_AXES.x)}`);
+  assert(Math.abs(normOf(PROJECTION_AXES.y) - 1) < 1e-3, `y 轴长度 ${normOf(PROJECTION_AXES.y)}`);
+});
+
+test("两个投影轴正交（重复的信息不该被算两次）", () => {
+  assert(Math.abs(dotOf(PROJECTION_AXES.x, PROJECTION_AXES.y)) < 1e-3,
+    `内积 ${dotOf(PROJECTION_AXES.x, PROJECTION_AXES.y)}`);
+});
+
+test("均值与轴长和维度数量一致", () => {
+  assertEqual(PROJECTION_MEAN.length, DIMENSION_KEYS.length);
+  assertEqual(PROJECTION_AXES.x.length, DIMENSION_KEYS.length);
+  assertEqual(PROJECTION_AXES.y.length, DIMENSION_KEYS.length);
+  assert(PROJECTION_SPAN > 0, "缩放必须是正数");
+});
+
+test("x 轴取向：表达更强的人更靠外，而不是靠内", () => {
+  const inward = { ...zeroVector(), expressivity: -0.8 };
+  const outward = { ...zeroVector(), expressivity: 0.8 };
+  assert(projectVector(outward).x > projectVector(inward).x, "符号约定被翻转了，重跑脚本时注意 orient()");
+});
+
+test("y 轴取向：变化亲和更强的人更靠上（流动）", () => {
+  const steady = { ...zeroVector(), changeAffinity: -0.8 };
+  const flowing = { ...zeroVector(), changeAffinity: 0.8 };
+  assert(projectVector(flowing).y > projectVector(steady).y, "符号约定被翻转了，重跑脚本时注意 orient()");
+});
+
+test("投影是纯函数：不修改输入向量", () => {
+  const vector = { ...zeroVector(), energySource: 0.4, processingDepth: -0.2 };
+  const snapshot = JSON.stringify(vector);
+  const first = projectVector(vector);
+  const second = projectVector(vector);
+  assertEqual(JSON.stringify(vector), snapshot, "输入被改写了");
+  assertDeepEqual(first, second, "同一个向量两次投影不一致");
+});
+
+test("越界的向量被夹到图内，而不是画到图外", () => {
+  const extreme = Object.fromEntries(DIMENSION_KEYS.map((key) => [key, 12]));
+  const point = projectVector(extreme);
+  assert(Math.abs(point.x) <= 1 && Math.abs(point.y) <= 1, `越界: ${JSON.stringify(point)}`);
+});
+
+test("缺维度返回 null，不偷偷落到原点", () => {
+  assertEqual(projectVector({}), null);
+  assertEqual(projectVector({ energySource: 0.3 }), null);
+  assertEqual(projectVector({ ...zeroVector(), expressivity: Number.NaN }), null);
+  assertEqual(projectVector(null), null);
+});
+
+test("十个原型都落在图内", () => {
+  for (const [key, profile] of Object.entries(ARCHETYPE_PROFILES)) {
+    const point = projectVector(profile.vector);
+    assert(point && Math.abs(point.x) <= 1 && Math.abs(point.y) <= 1, `${key} 落在图外`);
+  }
+});
+
+test("居中留白不硬判方向", () => {
+  const center = axisTendency({ x: 0.02, y: -0.05 });
+  assertEqual(center.x, null);
+  assertEqual(center.y, null);
+  const edge = axisTendency({ x: 0.4, y: -0.4 });
+  assertEqual(edge.x, "positive");
+  assertEqual(edge.y, "negative");
+  assertEqual(axisTendency(null), null);
 });
 
 /* ── Summary ─────────────────────────────────────────────────────────────── */

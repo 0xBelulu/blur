@@ -1,12 +1,13 @@
 import { publicRecord, publicResult } from '../shared/profile.js';
 import { sha256Hex } from '../shared/hex.js';
 
-import { HttpError, json, body } from './http.js';
+import { HttpError, json, body, readToken } from './http.js';
 import { metricsRoute } from './metrics.js';
 import { peopleRoute, requireCloudIdentity } from './people.js';
+import { communityRoute } from './community.js';
 
 async function ownerHash(request) {
-  const token = request.headers.get('Authorization')?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];
+  const token = readToken(request);
   if (!token) throw new HttpError(401, '无法识别本机身份，请刷新页面后重试');
   return sha256Hex(token);
 }
@@ -52,6 +53,11 @@ async function route(request, env) {
 
   const anonymous = await metricsRoute(request, env, path);
   if (anonymous) return anonymous;
+
+  // 星图是匿名可读的：没有身份也能看见密度，带凭证时才会额外拿到自己的那一个点。
+  // 它必须排在 ownerHash() 之前，否则没带凭证的访客会先吃一个 401。
+  const community = await communityRoute(request, env, path);
+  if (community) return community;
 
   const owner = await ownerHash(request);
   const people = await peopleRoute(request, env.DB, owner, path);
@@ -129,6 +135,7 @@ export async function handleRequest(request, env) {
   const path = new URL(request.url).pathname;
   const resource = path.startsWith('/api/admin/') ? 'admin'
     : path.startsWith('/api/metrics/') ? 'anonymous_metrics'
+    : path.startsWith('/api/community/') ? 'community_field'
     : path.startsWith('/api/shares/') ? 'public_profile'
     : path.endsWith('/share') ? 'share_settings' : 'private_records';
   let response;

@@ -52,7 +52,7 @@ function RotatingTip() {
   );
 }
 
-export default function Landing({ onStart, onExplore, onOpenMy, onOpenNext }) {
+export default function Landing({ onStart, onExplore, onOpenMy, onOpenCommunity }) {
   const actions = [
     {
       label: "开始测试",
@@ -79,9 +79,8 @@ export default function Landing({ onStart, onExplore, onOpenMy, onOpenNext }) {
       label: "社区",
       icon: Users,
       variant: "secondary",
-      badge: "预告",
-      onClick: onOpenNext,
-      className: "text-sm gap-2 animate-fade-in-up delay-1500",
+      onClick: onOpenCommunity,
+      className: "text-sm gap-1.5 animate-fade-in-up delay-1500",
     },
   ];
 

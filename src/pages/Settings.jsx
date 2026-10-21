@@ -55,8 +55,10 @@ export default function Settings({ account, records, pendingLegacy, onCreate, on
               </button>)}
             </div>
             <p className="pp-note">{resultVisibility === 'friends'
-              ? registered ? '好友能看到你正在展示的那一份；每份记录需要单独存到云端。' : '把身份存到云端后，好友才能看到你展示的这一份。'
-              : '只有你能在个人空间里看到这一份。'}原始作答始终只有自己可见。</p>
+              ? registered
+                ? '好友能看到你正在展示的那一份，每份记录需要单独存到云端；它同时会成为星图上一个没有名字的点。'
+                : '把身份存到云端后，好友能看到这一份；它同时会成为星图上一个没有名字的点。'
+              : '只有你能在个人空间里看到这一份，星图上也不会有你的点。'}原始作答始终只有自己可见。</p>
           </div>
 
           <div className="pp-row is-stacked">
