@@ -92,6 +92,8 @@ lint、构建、完整自动测试及本地 Cloudflare/D1 联调通过。真实�
 
 设置页采用标题、留白和细分隔线组织，去除嵌套卡片；桌面将身份备份与记录存储并列，手机改为单列。已检查桌面和手机排版及无横向溢出。
 
+2026-10-21 的星图是一次纯代码发布，没有新增迁移：`GET /api/community/field` 只读 `accounts.portrait_id`、`friends_visible` 和 `profiles.result_json` 里已有的向量，这些列在 0003 / 0005 里都已存在于生产，因此不需要「先迁移再发代码」的顺序。提交 `152ef31` 推送到 GitHub `main` 后由 Pages 的 Git 集成构建（命令 `npm run build`，输出 `dist`，根目录 `functions/` 一并编译），没有使用 `wrangler pages deploy` 直接发布。构建完成后验证生产接口：推送前该路径返回 401（旧代码没有这个路由，落到了 `ownerHash()`），构建后返回 200，`total` 14、`points` 14 组坐标、`you` 为 null；响应里没有 `owner_hash`、昵称、原型、时间或顺序。`#community` 在无头 Chrome 中打开无 console 错误。星图的权限语义（「好友可见」同时意味着一个匿名点）与实现取舍见 [社区构想](community.md) 的「P1 实现记录」。
+
 本地与生产迁移相互独立：`npm run db:migrate:local`、构建成功和本地接口通过，均不能证明生产库已更新。发布后需验证实际生产 API 的写入与随后读取；使用临时身份时清理其测试数据。迁移本身若不兼容旧代码，需要另行安排发布顺序，不能直接沿用“先迁移”的增量发布步骤。参见 [Cloudflare D1 迁移说明](https://developers.cloudflare.com/d1/reference/migrations/)。
 
 ### 2026-10-18：账户接口 503
