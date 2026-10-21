@@ -83,7 +83,7 @@ export default function Community({ records, account, onBack, onOpenMy, onOpenNe
 
   return (
     <div className="flex-1 flex flex-col min-h-[100svh] relative overflow-hidden">
-      <main className="relative z-10 h-[100svh] w-full overflow-y-auto custom-scrollbar">
+      <main className="relative z-10 h-[100svh] w-full overflow-y-auto overflow-x-hidden custom-scrollbar">
         <header className="sticky top-0 z-30 bg-blur-bg/92 md:bg-blur-bg/70 md:backdrop-blur-md">
           <div className="relative flex h-16 items-center justify-between border-b border-blur-border/25 px-5 md:px-10">
             <button
@@ -100,8 +100,8 @@ export default function Community({ records, account, onBack, onOpenMy, onOpenNe
           </div>
         </header>
 
-        <section className="mx-auto w-full max-w-5xl px-5 pt-10 md:px-10 md:pt-16">
-          <div className="grid gap-9 md:grid-cols-[0.92fr_1.08fr] md:items-center md:gap-14">
+        <section className="relative mx-auto w-full max-w-5xl px-5 pt-8 md:px-10 md:pt-14">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-[0.86fr_1.14fr] md:items-center md:gap-10">
             <Reveal>
               <Eyebrow>COMMUNITY / 只读</Eyebrow>
               <div className="relative mt-6 md:mt-8">
@@ -115,32 +115,68 @@ export default function Community({ records, account, onBack, onOpenMy, onOpenNe
             </Reveal>
 
             <Reveal delay={0.1}>
-              {/* 坐标系是方的，就别塞进一条横带里——那会让六十个人看起来像几粒灰。 */}
-              <div className="relative mx-auto aspect-square w-full max-w-[420px] md:max-w-none">
-                <CommunityField points={field?.points || []} you={you ? [you.x, you.y] : null} className="absolute inset-0" />
-                {/* 空场不放任何虚构的点，只放一句话。人少是早期，不是故障。 */}
-                {field && total === 0 && (
-                  <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 text-center">
-                    <p className="text-[13px] tracking-[0.2em] text-blur-text-muted">这里还是空的</p>
-                    <p className="text-[12px] text-blur-text-light">第一个点，可以是你</p>
+              <div className="relative">
+                <div className="mb-1.5 flex items-center justify-between text-[10px] tracking-[0.26em] text-blur-text-muted">
+                  <span>STAR FIELD / 星图</span>
+                  <span className="hidden sm:inline">移动指针，靠近看</span>
+                </div>
+                {/* 星图是一块观测场，不是放进卡片里的图表：
+                    桌面端向右探进页边距；移动端收在栏内，避免把正文撑出屏幕。 */}
+                <div className="relative h-[56svh] min-h-[330px] w-full md:-mr-10 md:h-[min(64svh,600px)] md:w-[calc(100%_+_2.5rem)]">
+                  <CommunityField points={field?.points || []} you={you ? [you.x, you.y] : null} className="absolute inset-0" />
+                  {/* 空场不放任何虚构的点，只放一句话。人少是早期，不是故障。 */}
+                  {field && total === 0 && (
+                    <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 text-center">
+                      <p className="text-[13px] tracking-[0.2em] text-blur-text-muted">这里还是空的</p>
+                      <p className="text-[12px] text-blur-text-light">第一个点，可以是你</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-3 border-t border-blur-border/30 pt-3">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+                    <p className="text-[13px] leading-[1.7] text-blur-text/85" role="status">{status}</p>
+                    {error ? (
+                      <button onClick={retry} className="inline-flex items-center gap-1.5 text-[12.5px] text-blur-text-muted transition-colors hover:text-blur-text">
+                        再读一次<RefreshCw size={12} />
+                      </button>
+                    ) : localPoint ? (
+                      <button onClick={withdraw} className="text-[12px] text-blur-text-muted transition-colors hover:text-blur-text">
+                        撤下我留下的点
+                      </button>
+                    ) : (
+                      <span className="text-[11px] tracking-[0.2em] text-blur-text-muted">位置是近似的</span>
+                    )}
                   </div>
-                )}
+                  {notice && <p className="mt-2 text-[12.5px] text-blur-text-muted" role="status">{notice}</p>}
+
+                  {you ? (
+                    <div className="mt-5 md:mt-6">
+                      <div className="text-[10px] tracking-[0.28em] text-blur-text-muted">你的位置 / POSITION</div>
+                      <p className="mt-2 text-[19px] leading-[1.5] text-blur-text md:text-[22px]">
+                        {archetype ? `你的画像最接近「${archetype}」` : '你已经在这张图上了'}
+                      </p>
+                      {leaning && (
+                        <p className="mt-1.5 text-[13.5px] leading-relaxed text-blur-text/80 md:text-[14px]">
+                          在这张图上，你{leaning}。
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="mt-5 max-w-md md:mt-6">
+                      <p className="text-[14.5px] leading-[1.8] text-blur-text/90 md:text-[15px]">
+                        做一次测试，你就会在这张图上留下一个点——不用注册，也不用把画像展示出来。
+                      </p>
+                      <div className="mt-4">
+                        <GlassButton onClick={onStart} className="inline-flex items-center gap-2">
+                          开始测试
+                          <ArrowRight size={14} />
+                        </GlassButton>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-t border-blur-border/30 pt-3">
-                <p className="text-[13px] leading-[1.7] text-blur-text/85" role="status">{status}</p>
-                {error ? (
-                  <button onClick={retry} className="inline-flex items-center gap-1.5 text-[12.5px] text-blur-text-muted transition-colors hover:text-blur-text">
-                    再读一次<RefreshCw size={12} />
-                  </button>
-                ) : localPoint ? (
-                  <button onClick={withdraw} className="text-[12px] text-blur-text-muted transition-colors hover:text-blur-text">
-                    撤下我留下的点
-                  </button>
-                ) : (
-                  <span className="text-[11px] tracking-[0.2em] text-blur-text-muted">位置是近似的</span>
-                )}
-              </div>
-              {notice && <p className="mt-2 text-[12.5px] text-blur-text-muted" role="status">{notice}</p>}
             </Reveal>
           </div>
         </section>
@@ -148,37 +184,7 @@ export default function Community({ records, account, onBack, onOpenMy, onOpenNe
         <div className="mx-auto w-full max-w-5xl">
           <section className="px-5 py-12 md:px-10 md:py-16">
             <Reveal>
-              <SectionTag index="01" label="你在这张图上的哪里" />
-            </Reveal>
-            {you ? (
-              <Reveal delay={0.06} className="mt-5">
-                <p className="text-[19px] leading-[1.5] text-blur-text md:text-[22px]">
-                  {archetype ? `你的画像最接近「${archetype}」` : '你已经在这张图上了'}
-                </p>
-                {leaning && (
-                  <p className="mt-2 text-[13.5px] leading-relaxed text-blur-text/80 md:text-[14px]">
-                    在这张图上，你{leaning}。
-                  </p>
-                )}
-              </Reveal>
-            ) : (
-              <Reveal delay={0.06} className="mt-5 max-w-2xl">
-                <p className="text-[15px] leading-[1.85] text-blur-text/90 md:text-[16px]">
-                  做一次测试，你就会在这张图上留下一个点——不用注册，也不用把画像展示出来。
-                </p>
-                <div className="mt-6">
-                  <GlassButton onClick={onStart}>
-                    开始测试
-                    <ArrowRight size={14} />
-                  </GlassButton>
-                </div>
-              </Reveal>
-            )}
-          </section>
-
-          <section className="px-5 py-12 md:px-10 md:py-16">
-            <Reveal>
-              <SectionTag index="02" label="看得见，和看不见" />
+              <SectionTag index="01" label="看得见，和看不见" />
             </Reveal>
             <Reveal delay={0.06} className="mt-6 grid gap-8 border-t border-blur-border/25 pt-6 md:grid-cols-2 md:gap-14">
               <div>
@@ -210,7 +216,7 @@ export default function Community({ records, account, onBack, onOpenMy, onOpenNe
 
           <section className="px-5 py-12 md:px-10 md:py-16">
             <Reveal>
-              <SectionTag index="03" label="怎么让这里多一个人" />
+              <SectionTag index="02" label="怎么让这里多一个人" />
               <h2 className="mt-4 text-[22px] font-medium tracking-[0.03em] text-blur-text md:text-[26px]">
                 做完测试，你就已经在这里了。
               </h2>

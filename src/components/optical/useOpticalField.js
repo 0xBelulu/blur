@@ -690,28 +690,33 @@ export function useOpticalField({
         const defocus = Math.min(1, blurPx / (blurCeiling * 0.82));
 
         // C. 清晰度与尺寸响应 (适度提升漫染透光基底，失焦如宣纸浮墨，合焦如发光水晶)
-        const isFocused = state.activeFocusedId === item.id || blurPx < 0.9;
-        const targetOpacity = isFocused ? 0.98 : 0.16 + (1 - defocus) * 0.72;
-        const itemScale = isFocused ? 1.22 : 0.93 + (1 - defocus) * 0.22;
+        // sharp: 星图里的「你」——不参与失焦，但仍然共享同一套漂移与视差。
+        const sharp = item.sharp === true;
+        const isFocused = !sharp && (state.activeFocusedId === item.id || blurPx < 0.9);
+        const targetOpacity = sharp ? 1 : isFocused ? 0.98 : 0.16 + (1 - defocus) * 0.72;
+        const itemScale = sharp ? 1 : isFocused ? 1.22 : 0.93 + (1 - defocus) * 0.22;
 
         // 做题页把上限压下来：emoji 是背景，不能盖过题干
-        const renderBlur = Math.max(blurFloor, blurPx);
+        const renderBlur = sharp ? 0 : Math.max(blurFloor, blurPx);
         const renderOpacity = Math.min(cap, targetOpacity);
 
         // 更新 Emoji DOM 样式 (合焦时带有晶莹透镜微光 Bloom，告别干瘪生硬)
         writeStyle(el, last, "transform", `translate3d(${(offset.driftX + offset.parallaxX).toFixed(1)}px, ${(offset.driftY + offset.parallaxY).toFixed(1)}px, 0) scale(${itemScale.toFixed(3)})`);
 
         // Keep the existing visual thresholds for the expensive blur changes.
-        const focusChanged = last.focused !== isFocused;
+        const focusChanged = last.focused !== isFocused || last.sharp !== sharp;
 
         if (focusChanged || last.blur === undefined || Math.abs(last.blur - renderBlur) > 0.4) {
-          if (isFocused && blurFloor === 0) {
+          if (sharp) {
+            el.style.filter = "none";
+          } else if (isFocused && blurFloor === 0) {
             el.style.filter = FOCUS_FILTER;
           } else {
             el.style.filter = `blur(${renderBlur.toFixed(1)}px)`;
           }
           last.blur = renderBlur;
           last.focused = isFocused;
+          last.sharp = sharp;
         }
 
         if (last.opacity === undefined || Math.abs(last.opacity - renderOpacity) > 0.02) {

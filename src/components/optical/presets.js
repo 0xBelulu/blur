@@ -36,6 +36,18 @@ export const ABOUT_PRESET = {
   maxBlur: 6.5,
 };
 
+/**
+ * 社区星图：同一套引擎，把 emoji 换成圆点。
+ * 圆点本身很小，失焦上限可以比探索页更深，远近差才出得来。
+ */
+export const COMMUNITY_PRESET = {
+  focusMode: "pointer",
+  focusZ: 0.5,
+  opacityCap: 1,
+  minBlur: 0,
+  maxBlur: 9,
+};
+
 // Shared full-viewport scenes. The embedded About field remains page content.
 //
 // atmosphere 是水彩层的强度，sky 是星点层的强度（数字，0 表示不显示）。
@@ -58,8 +70,9 @@ export const PAGE_BACKGROUND_PRESETS = {
   invite: { atmosphere: 0.62, sky: 0.5 },
   friend: { atmosphere: 0.7, sky: 0.6 },
   together: { atmosphere: 0.7, sky: 0.6 },
-  // 星图自己就是一片尘埃，背景只留一层薄水彩：两层星点叠在一起会变成噪点
-  community: { atmosphere: 0.55, sky: 0.22 },
+  // 星图自己就是一片尘埃，而且观测场里已经有空气层：背景只留一层薄水彩，
+  // 不再叠整屏星点，两层星点叠在一起会变成噪点
+  community: { atmosphere: 0.62, sky: 0 },
   archetypes: { atmosphere: 0.42, wash: 'catalog' },
   traits: { atmosphere: 0.42, wash: 'catalog' },
   questions: { atmosphere: 0.42, wash: 'catalog' },
