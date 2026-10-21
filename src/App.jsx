@@ -27,6 +27,7 @@ import { flushPending, refreshCloudHistory, downloadRecord, signOut, deleteIdent
 import { getAccountInfo, ensureLocalIdentity, updateAccountInfo } from './utils/identity';
 import { selectPortrait } from './utils/people';
 import { recordEvent } from './utils/metrics';
+import { dropFieldPoint } from './utils/community';
 
 const LOADING_DURATION = 3500;
 const INITIAL_TEST_SYMBOLS = buildPersonaSymbols(solveProfile([]).field, revealAt(0));
@@ -185,6 +186,9 @@ export default function App() {
       if (getAccountInfo().displayRecordId === undefined && !getAccountInfo().portraitId) {
         try { updateAccountInfo({ displayRecordId: saved.id }); } catch { /* The snapshot itself is already saved. */ }
       }
+      // 完成即留下一个匿名点。已有展示画像的人跳过——那份画像本身就是他的位置，
+      // 两个都留会让同一个人在图上变成两个点。失败不阻断任何事，点只是没留下。
+      if (!getAccountInfo().portraitId) dropFieldPoint(result.userVector).catch(() => {});
       // Finishing a test never uploads anything. Saving to the cloud is explicit.
       if (target) { setComparisonRecordId(saved.id); navigate('compare', target); }
       else { setJustFinished(true); navigate('result', saved.id); }

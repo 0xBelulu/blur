@@ -44,6 +44,7 @@ function database(t, legacy = false) {
     sqlite.exec(readFileSync(new URL('../migrations/0008_stats_snapshots.sql', import.meta.url), 'utf8'));
     sqlite.exec(readFileSync(new URL('../migrations/0009_account_deletion.sql', import.meta.url), 'utf8'));
     sqlite.exec(readFileSync(new URL('../migrations/0010_accent.sql', import.meta.url), 'utf8'));
+    sqlite.exec(readFileSync(new URL('../migrations/0011_field_points.sql', import.meta.url), 'utf8'));
   }
   t.after(() => sqlite.close());
   return { sqlite, ...adapter(sqlite) };
@@ -1322,7 +1323,7 @@ test('the star map only publishes anonymous coordinates of displayed portraits',
   const db = database(t);
   const empty = await call(db, '/community/field', 'GET', undefined, '');
   assert.equal(empty.status, 200);
-  assert.deepEqual(empty.data, { version: PROJECTION_VERSION, total: 0, points: [], you: null });
+  assert.deepEqual(empty.data, { version: PROJECTION_VERSION, total: 0, completed: 0, points: [], you: null });
 
   const { a } = await pair(db);
   await call(db, '/records/one', 'PUT', record);
@@ -1368,4 +1369,48 @@ test('the star map only publishes anonymous coordinates of displayed portraits',
   assert.equal((await call(db, '/community/field', 'GET', undefined, '')).data.total, 0);
 
   assert.equal((await call(db, '/community/field', 'POST', {})).status, 405);
+});
+
+test('a completed test leaves an anonymous point that only its own device can withdraw', async (t) => {
+  const db = database(t);
+  const id = 'd'.repeat(32);
+  const posted = await call(db, '/community/point', 'POST', { id, vector: result.userVector }, '');
+  assert.equal(posted.status, 200);
+
+  // 重试幂等：同一个 id 提交两次仍然只有一个点。
+  await call(db, '/community/point', 'POST', { id, vector: result.userVector }, '');
+  const field = await call(db, '/community/field', 'GET', undefined, '');
+  assert.equal(field.data.total, 1);
+  assert.equal(field.data.points.length, 1);
+  const [x, y] = field.data.points[0];
+  const expected = projectVector(result.userVector);
+  assert.ok(Math.abs(x - expected.x) < 0.002 && Math.abs(y - expected.y) < 0.002, '坐标应当由服务端投影');
+  // 匿名点没有任何身份字段，连 created_at 都不发。
+  const payload = JSON.stringify(field.data);
+  for (const field_ of ['owner_hash', 'nickname', 'publicId', 'created_at', 'id']) {
+    assert.ok(!payload.includes(field_), `星图响应不应包含 ${field_}`);
+  }
+
+  // 出示自己的 id：这个点从 points 里摘出来，作为「你」返回，但不知道原型。
+  const mine = await call(db, `/community/field?point=${id}`, 'GET', undefined, '');
+  assert.equal(mine.data.points.length, 0);
+  assert.equal(mine.data.total, 1);
+  assert.equal(mine.data.you.archetype, null);
+  assert.ok(Math.abs(mine.data.you.x - expected.x) < 0.002);
+
+  // 别人出示这个 id 也只能看见坐标——它本来就是公开的。
+  const other = await call(db, `/community/field?point=${'f'.repeat(32)}`, 'GET', undefined, '');
+  assert.equal(other.data.points.length, 1);
+  assert.equal(other.data.you, null);
+
+  assert.equal((await call(db, '/community/point', 'POST', { id: 'not-a-point', vector: result.userVector }, '')).status, 400);
+  assert.equal((await call(db, '/community/point', 'POST', { id: 'e'.repeat(32), vector: {} }, '')).status, 400);
+
+  assert.equal((await call(db, `/community/point/${id}`, 'DELETE', undefined, '')).status, 200);
+  assert.equal((await call(db, '/community/field', 'GET', undefined, '')).data.total, 0);
+  // 撤下是幂等的：再撤一次也不报错。
+  assert.equal((await call(db, `/community/point/${id}`, 'DELETE', undefined, '')).status, 200);
+
+  db.sqlite.prepare("INSERT INTO metrics_daily (day, metric, count) VALUES ('2026-10-21', 'test_completed', 123)").run();
+  assert.equal((await call(db, '/community/field', 'GET', undefined, '')).data.completed, 123);
 });

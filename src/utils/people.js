@@ -1,4 +1,5 @@
 import { api, identityOperation, syncRecord } from './cloud.js';
+import { withdrawFieldPoint } from './community.js';
 import { getIdentityToken, getAccountInfo, updateAccountInfo } from './identity.js';
 import { getHistoryRecords } from './historyStorage.js';
 
@@ -55,6 +56,9 @@ export async function selectPortrait(record, friendsVisible) {
       portraitId: current?.cloudId || null, friendsVisible,
     } });
     if (getIdentityToken() !== ctx.token) throw new Error('身份已切换，请重新选择');
+    // 一旦有了展示画像，那份画像就代表这个人：把完成测试时留下的匿名点撤掉，
+    // 否则同一个人会在图上出现两次。撤不掉不算失败——点本来就没有身份可追。
+    if (account.portraitId) await withdrawFieldPoint().catch(() => {});
     return updateAccountInfo({ ...account, displayRecordId: record?.id || null, checkStatus: 'verified' });
   });
 }

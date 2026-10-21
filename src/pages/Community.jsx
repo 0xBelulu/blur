@@ -6,7 +6,7 @@ import Reveal from '../components/Reveal';
 import Eyebrow from '../components/Eyebrow';
 import ChromaticTitle from '../components/ChromaticTitle';
 import { axisTendency, PROJECTION_AXIS_COPY } from '../../shared/projection.js';
-import { readCommunityField } from '../utils/community';
+import { readCommunityField, localFieldPoint, withdrawFieldPoint } from '../utils/community';
 import { displayRecord, recordArchetype } from '../utils/portraits';
 
 const TITLE_CLASS = 'text-[2.3rem] leading-[1.1] tracking-tight font-medium md:text-[3.6rem]';
@@ -38,7 +38,8 @@ export default function Community({ records, account, onBack, onOpenMy, onOpenNe
   const [field, setField] = useState(null);
   const [error, setError] = useState('');
   const [revision, setRevision] = useState(0);
-  const registered = !!account.registered;
+  const [localPoint, setLocalPoint] = useState(localFieldPoint);
+  const [notice, setNotice] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -49,11 +50,21 @@ export default function Community({ records, account, onBack, onOpenMy, onOpenNe
   }, [revision, account.id]);
 
   const retry = useCallback(() => { setField(null); setRevision((value) => value + 1); }, []);
+  const withdraw = async () => {
+    setNotice('');
+    try {
+      await withdrawFieldPoint();
+      setLocalPoint(null);
+      setNotice('这个点已经撤下了。');
+      retry();
+    } catch (cause) { setNotice(cause.message); }
+  };
 
   const shown = displayRecord(records, account);
   const you = field?.you || null;
   const archetype = you?.archetype || recordArchetype(shown)?.title || '';
   const total = field?.total || 0;
+  const completed = field?.completed || 0;
   const tendency = axisTendency(you);
   const leaning = tendency
     ? [tendency.x, tendency.y]
@@ -117,12 +128,19 @@ export default function Community({ records, account, onBack, onOpenMy, onOpenNe
               </div>
               <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-t border-blur-border/30 pt-3">
                 <p className="text-[13px] leading-[1.7] text-blur-text/85" role="status">{status}</p>
-                {error
-                  ? <button onClick={retry} className="inline-flex items-center gap-1.5 text-[12.5px] text-blur-text-muted transition-colors hover:text-blur-text">
+                {error ? (
+                  <button onClick={retry} className="inline-flex items-center gap-1.5 text-[12.5px] text-blur-text-muted transition-colors hover:text-blur-text">
                     再读一次<RefreshCw size={12} />
                   </button>
-                  : <span className="text-[11px] tracking-[0.2em] text-blur-text-muted">位置是近似的</span>}
+                ) : localPoint ? (
+                  <button onClick={withdraw} className="text-[12px] text-blur-text-muted transition-colors hover:text-blur-text">
+                    撤下我留下的点
+                  </button>
+                ) : (
+                  <span className="text-[11px] tracking-[0.2em] text-blur-text-muted">位置是近似的</span>
+                )}
               </div>
+              {notice && <p className="mt-2 text-[12.5px] text-blur-text-muted" role="status">{notice}</p>}
             </Reveal>
           </div>
         </section>
@@ -146,13 +164,11 @@ export default function Community({ records, account, onBack, onOpenMy, onOpenNe
             ) : (
               <Reveal delay={0.06} className="mt-5 max-w-2xl">
                 <p className="text-[15px] leading-[1.85] text-blur-text/90 md:text-[16px]">
-                  {registered
-                    ? '你还没有在这片图上。把展示中的画像设为「好友可见」，这里就会出现一个没有名字的点。'
-                    : '把身份存到云端，再选一份画像展示出来，你就会出现在这里。'}
+                  做一次测试，你就会在这张图上留下一个点——不用注册，也不用把画像展示出来。
                 </p>
                 <div className="mt-6">
-                  <GlassButton onClick={onOpenMy}>
-                    {registered ? '去选一份画像' : '看看我的空间'}
+                  <GlassButton onClick={onStart}>
+                    开始测试
                     <ArrowRight size={14} />
                   </GlassButton>
                 </div>
@@ -196,18 +212,29 @@ export default function Community({ records, account, onBack, onOpenMy, onOpenNe
             <Reveal>
               <SectionTag index="03" label="怎么让这里多一个人" />
               <h2 className="mt-4 text-[22px] font-medium tracking-[0.03em] text-blur-text md:text-[26px]">
-                这里不靠发帖变热闹。
+                做完测试，你就已经在这里了。
               </h2>
               <p className="mt-3 max-w-2xl text-[15px] leading-[1.85] text-blur-text/85 md:text-[16px]">
-                多一个人，就是多一个人做完测试、把画像存到云端、选择展示出来。
-                没有关注，没有消息，也没有需要你每天回来维护的东西。
+                图上的人有两种来源：做完测试留下的匿名点——不用注册，也不用把画像存到云端；
+                以及主动展示画像的人。两种都没有名字，也都点不开。
+              </p>
+              <p className="mt-3 max-w-2xl text-[15px] leading-[1.85] text-blur-text/85 md:text-[16px]">
+                {completed > 0
+                  ? `到目前有 ${completed} 个人做完过这个测试。这张图会跟着它慢慢变密。`
+                  : '这张图会随着做完测试的人变密。'}
               </p>
             </Reveal>
             <Reveal delay={0.08} className="mt-8 flex flex-wrap items-center gap-4">
-              <GlassButton size="lg" onClick={onStart}>自己再测一次<ArrowRight size={15} /></GlassButton>
-              <button onClick={onOpenMy} className="inline-flex items-center gap-1.5 text-[13.5px] text-blur-text-muted transition-colors hover:text-blur-text">
-                邀请一个朋友<ArrowUpRight size={13} />
+              <GlassButton size="lg" onClick={onOpenMy}>邀请一个朋友<ArrowRight size={15} /></GlassButton>
+              <button onClick={onStart} className="inline-flex items-center gap-1.5 text-[13.5px] text-blur-text-muted transition-colors hover:text-blur-text">
+                自己再测一次<ArrowUpRight size={13} />
               </button>
+            </Reveal>
+            <Reveal delay={0.04} className="mt-6 max-w-2xl">
+              <p className="text-[12.5px] leading-[1.8] text-blur-text-muted">
+                匿名点没有身份可查，所以只能在这台设备上撤下。换了浏览器或清掉本机数据之后，
+                那个点还在图上，但再也找不到它——这是匿名的代价，不是故障。
+              </p>
             </Reveal>
           </section>
 
