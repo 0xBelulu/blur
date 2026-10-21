@@ -94,6 +94,8 @@ lint、构建、完整自动测试及本地 Cloudflare/D1 联调通过。真实�
 
 2026-10-21 的星图是一次纯代码发布，没有新增迁移：`GET /api/community/field` 只读 `accounts.portrait_id`、`friends_visible` 和 `profiles.result_json` 里已有的向量，这些列在 0003 / 0005 里都已存在于生产，因此不需要「先迁移再发代码」的顺序。提交 `152ef31` 推送到 GitHub `main` 后由 Pages 的 Git 集成构建（命令 `npm run build`，输出 `dist`，根目录 `functions/` 一并编译），没有使用 `wrangler pages deploy` 直接发布。构建完成后验证生产接口：推送前该路径返回 401（旧代码没有这个路由，落到了 `ownerHash()`），构建后返回 200，`total` 14、`points` 14 组坐标、`you` 为 null；响应里没有 `owner_hash`、昵称、原型、时间或顺序。`#community` 在无头 Chrome 中打开无 console 错误。星图的权限语义（「好友可见」同时意味着一个匿名点）与实现取舍见 [社区构想](community.md) 的「P1 实现记录」。
 
+同一天的第二版星图加了匿名完成点，是**本次唯一一次先迁移后发代码**：`npx wrangler d1 migrations list blur --remote` 当时只剩 `0011_field_points.sql`，先用 `npm run db:migrate:remote` 建表，再推送 `08ad41a` 触发构建。顺序不能反：`POST /api/community/point` 在表不存在时会返回 503，而 `GET` 有兜底（表缺失时只显示展示画像）。上线后在生产用一次性 id 验证了写入与读取：`POST` 返回 `{"dropped":true}`，`GET ?point=<id>` 返回 `total` 15 / `points` 14 / `you` 为该点且 `archetype` 为 null，`DELETE` 后回到 `total` 14；测试点已撤下，未留残留。同日 `total` 仍为 14、`completed` 为 126——**历史完成数补不回来**，`metrics_daily` 只有计数器，那 126 份作答的向量从未存过，匿名点只对上线之后的完成生效。
+
 本地与生产迁移相互独立：`npm run db:migrate:local`、构建成功和本地接口通过，均不能证明生产库已更新。发布后需验证实际生产 API 的写入与随后读取；使用临时身份时清理其测试数据。迁移本身若不兼容旧代码，需要另行安排发布顺序，不能直接沿用“先迁移”的增量发布步骤。参见 [Cloudflare D1 迁移说明](https://developers.cloudflare.com/d1/reference/migrations/)。
 
 ### 2026-10-18：账户接口 503
