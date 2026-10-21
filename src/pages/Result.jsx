@@ -12,6 +12,7 @@ import DraggableTabs from "../components/DraggableTabs";
 import ShareControls from "../components/ShareControls";
 import IdentityInvite from "../components/IdentityInvite";
 import { shouldInvite, noteInviteShown } from "../utils/identityInvite";
+import { ACCENT, SKY, GOLD, rgba } from "../utils/palette.js";
 
 const INVITE_DELAY = 1800;
 
@@ -127,7 +128,7 @@ export default function Result({ result, onRestart, record, publicView = false, 
             className="absolute inset-0 rounded-full opacity-15 blur-3xl -z-10"
             style={{
               background:
-                "radial-gradient(circle at 40% 40%, rgba(155,142,199,0.35) 0%, rgba(143,181,196,0.15) 50%, transparent 70%)",
+                `radial-gradient(circle at 40% 40%, ${rgba(ACCENT, 0.35)} 0%, ${rgba(SKY, 0.15)} 50%, transparent 70%)`,
             }}
           />
         </motion.div>
@@ -572,19 +573,19 @@ export default function Result({ result, onRestart, record, publicView = false, 
                   title="你的内在世界"
                   content={activeNarrative.innerWorld}
                   delay={0}
-                  accent="rgba(155, 142, 199, 0.3)"
+                  accent={rgba(ACCENT, 0.3)}
                 />
                 <NarrativeSection
                   title="你在关系中"
                   content={activeNarrative.inRelation}
                   delay={0.1}
-                  accent="rgba(143, 181, 196, 0.3)"
+                  accent={rgba(SKY, 0.3)}
                 />
                 <NarrativeSection
                   title="你的隐藏面"
                   content={activeNarrative.hiddenSide}
                   delay={0.2}
-                  accent="rgba(196, 165, 137, 0.3)"
+                  accent={rgba(GOLD, 0.3)}
                 />
               </motion.div>
             )}

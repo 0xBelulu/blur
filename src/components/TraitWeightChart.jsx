@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { ACCENT, rgba } from "../utils/palette.js";
 
-function rgba(rgb, a) {
-  if (!rgb) return `rgba(155,142,199,${a})`;
-  return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`;
-}
+// 没有主色时退回环境主色（画像对陌生人不可见时会出现）
+const tone = (rgb, a) => rgba(rgb || ACCENT, a);
 
 export default function TraitWeightChart({ traits, color }) {
   const [hoveredTrait, setHoveredTrait] = useState(null);
@@ -47,8 +46,8 @@ export default function TraitWeightChart({ traits, color }) {
                   className="h-full rounded-full"
                   style={{
                     background: isHovered
-                      ? rgba(color, 0.85)
-                      : `linear-gradient(90deg, ${rgba(color, 0.7)}, ${rgba(color, 0.35)})`,
+                      ? tone(color, 0.85)
+                      : `linear-gradient(90deg, ${tone(color, 0.7)}, ${tone(color, 0.35)})`,
                   }}
                 />
               </div>

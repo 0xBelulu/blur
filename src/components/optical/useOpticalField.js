@@ -1,6 +1,10 @@
 import { useEffect, useRef } from "react";
 
 import { SPATIAL_SYMBOLS, STARDUST_PARTICLES } from "./symbols";
+import { ACCENT, GOLD, rgba } from "../../utils/palette.js";
+
+// 合焦时那层"晶莹透镜微光"。只在对焦状态变化时写入，所以算一次就够。
+const FOCUS_FILTER = `blur(0px) drop-shadow(0 0 14px ${rgba(ACCENT, 0.5)}) drop-shadow(0 0 24px ${rgba(GOLD, 0.35)})`;
 
 // 点按这些元素时不触发空间对焦（按钮/链接等自身已有交互反馈）
 const INTERACTIVE_SELECTOR = "button, a, input, select, textarea, [role='button']";
@@ -702,7 +706,7 @@ export function useOpticalField({
 
         if (focusChanged || last.blur === undefined || Math.abs(last.blur - renderBlur) > 0.4) {
           if (isFocused && blurFloor === 0) {
-            el.style.filter = "blur(0px) drop-shadow(0 0 14px rgba(155,142,199,0.5)) drop-shadow(0 0 24px rgba(196,165,137,0.35))";
+            el.style.filter = FOCUS_FILTER;
           } else {
             el.style.filter = `blur(${renderBlur.toFixed(1)}px)`;
           }

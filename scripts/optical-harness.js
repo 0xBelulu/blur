@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import { SPATIAL_SYMBOLS, STARDUST_PARTICLES } from '../src/components/optical/symbols.js';
+import { ACCENT, GOLD, rgba } from '../src/utils/palette.js';
 
 export const opticalSource = () => readFileSync(new URL('../src/components/optical/useOpticalField.js', import.meta.url), 'utf8');
 
@@ -107,7 +108,9 @@ export function createOpticalHost(source = opticalSource(), options = {}) {
     cancelAnimationFrame(id) { frames.delete(id); },
     performance: { now: () => now },
     console: { warn: (...args) => warnings.push(args) },
-    SPATIAL_SYMBOLS, STARDUST_PARTICLES,
+    // The hook's ESM imports are stripped above, so the values it imports from
+    // the palette have to enter the sandbox explicitly, like the symbol tables.
+    SPATIAL_SYMBOLS, STARDUST_PARTICLES, ACCENT, GOLD, rgba,
   });
   let result;
   function render(nextProps = props) {

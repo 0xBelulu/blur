@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useReducedMotion } from "framer-motion";
+import { ACCENT, SKY, GOLD, DEEP } from "../../utils/palette.js";
 
 /*
  * 下一步页的整屏星场。
@@ -22,7 +23,7 @@ const BANDS = [
   { key: "far", parallax: 8, blur: [5, 7], size: [3, 6], alpha: [0.24, 0.44], count: 22 },
 ];
 
-const PALETTE = ["155,142,199", "143,181,196", "196,165,137", "196,155,165"];
+const PALETTE = [ACCENT, SKY, GOLD, DEEP].map((rgb) => rgb.join(","));
 const IDLE_AFTER = 2400;
 
 function makeField() {

@@ -1,10 +1,7 @@
 import { useRef, useEffect } from "react";
 import { ARCHETYPE_PROFILES } from "../data/archetypeProfiles.js";
 import { DIMENSIONS } from "../data/dimensions.js";
-
-function rgba(rgb, a) {
-  return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`;
-}
+import { ACCENT, rgba } from "../utils/palette.js";
 
 const THROTTLE_IDLE = 4;
 
@@ -329,8 +326,8 @@ export default function TraitSpace2D({
 
         const glow = ctx.createRadialGradient(upos.x, upos.y, 0, upos.x, upos.y, 24);
         glow.addColorStop(0, rgba(ownColor, 0.25 * pulse));
-        glow.addColorStop(0.4, `rgba(155,142,199,${0.18 * pulse})`);
-        glow.addColorStop(1, "rgba(155,142,199,0)");
+        glow.addColorStop(0.4, rgba(ACCENT, 0.18 * pulse));
+        glow.addColorStop(1, rgba(ACCENT, 0));
         ctx.beginPath();
         ctx.arc(upos.x, upos.y, 24, 0, Math.PI * 2);
         ctx.fillStyle = glow;
@@ -345,7 +342,7 @@ export default function TraitSpace2D({
         ctx.closePath();
         ctx.fillStyle = rgba(ownColor, 0.9);
         ctx.fill();
-        ctx.strokeStyle = "rgba(155,142,199,0.8)";
+        ctx.strokeStyle = rgba(ACCENT, 0.8);
         ctx.lineWidth = 1.5;
         ctx.stroke();
 

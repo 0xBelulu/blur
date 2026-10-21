@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserRound, Sparkles, Users } from "lucide-react";
 import GlassButton from "../components/GlassButton";
+import { ACCENT, SKY, GOLD, DEEP, PAPER, rgba, hex } from "../utils/palette.js";
 
 const TIPS = [
   "如果你在读这句话，说明你确实在读。",
@@ -106,16 +107,16 @@ export default function Landing({ onStart, onExplore, onOpenMy, onOpenNext }) {
                 <feGaussianBlur stdDeviation="3.5" />
               </filter>
               <radialGradient id="lg1" cx="40%" cy="35%" r="60%">
-                <stop offset="0%" stopColor="#ede6ff" stopOpacity="0.9"/>
-                <stop offset="100%" stopColor="#9b8ec7" stopOpacity="0.3"/>
+                <stop offset="0%" stopColor="#e8eafb" stopOpacity="0.9"/>
+                <stop offset="100%" stopColor={hex(ACCENT)} stopOpacity="0.3"/>
               </radialGradient>
               <radialGradient id="lg2" cx="55%" cy="60%" r="55%">
-                <stop offset="0%" stopColor="#c4a589" stopOpacity="0.7"/>
-                <stop offset="100%" stopColor="#8fb5c4" stopOpacity="0.2"/>
+                <stop offset="0%" stopColor={hex(GOLD)} stopOpacity="0.7"/>
+                <stop offset="100%" stopColor={hex(SKY)} stopOpacity="0.2"/>
               </radialGradient>
               <radialGradient id="lg3" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#c49ba5" stopOpacity="0.5"/>
-                <stop offset="100%" stopColor="#b5ada3" stopOpacity="0.1"/>
+                <stop offset="0%" stopColor={hex(DEEP)} stopOpacity="0.5"/>
+                <stop offset="100%" stopColor={hex(PAPER)} stopOpacity="0.1"/>
               </radialGradient>
             </defs>
           </svg>
@@ -130,8 +131,8 @@ export default function Landing({ onStart, onExplore, onOpenMy, onOpenNext }) {
             className="text-[3.5rem] md:text-[5.5rem] lg:text-[6.5rem] leading-none font-medium tracking-tight text-blur-text select-none"
             style={{
               textShadow: `
-                0 0 50px rgba(155,142,199,0.12),
-                0 0 100px rgba(155,142,199,0.06),
+                0 0 50px ${rgba(ACCENT, 0.12)},
+                0 0 100px ${rgba(ACCENT, 0.06)},
                 0 1px 0 rgba(255,255,255,0.35)
               `,
             }}

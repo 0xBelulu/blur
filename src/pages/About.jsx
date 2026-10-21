@@ -7,6 +7,7 @@ import { ABOUT_PRESET } from "../components/optical/presets";
 import { ARCHETYPE_SYMBOLS } from "../data/archetypeField";
 import { archetypeDescriptions, tagPool } from "../data/tags";
 import { ARCHETYPE_PROFILES } from "../data/archetypeProfiles";
+import { ACCENT, SKY, GOLD, rgba } from "../utils/palette.js";
 
 const EASE = [0.22, 1, 0.36, 1];
 const TITLE_CLASS = "text-[3.1rem] leading-[1.04] md:text-[5.4rem] tracking-tight font-medium";
@@ -408,9 +409,9 @@ export default function About({ onBack, onStart, onOpenArchetypes, onOpenTraits,
               </div>
               <div className="mt-5 grid grid-cols-3 gap-2.5 md:gap-3">
                 {[
-                  { n: "10", label: "道题", sub: "凭第一反应作答", tint: "rgba(155,142,199,0.55)" },
-                  { n: "10", label: "个维度", sub: "被悄悄测量", tint: "rgba(143,181,196,0.55)" },
-                  { n: "01", label: "个你", sub: "无法被归类", tint: "rgba(196,165,137,0.55)" },
+                  { n: "10", label: "道题", sub: "凭第一反应作答", tint: rgba(ACCENT, 0.55) },
+                  { n: "10", label: "个维度", sub: "被悄悄测量", tint: rgba(SKY, 0.55) },
+                  { n: "01", label: "个你", sub: "无法被归类", tint: rgba(GOLD, 0.55) },
                 ].map((step, index) => (
                   <div
                     key={index}

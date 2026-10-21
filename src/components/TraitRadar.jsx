@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { ACCENT, MUTED, HINT, rgba, hex } from "../utils/palette.js";
 
 const CX = 120;
 const CY = 120;
@@ -75,8 +76,8 @@ export default function TraitRadar({ dimensionScores }) {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
           points={dataPolygon}
-          fill="rgba(155, 142, 199, 0.15)"
-          stroke="rgba(155, 142, 199, 0.6)"
+          fill={rgba(ACCENT, 0.15)}
+          stroke={rgba(ACCENT, 0.6)}
           strokeWidth={1.5}
           style={{ transformOrigin: `${CX}px ${CY}px` }}
         />
@@ -89,7 +90,7 @@ export default function TraitRadar({ dimensionScores }) {
             transition={{ delay: 0.3 + i * 0.08, duration: 0.4 }}
             cx={p.x}
             cy={p.y}
-            fill="rgba(155, 142, 199, 0.9)"
+            fill={rgba(ACCENT, 0.9)}
           />
         ))}
 
@@ -103,7 +104,7 @@ export default function TraitRadar({ dimensionScores }) {
               x={lp.x}
               y={lp.y + dy}
               textAnchor={anchor}
-              fill="#8a8378"
+              fill={hex(MUTED)}
               fontSize={9}
               fontFamily="system-ui, -apple-system, sans-serif"
             >
@@ -122,7 +123,7 @@ export default function TraitRadar({ dimensionScores }) {
               x={lp.x}
               y={lp.y + dy}
               textAnchor={anchor}
-              fill="#b5ada3"
+              fill={hex(HINT)}
               fontSize={8}
               fontFamily="system-ui, -apple-system, sans-serif"
             >

@@ -1,10 +1,22 @@
 import atmosphereDither from "../assets/atmosphere-dither.png";
+import { ACCENT, SKY, GOLD, DEEP, rgba } from "../utils/palette.js";
 
 /**
  * 温润水彩漫染流光 —— 页面最底层的氛围。
  *
  * 由 AppBackground 持续持有，切页时只改变 intensity，不重建纹理和动画。
+ *
+ * 四团洗染只取三个色相：蓝紫（主色）、天蓝（冷）、奶油金（暖），第四团是
+ * 主色的深一档而不是第四个色相。粉色那一层被去掉了——它是画面发糊的来源。
  */
+
+const WASH = [
+  `radial-gradient(ellipse 85% 65% at 50% 45%, ${rgba(ACCENT, 0.2)} 0%, transparent 72%)`,
+  `radial-gradient(ellipse 65% 55% at 20% 60%, ${rgba(SKY, 0.16)} 0%, transparent 65%)`,
+  `radial-gradient(ellipse 55% 45% at 78% 30%, ${rgba(GOLD, 0.16)} 0%, transparent 58%)`,
+  `radial-gradient(ellipse 45% 40% at 60% 78%, ${rgba(DEEP, 0.13)} 0%, transparent 52%)`,
+].join(", ");
+
 export default function AtmosphereField({ intensity = 1 }) {
   return (
     <div
@@ -12,13 +24,7 @@ export default function AtmosphereField({ intensity = 1 }) {
       aria-hidden="true"
       style={{ opacity: intensity }}
     >
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 85% 65% at 50% 45%, rgba(155,142,199,0.20) 0%, transparent 72%), radial-gradient(ellipse 65% 55% at 20% 60%, rgba(143,181,196,0.16) 0%, transparent 65%), radial-gradient(ellipse 55% 45% at 78% 30%, rgba(196,165,137,0.15) 0%, transparent 58%), radial-gradient(ellipse 45% 40% at 60% 78%, rgba(196,155,165,0.14) 0%, transparent 52%)",
-        }}
-      />
+      <div className="absolute inset-0" style={{ background: WASH }} />
       {/* Static blurred paint inside moving wrappers lets the browser reuse it. */}
       <div
         className="atmosphere-orb absolute will-change-transform"
@@ -33,7 +39,7 @@ export default function AtmosphereField({ intensity = 1 }) {
       >
         <div className="absolute inset-0 blur-[45px]" style={{
           borderRadius: "inherit",
-          background: "radial-gradient(circle, rgba(155,142,199,0.18) 0%, transparent 68%)",
+          background: `radial-gradient(circle, ${rgba(ACCENT, 0.18)} 0%, transparent 68%)`,
         }} />
       </div>
       <div
@@ -49,7 +55,7 @@ export default function AtmosphereField({ intensity = 1 }) {
       >
         <div className="absolute inset-0 blur-[45px]" style={{
           borderRadius: "inherit",
-          background: "radial-gradient(circle, rgba(143,181,196,0.16) 0%, transparent 65%)",
+          background: `radial-gradient(circle, ${rgba(SKY, 0.16)} 0%, transparent 65%)`,
         }} />
       </div>
       <div
@@ -65,7 +71,7 @@ export default function AtmosphereField({ intensity = 1 }) {
       >
         <div className="absolute inset-0 blur-[40px]" style={{
           borderRadius: "inherit",
-          background: "radial-gradient(circle, rgba(196,165,137,0.15) 0%, transparent 60%)",
+          background: `radial-gradient(circle, ${rgba(GOLD, 0.17)} 0%, transparent 60%)`,
         }} />
       </div>
       <div
@@ -81,7 +87,7 @@ export default function AtmosphereField({ intensity = 1 }) {
       >
         <div className="absolute inset-0 blur-[35px]" style={{
           borderRadius: "inherit",
-          background: "radial-gradient(circle, rgba(196,155,165,0.13) 0%, transparent 55%)",
+          background: `radial-gradient(circle, ${rgba(DEEP, 0.13)} 0%, transparent 55%)`,
         }} />
       </div>
       <div

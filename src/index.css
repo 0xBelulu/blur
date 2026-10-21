@@ -1,27 +1,31 @@
 @import "tailwindcss";
 
+/* 颜色字面量只出现在这里和 src/utils/palette.js，两边是同一套值的镜像：
+   这里是 CSS（Tailwind 只收字面量），那边是 JS（canvas / SVG / 内联 rgba 用）。
+   改色必须同时改两处，否则光场会和按钮脱节。 */
 @theme {
-  --color-blur-bg: #f5f3f0;
+  --color-blur-bg: #f8f5f1;
   --color-blur-surface: rgba(255, 255, 255, 0.45);
   --color-blur-surface-hover: rgba(255, 255, 255, 0.65);
   --color-blur-border: rgba(200, 195, 190, 0.4);
-  --color-blur-text: #4a4540;
-  --color-blur-text-muted: #8a8378;
-  --color-blur-text-light: #b5ada3;
-  --color-blur-accent: #9b8ec7;
-  --color-blur-accent-warm: #c4a589;
-  --color-blur-accent-cool: #8fb5c4;
+  --color-blur-text: #33322f;
+  --color-blur-text-muted: #75736c;
+  --color-blur-text-light: #a8a49b;
+  --color-blur-accent: #7c85c4;
+  --color-blur-accent-warm: #e8cd97;
+  --color-blur-accent-cool: #8ea3d2;
+  /* 唯一保留的暖粉：Admin 的报错文字，不参与光场 */
   --color-blur-accent-rose: #c49ba5;
-  --color-blur-shadow: rgba(74, 69, 64, 0.08);
+  --color-blur-shadow: rgba(51, 50, 47, 0.08);
   --color-blur-glass: rgba(255, 255, 255, 0.25);
   --color-blur-glass-strong: rgba(255, 255, 255, 0.55);
   --color-blur-glass-border: rgba(255, 255, 255, 0.5);
-  --color-blur-shadow-sm: rgba(74, 69, 64, 0.06);
-  --color-blur-shadow-md: rgba(74, 69, 64, 0.08);
+  --color-blur-shadow-sm: rgba(51, 50, 47, 0.06);
+  --color-blur-shadow-md: rgba(51, 50, 47, 0.08);
   --color-blur-inset: rgba(255, 255, 255, 0.4);
   --color-blur-inset-strong: rgba(255, 255, 255, 0.6);
-  --color-blur-accent-glow: rgba(155, 142, 199, 0.3);
-  --color-blur-accent-glow-hover: rgba(155, 142, 199, 0.4);
+  --color-blur-accent-glow: rgba(124, 133, 196, 0.3);
+  --color-blur-accent-glow-hover: rgba(124, 133, 196, 0.4);
 }
 
 html {
@@ -98,7 +102,7 @@ body {
   border: 1px solid var(--color-blur-border);
   box-shadow:
     0 4px 24px var(--color-blur-shadow-sm),
-    0 2px 8px rgba(74, 69, 64, 0.08),
+    0 2px 8px rgba(51, 50, 47, 0.08),
     inset 0 1px 0 var(--color-blur-inset);
 }
 
@@ -108,7 +112,7 @@ body {
   -webkit-backdrop-filter: blur(32px) saturate(160%);
   border: 1px solid rgba(200, 195, 190, 0.5);
   box-shadow:
-    0 6px 20px rgba(74, 69, 64, 0.09),
+    0 6px 20px rgba(51, 50, 47, 0.09),
     inset 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
@@ -124,10 +128,10 @@ body {
   padding: 1px;
   background: linear-gradient(
     135deg,
-    rgba(155, 142, 199, 0.3) 0%,
-    rgba(143, 181, 196, 0.2) 33%,
-    rgba(196, 165, 137, 0.2) 66%,
-    rgba(196, 155, 165, 0.3) 100%
+    rgba(124, 133, 196, 0.3) 0%,
+    rgba(142, 163, 210, 0.2) 33%,
+    rgba(232, 205, 151, 0.2) 66%,
+    rgba(107, 116, 184, 0.3) 100%
   );
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,

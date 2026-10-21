@@ -1,6 +1,9 @@
 import { motion } from "framer-motion";
+import { ACCENT, SKY, rgba } from "../utils/palette.js";
 
-export default function ProgressBar({ pct, delay = 0, gradient = "linear-gradient(90deg, rgba(155,142,199,0.7), rgba(143,181,196,0.7))" }) {
+const DEFAULT_GRADIENT = `linear-gradient(90deg, ${rgba(ACCENT, 0.7)}, ${rgba(SKY, 0.7)})`;
+
+export default function ProgressBar({ pct, delay = 0, gradient = DEFAULT_GRADIENT }) {
   return (
     <div className="h-1.5 rounded-full bg-blur-surface overflow-hidden">
       <motion.div

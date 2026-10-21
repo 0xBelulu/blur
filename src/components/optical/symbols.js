@@ -1,6 +1,8 @@
 // 光学场的空间符号表与光尘粒子表。
 // Landing 用默认的 SPATIAL_SYMBOLS，做题页传入实时解算生成的自定义符号表。
 
+import { ACCENT, SKY, GOLD, DEEP, rgba } from "../../utils/palette.js";
+
 export const SPATIAL_SYMBOLS = [
   // 前景组 (近焦平面，浅景深)
   {
@@ -162,13 +164,14 @@ export const SPATIAL_SYMBOLS = [
 ];
 
 // 丁达尔悬浮光尘粒子 (充盈三维空间微光空气感)
+// 金色粒子是这张场里唯一的暖色，故意稀疏——它是"星"，不是底色。
 export const STARDUST_PARTICLES = [
-  { id: "dust1", x: 22, y: 32, z: 0.22, size: 4, color: "rgba(196,165,137,0.75)" },
-  { id: "dust2", x: 74, y: 18, z: 0.42, size: 3.5, color: "rgba(155,142,199,0.7)" },
-  { id: "dust3", x: 86, y: 70, z: 0.16, size: 4.5, color: "rgba(143,181,196,0.75)" },
-  { id: "dust4", x: 16, y: 64, z: 0.68, size: 3, color: "rgba(196,155,165,0.65)" },
-  { id: "dust5", x: 48, y: 22, z: 0.35, size: 3.5, color: "rgba(155,142,199,0.7)" },
-  { id: "dust6", x: 62, y: 88, z: 0.54, size: 4, color: "rgba(196,165,137,0.75)" },
-  { id: "dust7", x: 38, y: 76, z: 0.82, size: 3, color: "rgba(143,181,196,0.65)" },
-  { id: "dust8", x: 92, y: 38, z: 0.58, size: 3.5, color: "rgba(196,155,165,0.7)" },
+  { id: "dust1", x: 22, y: 32, z: 0.22, size: 4, color: rgba(GOLD, 0.75) },
+  { id: "dust2", x: 74, y: 18, z: 0.42, size: 3.5, color: rgba(ACCENT, 0.7) },
+  { id: "dust3", x: 86, y: 70, z: 0.16, size: 4.5, color: rgba(SKY, 0.75) },
+  { id: "dust4", x: 16, y: 64, z: 0.68, size: 3, color: rgba(DEEP, 0.65) },
+  { id: "dust5", x: 48, y: 22, z: 0.35, size: 3.5, color: rgba(ACCENT, 0.7) },
+  { id: "dust6", x: 62, y: 88, z: 0.54, size: 4, color: rgba(GOLD, 0.75) },
+  { id: "dust7", x: 38, y: 76, z: 0.82, size: 3, color: rgba(SKY, 0.65) },
+  { id: "dust8", x: 92, y: 38, z: 0.58, size: 3.5, color: rgba(DEEP, 0.7) },
 ];
